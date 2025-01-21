@@ -1,0 +1,122 @@
+---
+title: "mzQuality Compound report"
+output: 
+    html_document:
+      toc: true
+      self_contained: true
+params:
+  exp: ""
+  assays: ""
+  plots: ""
+  project: "mzQuality"
+  vendor: "Unknown"
+theme: lumen
+
+---
+
+<style type="text/css">
+div.main-container {
+  max-width: 80vw !important;
+}
+</style>
+
+
+```{r loadDependencies, echo = FALSE, include=FALSE}
+library(SummarizedExperiment)
+exp <- params$exp
+assays <- params$assays
+plots <- params$plots
+```
+
+### About this Project
+This is an mzQuality summary report. It was generated at `r lubridate::now()` using version `r utils::packageVersion("mzQuality2")`. Out of `r ncol(exp)` samples, `r if ("use" %in% colnames(exp)) sum(exp$use)` samples were used for this analysis. Samples that were excluded were: `r  if ("use" %in% colnames(exp)) paste(colnames(exp[, !exp$use]), collapse = ",")`. The sample data consisted of `r  if ("batch" %in% colnames(exp)) length(unique(exp$batch))` batches, measured between `r  if ("datetime" %in% colnames(exp)) sort(exp$datetime)[1]` and `r if ("datetime" %in% colnames(exp)) sort(-exp$datetime)[1]`. The batches contained `r if ("batch" %in% colnames(exp)) paste(as.vector(table(exp$batch)), collapse = ",")` samples respectively. 
+
+See below for the sample data:
+
+```{r sampleTable, echo = FALSE}
+exp <- params$exp
+exp <- exp[rowData(exp)$use, exp$use]
+cols <- sapply(colData(exp), function(x) !"matrix" %in% class(x))
+
+x <- colData(exp)[, cols]
+DT::datatable(as.data.frame(x))
+```
+
+In total, `r nrow(exp)` compounds were submitted, of which `r if ("use" %in% colnames(rowData(exp))) sum(rowData(exp)$use) else 0` compounds were used. See the table below for compound data.
+
+```{r compoundTable, echo = FALSE, error=FALSE}
+exp <- params$exp
+exp <- exp[rowData(exp)$use, exp$use]
+cols <- sapply(rowData(exp), function(x) !"matrix" %in% class(x))
+
+x <- rowData(exp)[, cols]
+cols <- sapply(x, function(z) "numeric" %in% class(z))
+
+DT::datatable(as.data.frame(x[, cols]))
+```
+
+
+```{r plotSettings, echo=FALSE, error=FALSE}
+exp <- params$exp
+exp <- exp[rowData(exp)$use, exp$use]
+N <- length(unique(exp$batch))
+chunk <- 3.5
+height <- chunk * N
+heightType <- chunk * length(unique(exp$type))
+```
+
+
+
+# Compounds Per Batch {.tabset .tabset-fade .tabset-pills}
+```{r compound2, echo=FALSE, fig.width=24, warning=FALSE, fig.height=height, out.width='100%', results = "asis", dpi = 100, class.source = 'fold-hide', error=FALSE}
+exp <- params$exp
+exp <- exp[rowData(exp)$use, exp$use]
+
+for (assay in params$assays) {
+        cat(sprintf("## %s \n", assay))
+    
+        p <- compoundPlotNew(
+                exp = exp,
+                assay = assay
+        )
+        
+        p <- mzQuality2::facetPlot(
+          plot = p, 
+          by = "batch", 
+          ncol = 2
+        )
+
+        if (!is.null(p)) {
+            print(p)
+            cat('<hr style="border:1px solid gray">')
+        }
+}
+```
+
+# Compounds Per Type {.tabset .tabset-fade .tabset-pills}
+```{r compoundsPerType, echo=FALSE, fig.width=24, warning=FALSE, fig.height=heightType, out.width='100%', results = "asis", dpi = 100, class.source = 'fold-hide', error=FALSE}
+exp <- params$exp
+exp <- exp[rowData(exp)$use, exp$use]
+
+for (assay in params$assays) {
+        cat(sprintf("## %s \n", assay))
+    
+        p <- compoundPlotNew(
+                exp = exp,
+                assay = assay,
+                trendTypes = unique(exp$type), 
+                withinTrend = TRUE
+        )
+        
+        p <- mzQuality2::facetPlot(
+          plot = p, 
+          by = "type", 
+          ncol = 1
+        )
+
+        if (!is.null(p)) {
+            print(p)
+            cat('<hr style="border:1px solid gray">')
+        }
+}
+```

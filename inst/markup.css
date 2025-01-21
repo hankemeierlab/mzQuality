@@ -1,0 +1,68 @@
+@import url("https://fonts.googleapis.com/css2?family=Nunito:wght@300;500&display=swap");
+
+      .waiter-overlay-content{
+      position: absolute;
+      top: 0.9vh; /*30 pixels from the top*/
+      left: 48vw; /*48% from the left*/
+      }
+
+      p, div, h3 {
+        font-family: "Nunito", sans-serif;
+      }
+
+      * {
+        font-family: "Nunito", sans-serif;
+        font-weight: 500;
+      }
+
+      .handsontable .htAutocompleteArrow {
+        color: black;
+      }
+
+
+      .handsontable th:first-child {
+        border-right: none;
+      }
+
+      /* Cells */
+      .handsontable td {
+         background: white;
+        border-width: 1px;
+        border-right: none;
+        font-size: 1.5vh;
+        text-align: left;
+        color: black !important;
+      }
+
+      /* Header */
+      .handsontable thead * {
+        height: 4vh;
+        font-family: "Nunito", sans-serif !important;
+        font-weight: 300;
+        background: rgb(31, 191, 156);
+        color: white;
+         border-right: none;
+         text-align: left;
+         padding-top: 1vh;
+         font-size: 2vh;
+      }
+      .skin-blue .left-side, .skin-blue .wrapper {
+          background-color: rgb(236,240,245);
+      }
+
+      /* logo */
+      .skin-blue .main-header .logo {
+        background-color: rgb(31, 191, 156);
+        font-family: "Nunito", sans-serif !important;
+
+      }
+
+      /* logo when hovered */
+      .skin-blue .main-header .logo:hover {
+        background-color: rgb(31, 191, 156);;
+      }
+
+      /* navbar (rest of the header) */
+      .skin-blue .main-header .navbar {
+        background-color: rgb(31, 191, 156);;
+      }
