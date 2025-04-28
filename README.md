@@ -13,7 +13,7 @@ if (!"remotes" %in% installed.packages()) {
     install.packages("remotes")
 }
 
-remotes::install_github(".../mzQuality")
+remotes::install_github("hankemeierlab/mzQuality")
 ```
 
 ## Quick Start guide
