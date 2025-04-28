@@ -1,6 +1,6 @@
 Package: mzQuality
 Title: What the Package Does (One Line, Title Case)
-Version: 2.2
+Version: 2.4.0
 Authors@R: 
     person("Pascal", "Maas", email = "p.maas@lacdr.leidenuniv.nl", role = c("aut", "cre"),
             comment = c(ORCID = "0000-0001-9379-6041")
@@ -9,16 +9,20 @@ Description: This is an R package for monitoring technical variation in mass spe
 License: GPL-3
 biocViews: Software, MassSpectrometry, BatchEffect, QualityControl, Metabolomics 
 Depends:
+    R (>= 4.0),
     dplyr,
     SummarizedExperiment
 Imports:
     arrow,
+    doSNOW,
     EnvStats,
+    foreach,
     ggplot2,
     heatmaply,
     imputeLCMD,
     lubridate,
     matrixStats,
+    methods,
     openxlsx,
     reshape2,
     rmarkdown,
@@ -26,14 +30,15 @@ Imports:
     progress,
     S4Vectors,
     stats,
+    stringr,
+    utils,
     viridis
 Suggests: 
+    DT,
     ggrepel,
     knitr,
-    methods,
     testthat (>= 3.0.0),
     devtools,
-    utils,
     shiny,
     shinyWidgets,
     zip
@@ -41,5 +46,7 @@ Config/testthat/edition: 3
 Encoding: UTF-8
 VignetteBuilder:
   knitr
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.2
 LazyData: false
+BugReports: https://github.com/hankemeierlab/mzQuality/issues
+URL: https://github.com/hankemeierlab/mzQuality

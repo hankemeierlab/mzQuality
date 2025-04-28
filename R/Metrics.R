@@ -10,13 +10,12 @@
 #' @export
 #' @examples
 #' # Read the example dataset
-#' exp <- readRDS(system.file("data.RDS", package = "mzQuality2"))
+#' exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
 #'
 #' # Calculate the ratio between QCs and Samples of the batch-corrected ratio
 #' ratioQcSample(exp)
 ratioQcSample <- function(exp, assay = "ratio_corrected",
                           qcLabel = metadata(exp)$QC, sampleLabel = "SAMPLE") {
-
     # Check if the experiment is valid
     if (!validateExperiment(exp)) {
         stop("Invalid experiment")
@@ -55,46 +54,60 @@ ratioQcSample <- function(exp, assay = "ratio_corrected",
 #' @export
 #' @examples
 #' # Read the example dataset
-#' exp <- readRDS(system.file("data.RDS", package = "mzQuality2"))
+#' exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
 #'
 #' # Identify aliquot outliers and add to colData
 #' exp <- identifyOutliers(exp, assay = "Ratio")
 identifyOutliers <- function(exp, assay = "ratio", qcType = metadata(exp)$QC) {
-
-
-
     if (!validateExperiment(exp)) {
         stop("Invalid experiment")
     }
 
-    exp$use <- TRUE
-    exp$outlier <- FALSE
+    if ("use" %in% colnames(colData(exp))) {
+        exp$use <- colData(exp)$use
+        exp$outlier <- colData(exp)$outlier
+    } else {
+        exp$use <- TRUE
+        exp$outlier <- FALSE
+    }
 
 
-    if (!assay %in% assayNames(exp)) return(exp)
-    if (!qcType %in% exp$type) return(exp)
+    if (!assay %in% assayNames(exp)) {
+        return(exp)
+    }
+    if (!qcType %in% exp$type) {
+        return(exp)
+    }
 
 
     qc_se <- exp[, exp$type == qcType]
 
-    if (nrow(qc_se) <= 3) return(exp)
+    if (nrow(qc_se) <= 3) {
+        return(exp)
+    }
 
     medians <- colMedians(log10(assay(qc_se, assay)), na.rm = TRUE)
-   # medians <- medians[!is.finite(medians)]
+
+    idx <- is.finite(medians)
+
+    medians <- medians[idx]
     non_na <- sum(!is.na(medians))
+
 
     if (non_na < 3) {
         return(exp)
     }
 
+
     batches <- length(unique(exp$batch))
 
     k <- ifelse(non_na > batches, batches, non_na - 2)
     test <- EnvStats::rosnerTest(medians, k = k, alpha = 0.05, warn = FALSE)
+    outliers <- test$all.stats$Obs.Num[test$all.stats$Outlier]
 
-    outliers <- colnames(qc_se)[test$all.stats$Obs.Num[test$all.stats$Outlier]]
-    colData(exp)[outliers, "use"] <- FALSE
-    colData(exp)[outliers, "outlier"] <- TRUE
+    idx <- match(names(medians[outliers]), colnames(exp))
+    exp$use[idx] <- FALSE
+    exp$outlier[idx] <- TRUE
     exp
 }
 
@@ -113,23 +126,17 @@ identifyOutliers <- function(exp, assay = "ratio", qcType = metadata(exp)$QC) {
 #' @export
 #' @examples
 #' # Read the example dataset
-#' exp <- readRDS(system.file("data.RDS", package = "mzQuality2"))
+#' exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
 #'
 #' # Identify aliquot outliers and add to colData
 #' exp <- identifyOutliers(exp, assay = "Ratio")
 identifyMisInjections <- function(exp, assay = metadata(exp)$secondary, type = "SAMPLE") {
-    sampleExp <- exp[, exp$type == type]
-    if (ncol(sampleExp) == 0) return(exp)
 
-    medians <- colMedians(log10(assay(sampleExp, assay)), na.rm = TRUE)
-
-
-
-    test <- EnvStats::rosnerTest(log10(medians), k = max(1, round(length(medians) * 0.05)), alpha = 0.05, warn = FALSE)
-    outliers <- colnames(sampleExp)[test$all.stats$Obs.Num[test$all.stats$Outlier]]
-    colData(exp)[outliers, "use"] <- FALSE
-    colData(exp)[outliers, "outlier"] <- TRUE
-    return(exp)
+    identifyOutliers(
+        exp = exp,
+        assay = metadata(exp)$secondary,
+        qcType = type
+    )
 }
 
 typePresence <- function(exp, area = metadata(exp)$primary,
@@ -167,7 +174,7 @@ medianSampleArea <- function(exp, type = "SAMPLE", assayName = metadata(exp)$pri
 #' @export
 #' @examples
 #' # Read the example dataset
-#' exp <- readRDS(system.file("data.RDS", package = "mzQuality2"))
+#' exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
 #'
 #' # Perform analysis
 #' exp <- doAnalysis(exp)
@@ -183,92 +190,94 @@ doAnalysis <- function(exp,
                        backgroundPercentage = 40,
                        qcPercentage = 80,
                        nonReportableRSD = 30) {
-  message("Start Analysis")
+    message("Start Analysis")
 
     if (!validateExperiment(exp)) {
         stop("Invalid experiment")
     }
 
-  doAliquots <- length(aliquots) != ncol(exp)
+    doAliquots <- length(aliquots) != ncol(exp)
 
-  exp <- exp[, aliquots]
+    exp <- exp[, aliquots]
 
-  if (doAliquots | doAll | !"rsdqc" %in% colnames(rowData(exp))) {
-    exp <- calculateRatio(exp) %>%
-        addBatchCorrection(removeOutliers = removeOutliers, useWithinBatch = useWithinBatch) %>%
-        backgroundSignals(NaAsZero = effectNaAsZero) %>%
-        matrixEffect() %>%
-        ratioQcSample() %>%
-        typePresence() %>%
-        medianSampleArea() %>%
-        suggestedInternalStandards(
-            removeOutliers = removeOutliers,
-            useWithinBatch = useWithinBatch
-        )
-  }
+    if (doAliquots | doAll | !"rsdqc" %in% colnames(rowData(exp))) {
+        exp <- calculateRatio(exp) %>%
+            addBatchCorrection(removeOutliers = removeOutliers, useWithinBatch = useWithinBatch) %>%
+            backgroundSignals(NaAsZero = effectNaAsZero) %>%
+            matrixEffect() %>%
+            ratioQcSample() %>%
+            typePresence() %>%
+            medianSampleArea() %>%
+            suggestedInternalStandards(
+                removeOutliers = removeOutliers,
+                useWithinBatch = useWithinBatch
+            )
+    }
 
-  if ("concentration" %in% assayNames(exp)) {
-      exp <- exp %>%
-          calculateConcentrations(type = concentrationType) %>%
-          addBatchCorrectionAssay(assay = "concentration") %>%
-          carryOverEffect() %>%
-          blankLimits()
-  }
+    if ("concentration" %in% assayNames(exp)) {
+        exp <- exp %>%
+            calculateConcentrations(type = concentrationType) %>%
+            addBatchCorrectionAssay(assay = "concentration") %>%
+            carryOverEffect() %>%
+            blankLimits()
+    }
 
-  rsdThreshold <- rowData(exp)$rsdqcCorrected <= nonReportableRSD
+    rsdThreshold <- rowData(exp)$rsdqcCorrected <= nonReportableRSD
 
-  qcPresenceThreshold <- rowData(exp)[, sprintf("%sPresence", metadata(exp)$QC)] * 100 >= qcPercentage
-  backgroundThreshold <- rowData(exp)$backgroundSignal * 100 <= backgroundPercentage | !is.finite(rowData(exp)$backgroundSignal)
-  rowData(exp)$qcPresenceThreshold <- qcPresenceThreshold
+    qcPresenceThreshold <- rowData(exp)[, sprintf("%sPresence", metadata(exp)$QC)] * 100 >= qcPercentage
+    backgroundThreshold <- rowData(exp)$backgroundSignal * 100 <= backgroundPercentage | !is.finite(rowData(exp)$backgroundSignal)
+    rowData(exp)$qcPresenceThreshold <- qcPresenceThreshold
 
-  rowData(exp)$use <- rsdThreshold & backgroundThreshold & qcPresenceThreshold
-  rowData(exp)$use[is.na(rowData(exp)$use)] <- FALSE
+    rowData(exp)$use <- rsdThreshold & backgroundThreshold & qcPresenceThreshold
+    rowData(exp)$use[is.na(rowData(exp)$use)] <- FALSE
 
-  if (removeBadCompounds) {
-      exp <- exp[rowData(exp)$use, ]
-  }
-  message("Finished Analysis")
+    if (removeBadCompounds) {
+        exp <- exp[rowData(exp)$use, ]
+    }
+    message("Finished Analysis")
 
 
 
-  exp
+    exp
 }
 
 suggestedInternalStandards <- function(experiment, removeOutliers, useWithinBatch) {
-    if (!metadata(experiment)$hasIS) return(experiment)
-
-  rowData(experiment)$compound <- rownames(experiment)
-  comp_is <- unique(rowData(experiment)$compound_is)
-  df <- expand.grid(
-    compound_is = comp_is,
-    compound = rownames(experiment)
-  )
-  comp_row <- match(df$compound, rownames(experiment))
-  exp <- experiment[comp_row, ]
-  rownames(exp) <- seq_len(nrow(exp))
-
-  comp_is_row <- match(df$compound_is, rowData(exp)$compound_is)
-
-  assay(exp, "area_is", withDimnames = FALSE) <- assay(exp, "area_is")[comp_is_row, , drop = FALSE]
-  rowData(exp)$compound_is <- df$compound_is
-
-  testExp <- calculateRatio(exp) %>%
-    addBatchCorrection(removeOutliers = removeOutliers, useWithinBatch = useWithinBatch)
-
-  x <- as.data.frame(rowData(testExp))
-
-  rowData(experiment)$suggestedIS <- unlist(lapply(split(x, x$compound), function(z) {
-    if (all(is.na(z$rsdqcCorrected))) {
-      return(NA)
+    if (!metadata(experiment)$hasIS) {
+        return(experiment)
     }
-    as.character(z$compound_is[which.min(z$rsdqcCorrected)])
-  }))
 
-  rowData(experiment)$suggestedRSDQC <- unlist(lapply(split(x, x$compound), function(z) {
-    if (all(is.na(z$rsdqcCorrected))) {
-      return(NA)
-    }
-    min(z$rsdqcCorrected, na.rm = TRUE)
-  }))
-  experiment
+    rowData(experiment)$compound <- rownames(experiment)
+    comp_is <- unique(rowData(experiment)$compound_is)
+    df <- expand.grid(
+        compound_is = comp_is,
+        compound = rownames(experiment)
+    )
+    comp_row <- match(df$compound, rownames(experiment))
+    exp <- experiment[comp_row, ]
+    rownames(exp) <- seq_len(nrow(exp))
+
+    comp_is_row <- match(df$compound_is, rowData(exp)$compound_is)
+
+    assay(exp, "area_is", withDimnames = FALSE) <- assay(exp, "area_is")[comp_is_row, , drop = FALSE]
+    rowData(exp)$compound_is <- df$compound_is
+
+    testExp <- calculateRatio(exp) %>%
+        addBatchCorrection(removeOutliers = removeOutliers, useWithinBatch = useWithinBatch)
+
+    x <- as.data.frame(rowData(testExp))
+
+    rowData(experiment)$suggestedIS <- unlist(lapply(split(x, x$compound), function(z) {
+        if (all(is.na(z$rsdqcCorrected))) {
+            return(NA)
+        }
+        as.character(z$compound_is[which.min(z$rsdqcCorrected)])
+    }))
+
+    rowData(experiment)$suggestedRSDQC <- unlist(lapply(split(x, x$compound), function(z) {
+        if (all(is.na(z$rsdqcCorrected))) {
+            return(NA)
+        }
+        min(z$rsdqcCorrected, na.rm = TRUE)
+    }))
+    experiment
 }

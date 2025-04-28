@@ -41,7 +41,6 @@ filterISTD <- function(exp, tag = "STD") {
         exp <- exp[rowSums(a / b == 1 | is.na(a / b), na.rm = TRUE) != ncol(exp), ]
     }
     exp
-
 }
 
 #' @title Filter SST Aliquots from the SummarizedExperiment
@@ -161,7 +160,6 @@ filterRSDQC <- function(exp, min = 0, max = 30, include.na = FALSE) {
 #' filterBackground(exp, min = 0, max = 0.4)
 filterBackground <- function(exp, min = 0, max = 0.4, type = "BLANK",
                              include.na = FALSE) {
-
     be <- rowData(exp)$backgroundSignal
     be[is.nan(be)] <- NA
     exp[filterVec(be, min, max, include.na), ]

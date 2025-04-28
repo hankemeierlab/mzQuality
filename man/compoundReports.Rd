@@ -10,7 +10,7 @@ compoundReports(
   assays = c("ratio", "ratio_corrected"),
   project = "mzQuality",
   cores = 1,
-  verbose = F,
+  verbose = FALSE,
   shinyProgress = NULL
 )
 }

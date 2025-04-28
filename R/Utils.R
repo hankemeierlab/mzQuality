@@ -13,12 +13,15 @@
 #' @export
 multiApply <- function(func, jobs, cores = 1, progressTitle = "",
                        shinyProgress = NULL,
-                       verbose = FALSE, ...){
+                       verbose = FALSE, ...) {
+    if (jobs == 0) {
+        return(NULL)
+    }
 
-    if (jobs == 0) return(NULL)
-
-    pb <- progressBar(title = progressTitle, total = jobs,
-                      start = 0, shinyProgress)
+    pb <- progressBar(
+        title = progressTitle, total = jobs,
+        start = 0, shinyProgress
+    )
 
 
 
@@ -38,11 +41,13 @@ multiApply <- function(func, jobs, cores = 1, progressTitle = "",
             updateProgress(pb, jobs, n, shinyProgress)
         })
     ) %execute% {
-
         i <- get("i")
-        res <- tryCatch({
-            func(i, ...)
-        }, error = function(x) print(x))
+        res <- tryCatch(
+            {
+                func(i, ...)
+            },
+            error = function(x) warning(x)
+        )
 
         if (cores == 1) updateProgress(pb, jobs, i, shinyProgress)
 
@@ -65,8 +70,9 @@ multiApply <- function(func, jobs, cores = 1, progressTitle = "",
 #' @param files Character vector with each representing one task. This is used
 #' to prevent that more cores are assigned than tasks available
 #' @importFrom parallel makeCluster
+#' @importFrom doSNOW registerDoSNOW
 #' @noRd
-createCluster <- function(cores, files){
+createCluster <- function(cores, files) {
     cl <- NULL
 
 
@@ -76,8 +82,9 @@ createCluster <- function(cores, files){
         cores <- 1
     }
 
-    cl <- parallel::makeCluster(cores)
-    doSNOW::registerDoSNOW(cl)
+    cl <- makeCluster(cores)
+    registerDoSNOW(cl)
+
     return(cl)
 }
 
@@ -94,10 +101,11 @@ createCluster <- function(cores, files){
 #' @param shinyProgress Optional identifier for a progressbar in a shiny application
 #' Defaults to `NULL`
 #' @noRd
-progressBar <- function(title, total, start = 0, shinyProgress = NULL){
+progressBar <- function(title, total, start = 0, shinyProgress = NULL) {
     pb <- progress::progress_bar$new(
         format = sprintf("%s [:bar] | :current/:total (:percent) | Elapsed: :elapsedfull | Remaining: :eta", title),
-        total = total, force = TRUE, show_after = 0, clear = FALSE)
+        total = total, force = TRUE, show_after = 0, clear = FALSE
+    )
 
     if (requireNamespace("shiny", quietly = TRUE) &
         requireNamespace("shinyWidgets", quietly = TRUE)) {
@@ -128,15 +136,16 @@ progressBar <- function(title, total, start = 0, shinyProgress = NULL){
 #' @param total Maximum value that the progressbar can have
 #' @param n Current value of the progressbar
 #' @param shinyProgress Optional identifier of a progressbar in shiny.
-updateProgress <- function(pb, total, n, shinyProgress = NULL){
-
+updateProgress <- function(pb, total, n, shinyProgress = NULL) {
     if (requireNamespace("shiny", quietly = TRUE)) {
         if (!is.null(shinyProgress) & shiny::isRunning()) {
-            shinyWidgets::updateProgressBar(id = shinyProgress,
-                                            value = n,
-                                            total = total,
-                                            status = "primary",
-                                            range_value = c(0, total))
+            shinyWidgets::updateProgressBar(
+                id = shinyProgress,
+                value = n,
+                total = total,
+                status = "primary",
+                range_value = c(0, total)
+            )
         }
     }
     pb$tick(1)
@@ -160,4 +169,3 @@ sampleColors <- function(..., overwrite = FALSE) {
 
     unlist(params[!duplicated(names(params))])
 }
-

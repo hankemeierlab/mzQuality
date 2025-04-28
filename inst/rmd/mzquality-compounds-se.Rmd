@@ -29,7 +29,7 @@ plots <- params$plots
 ```
 
 ### About this Project
-This is an mzQuality summary report. It was generated at `r lubridate::now()` using version `r utils::packageVersion("mzQuality2")`. Out of `r ncol(exp)` samples, `r if ("use" %in% colnames(exp)) sum(exp$use)` samples were used for this analysis. Samples that were excluded were: `r  if ("use" %in% colnames(exp)) paste(colnames(exp[, !exp$use]), collapse = ",")`. The sample data consisted of `r  if ("batch" %in% colnames(exp)) length(unique(exp$batch))` batches, measured between `r  if ("datetime" %in% colnames(exp)) sort(exp$datetime)[1]` and `r if ("datetime" %in% colnames(exp)) sort(-exp$datetime)[1]`. The batches contained `r if ("batch" %in% colnames(exp)) paste(as.vector(table(exp$batch)), collapse = ",")` samples respectively. 
+This is an mzQuality summary report. It was generated at `r lubridate::now()` using version `r utils::packageVersion("mzQuality")`. Out of `r ncol(exp)` samples, `r if ("use" %in% colnames(exp)) sum(exp$use)` samples were used for this analysis. Samples that were excluded were: `r  if ("use" %in% colnames(exp)) paste(colnames(exp[, !exp$use]), collapse = ",")`. The sample data consisted of `r  if ("batch" %in% colnames(exp)) length(unique(exp$batch))` batches, measured between `r  if ("datetime" %in% colnames(exp)) sort(exp$datetime)[1]` and `r if ("datetime" %in% colnames(exp)) sort(-exp$datetime)[1]`. The batches contained `r if ("batch" %in% colnames(exp)) paste(as.vector(table(exp$batch)), collapse = ",")` samples respectively. 
 
 See below for the sample data:
 
@@ -72,7 +72,8 @@ heightType <- chunk * length(unique(exp$type))
 exp <- params$exp
 exp <- exp[rowData(exp)$use, exp$use]
 
-for (assay in params$assays) {
+if (nrow(exp) > 0) {
+    for (assay in params$assays) {
         cat(sprintf("## %s \n", assay))
     
         p <- compoundPlotNew(
@@ -80,7 +81,7 @@ for (assay in params$assays) {
                 assay = assay
         )
         
-        p <- mzQuality2::facetPlot(
+        p <- mzQuality::facetPlot(
           plot = p, 
           by = "batch", 
           ncol = 2
@@ -91,6 +92,9 @@ for (assay in params$assays) {
             cat('<hr style="border:1px solid gray">')
         }
 }
+}
+
+
 ```
 
 # Compounds Per Type {.tabset .tabset-fade .tabset-pills}
@@ -98,25 +102,28 @@ for (assay in params$assays) {
 exp <- params$exp
 exp <- exp[rowData(exp)$use, exp$use]
 
-for (assay in params$assays) {
-        cat(sprintf("## %s \n", assay))
-    
-        p <- compoundPlotNew(
-                exp = exp,
-                assay = assay,
-                trendTypes = unique(exp$type), 
-                withinTrend = TRUE
-        )
-        
-        p <- mzQuality2::facetPlot(
-          plot = p, 
-          by = "type", 
-          ncol = 1
-        )
+if (nrow(exp) > 0) {
 
-        if (!is.null(p)) {
-            print(p)
-            cat('<hr style="border:1px solid gray">')
-        }
+    for (assay in params$assays) {
+            cat(sprintf("## %s \n", assay))
+        
+            p <- compoundPlotNew(
+                    exp = exp,
+                    assay = assay,
+                    trendTypes = unique(exp$type), 
+                    withinTrend = TRUE
+            )
+            
+            p <- mzQuality::facetPlot(
+              plot = p, 
+              by = "type", 
+              ncol = 1
+            )
+    
+            if (!is.null(p)) {
+                print(p)
+                cat('<hr style="border:1px solid gray">')
+            }
+    }
 }
 ```

@@ -11,7 +11,8 @@ buildExperiment(
   primaryAssay = "area",
   secondaryAssay = "area_is",
   typeColumn = "type",
-  qc = "SQC"
+  qc = "SQC",
+  secondaryIndex = "compound_is"
 )
 }
 \arguments{

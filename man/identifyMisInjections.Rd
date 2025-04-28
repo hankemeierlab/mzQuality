@@ -25,7 +25,7 @@ placeholder
 }
 \examples{
 # Read the example dataset
-exp <- readRDS(system.file("data.RDS", package = "mzQuality2"))
+exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
 
 # Identify aliquot outliers and add to colData
 exp <- identifyOutliers(exp, assay = "Ratio")

@@ -21,7 +21,7 @@ over-corrected, or if a batch has bad measurements.
 }
 \examples{
 # Read the example dataset
-exp <- readRDS(system.file("data.RDS", package = "mzQuality2"))
+exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
 
 # Create boxplot with batch-correction values
 batchCorrectionPlot(exp)

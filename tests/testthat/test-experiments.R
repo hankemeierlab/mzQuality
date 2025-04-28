@@ -1,14 +1,14 @@
 library(testthat)
-suppressPackageStartupMessages(library(mzQuality2))
+suppressPackageStartupMessages(library(mzQuality))
 # Read the example dataset
-dataFile <- system.file("data.RDS", package = "mzQuality2")
-concentrationsFile <- system.file("concentrations.txt", package = "mzQuality2")
+dataFile <- system.file("data.RDS", package = "mzQuality")
+concentrationsFile <- system.file("concentrations.txt", package = "mzQuality")
 
 exp <- readRDS(dataFile)
 concentrations <- read.delim(concentrationsFile)
 
-file <- system.file("example.tsv", package = "mzQuality2")
-concentrationsFile <- system.file("concentrations.txt", package = "mzQuality2")
+file <- system.file("example.tsv", package = "mzQuality")
+concentrationsFile <- system.file("concentrations.txt", package = "mzQuality")
 
 
 test_that("A tab-delimited file can be converted into a SummarizedExperiment", {
@@ -18,7 +18,6 @@ test_that("A tab-delimited file can be converted into a SummarizedExperiment", {
     exp <- buildExperiment(combined)
     expect_true(is(exp, "SummarizedExperiment"))
     expect_true(validateExperiment(exp))
-
 })
 
 test_that("Is a valid experiment", {
@@ -33,7 +32,7 @@ test_that("experiment can be converted to combined", {
     comb <- expToCombined(exp)
     expect_true(is(comb, "data.frame"))
     expect_equal(nrow(comb), nrow(exp) * ncol(exp))
-    expect_true(all(c('Aliquot', "Compound", "area", "injection_time", "type", "batch") %in% colnames(comb)))
+    expect_true(all(c("Aliquot", "Compound", "area", "injection_time", "type", "batch") %in% colnames(comb)))
 })
 
 
@@ -73,7 +72,6 @@ test_that("an experiment can be converted", {
 test_that("expToCombined", {
     combined <- expToCombined(exp)
     expect_true(is(combined, "data.frame"))
-
 })
 
 test_that("Concentrations can be added", {
@@ -81,6 +79,3 @@ test_that("Concentrations can be added", {
     expect_true(is(exp, "SummarizedExperiment"))
     expect_true(validateExperiment(exp))
 })
-
-
-

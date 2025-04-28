@@ -50,6 +50,7 @@ validateDataframe <- function(dataframe = NULL) {
 #' to use with mzQuality
 #' @param exp SummarizedExperiment object
 #' @export
+#' @importFrom methods is
 #' @examples
 #' # Read example dataset
 #' data <- read.delim(system.file(package = "mzQuality", "dataset.txt"))
@@ -66,7 +67,8 @@ validateDataframe <- function(dataframe = NULL) {
 #' # Validate if the experiment is formatted correctly
 #' validateExperiment(exp)
 validateExperiment <- function(exp) {
-    all(methods::is(exp, "SummarizedExperiment"),
+    all(
+        methods::is(exp, "SummarizedExperiment"),
         nrow(exp) > 0,
         ncol(exp) > 0,
         all(c("type", "datetime", "batch") %in% colnames(colData(exp))),
@@ -103,8 +105,8 @@ validateCalibration <- function(exp, df) {
     idx2 <- exp$type %in% matches[, 2]
     aliqs <- colnames(exp)[idx1 & idx2]
     all(
-      any(aliqs %in% colnames(exp)),
-      any(rownames(df) %in% rownames(exp))
+        any(aliqs %in% colnames(exp)),
+        any(rownames(df) %in% rownames(exp))
     )
 }
 
@@ -143,10 +145,10 @@ validateCalibration <- function(exp, df) {
 #'     secondaryAssay = "Area_is"
 #' )
 #' convertExperiment(exp, primaryAssay = "Area")
-convertExperiment <- function(exp, primaryAssay = "area", secondaryAssay = primaryAssay,
+convertExperiment <- function(
+    exp, primaryAssay = "area", secondaryAssay = primaryAssay,
     istd = "compound_is", type = "type", datetime = "datetime",
     batch = "batch", qcType = "SQC") {
-
     if (requireNamespace("methods", quietly = TRUE)) {
         if (!methods::is(exp, "SummarizedExperiment")) {
             logwarn("Object is not of class 'SummarizedExperiment'")
@@ -192,7 +194,9 @@ convertExperiment <- function(exp, primaryAssay = "area", secondaryAssay = prima
         ))
     }
 
-    colnames(colData(exp)) <- cols
+    x <- colData(exp)
+    colnames(x) <- cols
+    colData(exp) <- x
 
     metadata(exp) <- c(metadata(exp), list(
         QC = qcType, primary = primaryAssay,

@@ -22,7 +22,7 @@ placeholder
 }
 \examples{
 # Read the example dataset
-exp <- readRDS(system.file("data.RDS", package = "mzQuality2"))
+exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
 
 # Calculate the ratio between QCs and Samples of the batch-corrected ratio
 ratioQcSample(exp)

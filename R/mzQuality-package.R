@@ -12,7 +12,7 @@
 #' @title Create a timestamped message
 #' @description
 #' This overrides the base message with an added timestamp
-message <- function(message){
+message <- function(message) {
     string <- sprintf("%s | %s", lubridate::now(), message)
     base::message(string)
 }

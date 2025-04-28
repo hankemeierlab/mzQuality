@@ -8,8 +8,8 @@
 #' @export
 #' @examples
 #' # Read the example dataset
-#' exp <- readRDS(system.file("data.RDS", package = "mzQuality2"))
-replaceInternalStandards <- function(exp, internalStandards = rowData(exp)$suggestedIS){
+#' exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+replaceInternalStandards <- function(exp, internalStandards = rowData(exp)$suggestedIS) {
     if (is.null(internalStandards)) {
         return(exp)
     }
@@ -23,7 +23,7 @@ replaceInternalStandards <- function(exp, internalStandards = rowData(exp)$sugge
     rowData(exp)$compound_is <- is[indexes]
     area_is <- metadata(exp)$secondary
 
-    assay(exp, area_is, withDimnames = FALSE) <- assay(exp,  area_is)[indexes, ]
+    assay(exp, area_is, withDimnames = FALSE) <- assay(exp, area_is)[indexes, ]
 
     # exp <- calculateRatio(exp) %>%
     #     addBatchCorrection()
@@ -43,7 +43,7 @@ replaceInternalStandards <- function(exp, internalStandards = rowData(exp)$sugge
 #' @importFrom matrixStats rowSds
 #' @examples
 #' # Read the example dataset
-#' exp <- readRDS(system.file("data.RDS", package = "mzQuality2"))
+#' exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
 #'
 #' rsdqc(exp)
 rsdqc <- function(exp, assay = "ratio_corrected", type = metadata(exp)$QC) {
@@ -64,14 +64,13 @@ rsdqc <- function(exp, assay = "ratio_corrected", type = metadata(exp)$QC) {
 #' @importFrom matrixStats rowSds
 #' @examples
 #' # Read the example dataset
-#' exp <- readRDS(system.file("data.RDS", package = "mzQuality2"))
+#' exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
 #'
 #' calculateCorrectedRSDQCs2(exp)
 calculateCorrectedRSDQCs2 <- function(exp, primaryAssay = "area",
                                       secondaryAssay = "area_is",
                                       qcType = "SQC", returnRSDs = FALSE,
                                       saveAssay = "ratio_corrected") {
-
     if (metadata(exp)$hasIS) {
         comp_is <- unique(rowData(exp)$compound_is)
         df <- expand.grid(
@@ -85,7 +84,7 @@ calculateCorrectedRSDQCs2 <- function(exp, primaryAssay = "area",
         area_is <- assay(exp, secondaryAssay)[comp_row, ]
         ratio <- areas / area_is
     } else {
-        comp_is <- 1:nrow(exp)
+        comp_is <- seq_len(nrow(exp))
         ratio <- assay(exp, primaryAssay)
     }
 
@@ -114,7 +113,8 @@ calculateCorrectedRSDQCs2 <- function(exp, primaryAssay = "area",
         orderMatrix <- matrix(
             data = rep(seq_len(ncol(x)), nrow(vals)),
             ncol = ncol(x),
-            byrow = TRUE)
+            byrow = TRUE
+        )
         vals <- orderMatrix * slope + int
         vals
     }))
@@ -143,7 +143,7 @@ calculateCorrectedRSDQCs2 <- function(exp, primaryAssay = "area",
     qcExp <- exp[, exp$type == qcType]
 
 
-# Between Batch -----------------------------------------------------------
+    # Between Batch -----------------------------------------------------------
 
 
     compound_qc_ratio_median <- rowMedians(ratio[, colnames(qcExp)], na.rm = TRUE)
@@ -151,12 +151,10 @@ calculateCorrectedRSDQCs2 <- function(exp, primaryAssay = "area",
     # For each batch, calculate the correction factor and multiply the
     # Ratio to obtain the Ratio Corrected factors
     ratio <- do.call(cbind, lapply(unique(exp$batch), function(batch) {
-
         correction_factor <- 1
 
         # Check if the batch is present in the QC-subsetted experiment
         if (batch %in% qcExp$batch) {
-
             # Subset the QC experiment for the current batch
             qcBatchExp <- qcExp[, qcExp$batch == batch]
 
@@ -170,8 +168,6 @@ calculateCorrectedRSDQCs2 <- function(exp, primaryAssay = "area",
         }
         # Multiply the entire batch with the calculated correction factors
         ratio[, colnames(exp[, exp$batch == batch])] * correction_factor
-
-
     }))[, colnames(exp)]
 
 
@@ -188,5 +184,3 @@ calculateCorrectedRSDQCs2 <- function(exp, primaryAssay = "area",
     dimnames(m) <- list(comp_is, rownames(exp))
     return(m)
 }
-
-

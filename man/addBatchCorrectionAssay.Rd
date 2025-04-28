@@ -24,7 +24,7 @@ Calculate the batch effection corrections
 }
 \examples{
 # Read the example dataset
-exp <- readRDS(system.file("data.RDS", package = "mzQuality2"))
+exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
 
 # Add batch correction assays
 exp <- addBatchCorrectionAssay(exp)

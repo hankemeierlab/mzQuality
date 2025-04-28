@@ -35,7 +35,7 @@ between the lowest and highest CAL line.
 }
 \examples{
 # Read the example dataset
-exp <- readRDS(system.file("data.RDS", package = "mzQuality2"))
+exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
 
 # Create scatterplot with calibration lines
 calibrationPlot(exp)

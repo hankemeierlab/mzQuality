@@ -29,7 +29,7 @@ plots <- params$plots
 ```
 
 ### About this Project
-This is an mzQuality summary report. It was generated at `r lubridate::now()` using version `r utils::packageVersion("mzQuality2")`. Out of `r ncol(exp)` samples, `r if ("use" %in% colnames(exp)) sum(exp$use)` samples were used for this analysis. Samples that were excluded were: `r  if ("use" %in% colnames(exp)) paste(colnames(exp[, !exp$use]), collapse = ",")`. The sample data consisted of `r  if ("batch" %in% colnames(exp)) length(unique(exp$batch))` batches, measured between `r  if ("datetime" %in% colnames(exp)) sort(exp$datetime)[1]` and `r if ("datetime" %in% colnames(exp)) sort(-exp$datetime)[1]`. The batches contained `r if ("batch" %in% colnames(exp)) paste(as.vector(table(exp$batch)), collapse = ",")` samples respectively. 
+This is an mzQuality summary report. It was generated at `r lubridate::now()` using version `r utils::packageVersion("mzQuality")`. Out of `r ncol(exp)` samples, `r if ("use" %in% colnames(exp)) sum(exp$use)` samples were used for this analysis. Samples that were excluded were: `r  if ("use" %in% colnames(exp)) paste(colnames(exp[, !exp$use]), collapse = ",")`. The sample data consisted of `r  if ("batch" %in% colnames(exp)) length(unique(exp$batch))` batches, measured between `r  if ("datetime" %in% colnames(exp)) sort(exp$datetime)[1]` and `r if ("datetime" %in% colnames(exp)) sort(-exp$datetime)[1]`. The batches contained `r if ("batch" %in% colnames(exp)) paste(as.vector(table(exp$batch)), collapse = ",")` samples respectively. 
 
 See below for the sample data:
 
@@ -79,7 +79,7 @@ if ("Aliquot" %in% params$plots) {
                 exp = exp, 
                 types = exp$type, 
                 assay = assay) %>% 
-            mzQuality2::facetPlot(ncol = 2) + ggplot2::ggtitle(assay)
+            mzQuality::facetPlot(ncol = 2) + ggplot2::ggtitle(assay)
             
         }, error = function(z){
             NULL
@@ -106,13 +106,13 @@ if ("PCA" %in% params$plots) {
         cat(sprintf("## %s \n", assay))
         
         p <- tryCatch({
-            mzQuality2:::pcaPlotNew(
+            pcaPlotNew(
                 exp = exp, 
                 assay = assay,
                 doLog = TRUE, 
                 types = c("SQC", "LQC", "SAMPLE"),
                 addConfidenceInterval = TRUE) %>% 
-            mzQuality2:::addLabels() + 
+            mzQuality:::addLabels() + 
                 ggplot2::ggtitle(assay)
         }, error = function(z){
             NULL
@@ -138,7 +138,7 @@ if ("QC" %in% params$plots) {
         cat(sprintf("## %s \n", assay))
         
         p <- tryCatch({
-            mzQuality2:::violinPlotNew(
+            mzQuality:::violinPlotNew(
             
             exp = exp, 
             assay = assay,
@@ -148,7 +148,7 @@ if ("QC" %in% params$plots) {
             addMedian = TRUE, 
             types = "SQC" 
         ) %>% 
-            mzQuality2::facetPlot(ncol = min(N, 4)) + 
+            mzQuality::facetPlot(ncol = min(N, 4)) + 
                 ggplot2::ggtitle(assay)
         }, error = function(z){
             NULL
@@ -175,7 +175,7 @@ if ("Heatmap" %in% params$plots) {
         cat(sprintf("## %s \n", assay))
         
         p <- tryCatch({
-            mzQuality2:::heatmapPlot(
+            mzQuality:::heatmapPlot(
                 exp = exp, 
                 assay = assay, 
                 method = "static"
@@ -203,7 +203,7 @@ if ("RSDQC" %in% params$plots) {
     cat(sprintf("## %s \n", assay))
     
     p <- tryCatch({
-        mzQuality2:::rsdqcPlot(
+        mzQuality:::rsdqcPlot(
             exp = exp, 
             method = "static"
         )

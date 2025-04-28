@@ -20,7 +20,7 @@ internal standard should be picked.
 }
 \examples{
 # Read the example dataset
-exp <- readRDS(system.file("data.RDS", package = "mzQuality2"))
+exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
 
 # Plot RSDQCs
 rsdqcPlot(exp)

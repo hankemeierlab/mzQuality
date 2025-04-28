@@ -4,7 +4,7 @@
 \alias{filterISTD}
 \title{Filter compounds that are equal to given internal standards}
 \usage{
-filterISTD(exp, tag = "ISTD")
+filterISTD(exp, tag = "STD")
 }
 \arguments{
 \item{exp}{A SummarizedExperiment object}
@@ -41,4 +41,7 @@ exp <- buildExperiment(
 
 # Filter internal standards from compounds
 filterISTD(exp, tag = "ISTD")
+
+# Filter all standards from compounds
+filterSTD(exp, tag = "STD")
 }

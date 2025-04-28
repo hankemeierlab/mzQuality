@@ -12,18 +12,6 @@ TRUE.}
 
 \item{saveAssay}{Name of the assay to save the results. Defaults to
 `"Concentration"`}
-
-\item{...}{
-  Arguments passed on to \code{\link[=batchConcentrations]{batchConcentrations}}
-  \describe{
-    \item{\code{exp}}{SummarizedExperiment object}
-    \item{\code{checkForOutliers}}{Boolean value, should studentized residuals be
-used to determine outliers? If TRUE, outliers are detected and only removed
-at the start or end of a calibration line. If FALSE, outlier detection
-is ignored.}
-    \item{\code{useWeights}}{Boolean value, should weighted regression be used? Defaults
-to FALSE, which indicates no weights are used.}
-  }}
 }
 \value{
 SummarizedExperiment with predicted concentrations in the assay

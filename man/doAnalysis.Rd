@@ -11,6 +11,7 @@ doAnalysis(
   removeBadCompounds = FALSE,
   removeOutliers = FALSE,
   useWithinBatch = FALSE,
+  effectNaAsZero = FALSE,
   concentrationType = "ACAL",
   backgroundPercentage = 40,
   qcPercentage = 80,
@@ -37,7 +38,7 @@ placeholder
 }
 \examples{
 # Read the example dataset
-exp <- readRDS(system.file("data.RDS", package = "mzQuality2"))
+exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
 
 # Perform analysis
 exp <- doAnalysis(exp)

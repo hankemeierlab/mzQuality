@@ -1,6 +1,6 @@
 library(testthat)
 # Read the example dataset
-exp <- readRDS(system.file("data.RDS", package = "mzQuality2"))
+exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
 
 test_that("filterISTD works", {
     # Should be no internal standards left in the compounds

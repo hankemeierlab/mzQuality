@@ -12,7 +12,7 @@
 #' @export
 #' @examples
 #' # Read the example dataset
-#' exp <- readRDS(system.file("data.RDS", package = "mzQuality2"))
+#' exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
 #'
 #' # Add concentrations
 #' concentrations <- read.delim(system.file(
@@ -41,20 +41,21 @@ carryOverEffect <- function(exp, type = "PROC", assay = "concentration",
     blanks <- which(exp$type == type)
 
     if (method == "previous") {
-      other <- which(exp$type != type)
-      blanks <- blanks[which((blanks - 1) %in% other)]
+        other <- which(exp$type != type)
+        blanks <- blanks[which((blanks - 1) %in% other)]
 
-      if (length(blanks) > 0 & length(other) > 0 & assay %in% assayNames(exp)) {
-        df <- do.call(cbind, lapply(blanks, function(blank) {
-          assay1 <- assay(exp[, blank], assay)
-          assay2 <- assay(exp[, blank - 1], assay)
-          return(assay1 / assay2)
-        }))
-        from <- colnames(exp)[blanks - 1]
-        to <- colnames(exp)[blanks]
-        colnames(df) <- glue::glue("{from}_{to}", from = from, to = to)
-        rowData(exp)$carryOver <- df
-      }
+        if (length(blanks) > 0 & length(other) > 0 & assay %in% assayNames(exp)) {
+            df <- do.call(cbind, lapply(blanks, function(blank) {
+                assay1 <- assay(exp[, blank], assay)
+                assay2 <- assay(exp[, blank - 1], assay)
+                return(assay1 / assay2)
+            }))
+            from <- colnames(exp)[blanks - 1]
+            to <- colnames(exp)[blanks]
+
+            colnames(df) <- sprintf("%s_%s", from, to)
+            rowData(exp)$carryOver <- df
+        }
     }
     return(exp)
 }
@@ -113,7 +114,6 @@ blankLimits <- function(exp, type = "PROC", assay = "concentration") {
     rowData(exp)$loq <- NA
 
     if (assay %in% assayNames(exp) & type %in% exp$type) {
-
         m <- rowMeans(assay(exp[, exp$type == type], assay), na.rm = TRUE)
         s <- rowSds(assay(exp[, exp$type == type], assay), na.rm = TRUE)
 
@@ -139,7 +139,7 @@ blankLimits <- function(exp, type = "PROC", assay = "concentration") {
 #' @export
 #' @examples
 #' # Read the example dataset
-#' exp <- readRDS(system.file("data.RDS", package = "mzQuality2"))
+#' exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
 #'
 #' # Perform the calculation
 #' backgroundSignals(exp)
@@ -150,7 +150,7 @@ backgroundSignals <- function(exp, type = "BLANK", NaAsZero = FALSE) {
 
     rowData(exp)$backgroundSignal <- NA
     if (type %in% toupper(exp$type)) {
-      rowData(exp)$backgroundSignal <- calculateEffect(exp = exp, type = type, NaAsZero = NaAsZero)
+        rowData(exp)$backgroundSignal <- calculateEffect(exp = exp, type = type, NaAsZero = NaAsZero)
     }
 
 
@@ -166,7 +166,7 @@ backgroundSignals <- function(exp, type = "BLANK", NaAsZero = FALSE) {
 #' @noRd
 #' @examples
 #' # Read the example dataset
-#' exp <- readRDS(system.file("data.RDS", package = "mzQuality2"))
+#' exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
 #'
 #' # Calculate the Blank effect
 #' calculateEffect(exp, type = "BLANK")
@@ -175,7 +175,6 @@ backgroundSignals <- function(exp, type = "BLANK", NaAsZero = FALSE) {
 #' calculateEffect(exp, type = "PROC")
 calculateEffect <- function(exp, assay = metadata(exp)$primary,
                             type = "BLANK", sampleLabel = "SAMPLE", NaAsZero = FALSE) {
-
     if (!validateExperiment(exp)) {
         stop("Invalid experiment")
     }
@@ -184,7 +183,6 @@ calculateEffect <- function(exp, assay = metadata(exp)$primary,
 
     effect <- NA
     if (all(c(sampleLabel, type) %in% exp$type)) {
-
         blanks <- assay(exp[, exp$type == type], assay)
 
         if (NaAsZero) {
@@ -212,26 +210,24 @@ calculateEffect <- function(exp, assay = metadata(exp)$primary,
 #' @export
 #' @examples
 #' #' # Read the example dataset
-#' exp <- readRDS(system.file("data.RDS", package = "mzQuality2"))
+#' exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
 #'
 #' matrixEffect(exp)
 matrixEffect <- function(exp, is_assay = metadata(exp)$secondary,
-                         sampleLabel = "SAMPLE", procBlankLabel = "PROC"){
+                         sampleLabel = "SAMPLE", procBlankLabel = "PROC") {
+    rowData(exp)$matrixEffectFactor <- NA
+    if (metadata(exp)$hasIS) {
+        useExp <- exp[, exp$use]
+        if (all(c(sampleLabel, procBlankLabel) %in% useExp$type)) {
+            samps <- rowMeans(assay(useExp[, useExp$type == sampleLabel], is_assay), na.rm = TRUE)
+            procs <- rowMeans(assay(useExp[, useExp$type == procBlankLabel], is_assay), na.rm = TRUE)
 
-  rowData(exp)$matrixEffectFactor <- NA
-  if (metadata(exp)$hasIS) {
-      useExp <- exp[, exp$use]
-      if (all(c(sampleLabel, procBlankLabel) %in% useExp$type)) {
+            # rowData(exp)$matrixEffect <- round(rowMedians(samps) / rowMedians(procs), 3)
+            # rowData(exp)$ionSuppresion <- round(100 - rowData(exp)$matrixEffect, 3)
 
-          samps <- rowMeans(assay(useExp[, useExp$type == sampleLabel], is_assay), na.rm = TRUE)
-          procs <- rowMeans(assay(useExp[, useExp$type == procBlankLabel], is_assay), na.rm = TRUE)
+            rowData(exp)$matrixEffectFactor <- round((procs - samps) / procs, 3)
+        }
+    }
 
-          # rowData(exp)$matrixEffect <- round(rowMedians(samps) / rowMedians(procs), 3)
-          # rowData(exp)$ionSuppresion <- round(100 - rowData(exp)$matrixEffect, 3)
-
-          rowData(exp)$matrixEffectFactor <- round((procs - samps) / procs, 3)
-      }
-  }
-
-  return(exp)
+    return(exp)
 }

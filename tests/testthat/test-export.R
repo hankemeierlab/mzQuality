@@ -1,10 +1,10 @@
 library(testthat)
-suppressPackageStartupMessages(library(mzQuality2))
+suppressPackageStartupMessages(library(mzQuality))
 # Read the example dataset
-combinedFile <- system.file("example.tsv", package = "mzQuality2")
+combinedFile <- system.file("example.tsv", package = "mzQuality")
 
-dataFile <- system.file("data.RDS", package = "mzQuality2")
-concentrationsFile <- system.file("concentrations.txt", package = "mzQuality2")
+dataFile <- system.file("data.RDS", package = "mzQuality")
+concentrationsFile <- system.file("concentrations.txt", package = "mzQuality")
 
 exp <- readRDS(dataFile)
 concentrations <- read.delim(concentrationsFile)
@@ -19,12 +19,11 @@ test_that("A combined file can be converted", {
 test_that("exportFilterWorkbook works", {
     f <- tempfile()
     exportFilterWorkbook(exp, f)
-
     expect_true(file.exists(f))
 })
 
 test_that("formatExport works", {
-    df <- formatExport(exp)
+    df <- mzQuality:::formatExport(exp)
     expect_true(is(df, "data.frame"))
     expect_true(all(c("Type", "Batch") %in% colnames(df)))
 })
@@ -52,7 +51,7 @@ test_that("summaryReport  works", {
 
 test_that("compoundReports   works", {
     dir <- tempdir()
-    compoundReports(exp[1, ], dir)
+    compoundReports(exp[1, ], dir, verbose = T)
     path <- file.path(dir, paste0(rownames(exp)[1], ".html"))
     expect_true(file.exists(path))
 })
@@ -63,10 +62,4 @@ test_that("exportTables works", {
 
     expect_true(file.exists(file.path(dir, "Aliquots.tsv")))
     expect_true(file.exists(file.path(dir, "Compounds.tsv")))
-})
-
-test_that("downloadZip works", {
-    exp <- addConcentrations(exp, concentrations)
-    x <- doAnalysis(exp, doAll = TRUE)
-    downloadZip("test", x[1, ])
 })

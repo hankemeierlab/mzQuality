@@ -1,7 +1,7 @@
 library(testthat)
-suppressPackageStartupMessages(library(mzQuality2))
+suppressPackageStartupMessages(library(mzQuality))
 # Read the example dataset
-dataFile <- system.file("data.RDS", package = "mzQuality2")
+dataFile <- system.file("data.RDS", package = "mzQuality")
 exp <- readRDS(dataFile)
 
 

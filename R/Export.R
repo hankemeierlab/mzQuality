@@ -27,7 +27,6 @@
 #' # Export used aliquots and metabolites
 #' exportFilterWorkbook(exp, outfile = tempfile())
 exportFilterWorkbook <- function(exp, outfile = "Metabolites_to_keep.xlsx") {
-
     metabolites <- data.frame(
         Compound = rownames(exp),
         Used = rowData(exp)$use
@@ -117,7 +116,7 @@ summaryTable <- function(exp, project = "mzQuality", vendor = "Unknown") {
         QC = metadata(exp)$QC,
         Batches = length(unique(exp$batch)),
         Aliquots = ncol(exp), Compounds = nrow(exp),
-        Version = as.character(utils::packageVersion("mzQuality2"))
+        Version = as.character(utils::packageVersion("mzQuality"))
     ))
     colnames(df) <- "Info"
     as.data.frame(df)
@@ -150,7 +149,7 @@ summaryTable <- function(exp, project = "mzQuality", vendor = "Unknown") {
 #'
 #' # Request a summary in table format
 #' exportExcel(exp, file = tempfile())
-exportExcel <- function(exp, file,  backgroundPercent = 40, cautionRSD = 15, nonReportableRSD = 30) {
+exportExcel <- function(exp, file, backgroundPercent = 40, cautionRSD = 15, nonReportableRSD = 30) {
     exp <- exp[, exp$use]
 
     df <- summaryTable(exp)
@@ -175,12 +174,13 @@ exportExcel <- function(exp, file,  backgroundPercent = 40, cautionRSD = 15, non
     non_reported <- formatExport(comps)
 
 
-    openxlsx::write.xlsx(list(
-        Summary = df, `High Confidence` = hc,
-        `With Caution` = lc, `Low SignalNoise` = non_reported
-    ),
-    file = file,
-    rowNames = TRUE, colNames = TRUE, keepNA = TRUE, na.string = "NA"
+    openxlsx::write.xlsx(
+        list(
+            Summary = df, `High Confidence` = hc,
+            `With Caution` = lc, `Low SignalNoise` = non_reported
+        ),
+        file = file,
+        rowNames = TRUE, colNames = TRUE, keepNA = TRUE, na.string = "NA"
     )
 }
 
@@ -207,11 +207,10 @@ exportExcel <- function(exp, file,  backgroundPercent = 40, cautionRSD = 15, non
 #' # summaryReport(mzQualityExp,
 #' #    folder = tempdir(), project = "MyProject",
 #' #    vendor = "Agilent", output = tempfile()
-#' #)
+#' # )
 summaryReport <- function(exp, folder, output = "mzquality-report.html",
                           plots = c("Aliquot", "PCA", "QC"),
                           assays = c("ratio", "ratio_corrected")) {
-
     if (!validateExperiment(exp)) stop("Invalid Experiment")
 
     assays <- assays[assays %in% assayNames(exp)]
@@ -227,20 +226,20 @@ summaryReport <- function(exp, folder, output = "mzquality-report.html",
 #' @title Report job
 #' @noRd
 compoundReportJob <- function(i, exp, folder, assays, project, vendor) {
-  output <- glue::glue("{comp}.html", comp = make.names(rownames(exp)[i]))
-  create_report(
-    path = file.path(folder),
-    parameters = list(
-      exp = exp[i, ],
-      assays = assays,
-      plots = "",
-      project = project,
-      vendor = vendor
-    ),
-    template = "mzquality-compounds-se.Rmd",
-    output = output
-  )
-  NULL
+    output <- sprintf("%s.html", make.names(rownames(exp)[i]))
+    create_report(
+        path = file.path(folder),
+        parameters = list(
+            exp = exp[i, ],
+            assays = assays,
+            plots = "",
+            project = project,
+            vendor = vendor
+        ),
+        template = "mzquality-compounds-se.Rmd",
+        output = output
+    )
+    NULL
 }
 
 #' @title Create dynamic compound report(s)
@@ -277,22 +276,21 @@ compoundReportJob <- function(i, exp, folder, assays, project, vendor) {
 #'
 #' # Request a compound report
 compoundReports <- function(exp, folder, assays = c("ratio", "ratio_corrected"),
-                            project = "mzQuality", cores = 1, verbose = F, shinyProgress = NULL) {
-
+                            project = "mzQuality", cores = 1, verbose = FALSE, shinyProgress = NULL) {
     if (!validateExperiment(exp)) stop("Invalid Experiment")
 
     multiApply(
-      func = compoundReportJob,
-      jobs = nrow(exp),
-      cores = cores,
-      shinyProgress = shinyProgress,
-      progressTitle = "Construction Compound reports",
-      verbose = verbose,
-      exp = exp,
-      folder = folder,
-      assays = assays,
-      project = project,
-      vendor = "Unknown"
+        func = compoundReportJob,
+        jobs = nrow(exp),
+        cores = cores,
+        shinyProgress = shinyProgress,
+        progressTitle = "Construction Compound reports",
+        verbose = verbose,
+        exp = exp,
+        folder = folder,
+        assays = assays,
+        project = project,
+        vendor = "Unknown"
     )
 }
 
@@ -304,27 +302,26 @@ compoundReports <- function(exp, folder, assays = c("ratio", "ratio_corrected"),
 #' @param parameters List of parameters
 #' @param template Name of template file
 #' @param output Name of the report
+#' @importFrom rmarkdown render
+#' @importFrom utils assignInNamespace
 #' @noRd
 create_report <- function(path, parameters, template, output) {
-    file <- system.file("rmd", template, package = "mzQuality2")
+    file <- system.file("rmd", template, package = "mzQuality")
 
-    library(rmarkdown)
-
-    assignInNamespace("clean_tmpfiles", function() {}, ns = "rmarkdown")
-
-    intermed <- paste0("intermediates_", stringi::stri_rand_strings(1, 10))
-    rmarkdown::render(
-      input = file,
-      params = parameters,
-      output_file = output,
-      quiet = FALSE,
-      output_dir = path,
-      output_format = "html_document",
-      output_options = list(self_contained = T),
-      intermediates_dir = intermed,
-      clean = T
+    random_part <- sample(c(letters, LETTERS, seq_len(10)), 10, replace = TRUE)
+    intermed <- paste0("intermediates_", paste0(random_part, collapse = ""))
+    render(
+        input = file,
+        params = parameters,
+        output_file = output,
+        quiet = TRUE,
+        output_dir = path,
+        output_format = "html_document",
+        output_options = list(self_contained = TRUE),
+        intermediates_dir = intermed,
+        clean = TRUE
     )
-    system(glue::glue("rm -r {intermed}"))
+    system(sprintf("rm -r %s", intermed))
 }
 
 #' @title Export rowData, colData, and assays
@@ -361,7 +358,7 @@ exportTables <- function(exp, folder) {
     folder <- file.path(folder)
 
 
-    cols <- sapply(colData(exp), function(x) !"matrix" %in% class(x))
+    cols <- vapply(colData(exp), function(x) !"matrix" %in% class(x), logical(1))
 
     x <- colData(exp)[, cols]
     utils::write.table(
@@ -371,7 +368,7 @@ exportTables <- function(exp, folder) {
     )
 
 
-    cols <- sapply(rowData(exp), function(x) !"matrix" %in% class(x))
+    cols <- vapply(rowData(exp), function(x) !"matrix" %in% class(x), logical(1))
     x <- rowData(exp)[, cols]
 
     utils::write.table(
@@ -399,9 +396,9 @@ exportTables <- function(exp, folder) {
 #' functions and reports.
 #' @export
 zipFolder <- function(file, output) {
-  if (requireNamespace("zip", quietly = TRUE)) {
-    zip::zip(zipfile = file, files = list.files(output), root = output)
-  }
+    if (requireNamespace("zip", quietly = TRUE)) {
+        zip::zip(zipfile = file, files = list.files(output), root = output)
+    }
 }
 
 #' @title Write the new export file
@@ -411,10 +408,7 @@ zipFolder <- function(file, output) {
 #' @export
 writeNewExport <- function(outFile, exp, types = exp$type,
                            backgroundPercent = 40, cautionRSD = 15, nonReportableRSD = 30,
-                           digits = 3, selectedOnly = FALSE){
-
-
-
+                           digits = 3, selectedOnly = FALSE) {
     overallSummary <- data.frame(
         Info = c(
             ncol(exp), nrow(exp), length(unique(rowData(exp)$compound_is))
@@ -430,12 +424,28 @@ writeNewExport <- function(outFile, exp, types = exp$type,
         exp <- exp[rowData(exp)$use, exp$use]
     }
 
-    toUse <- which(!colnames(colData(exp)) %in% pkg.env$colDataExclude)
-    aliquotSummary <- as.data.frame(colData(exp)[, toUse])
+    toUse <- !colnames(colData(exp)) %in% pkg.env$colDataExclude
+    toUse <- vapply(colData(exp)[, toUse], function(x) {
+        !("matrix" %in% class(x))
+    }, logical(1))
+
+
+
+    aliquotSummary <- as.data.frame(colData(exp[, toUse]))
+    if (!"outlier" %in% colnames(aliquotSummary)) {
+        aliquotSummary$outlier <- FALSE
+    }
     aliquotSummary$selected <- ifelse(aliquotSummary$outlier, "No", "Yes")
     aliquotSummary <- aliquotSummary[, colnames(aliquotSummary) != "use"]
 
     toUse <- which(!colnames(rowData(exp)) %in% pkg.env$rowDataExclude)
+
+    toUse <- vapply(rowData(exp)[, toUse], function(x) {
+        !("matrix" %in% class(x))
+    }, logical(1))
+
+
+
     compoundSummary <- as.data.frame(rowData(exp)[, toUse])
 
     compoundSummary$confidence <- ifelse(compoundSummary$backgroundSignal <= backgroundPercent & compoundSummary$rsdqcCorrected < cautionRSD, "High", "Caution")
@@ -454,7 +464,7 @@ writeNewExport <- function(outFile, exp, types = exp$type,
 
 
     assays(exp) <- assays(exp)[!assayNames(exp) %in% pkg.env$assayExclude]
-    assayList <- lapply( assays(exp), function(m){
+    assayList <- lapply(assays(exp), function(m) {
         if (all(is.numeric(m))) {
             m <- round(m, digits)
         }
@@ -495,7 +505,7 @@ writeNewExport <- function(outFile, exp, types = exp$type,
 #' @details
 #' @returns
 #' @export
-reportConcentrationsPerBatch <- function(exp, file){
+reportConcentrationsPerBatch <- function(exp, file) {
     highConfLinearRange <- rowData(exp)$linearRanges > 0.7
     highR2 <- rowData(exp)$concentrationR2 > 0.95
 
@@ -508,7 +518,7 @@ reportConcentrationsPerBatch <- function(exp, file){
 
 
 
-    sheets <- lapply(unique(exp$batch), function(batch){
+    sheets <- lapply(unique(exp$batch), function(batch) {
         x <- exp[, exp$batch == batch]
 
         header <- t(data.frame(
@@ -523,7 +533,7 @@ reportConcentrationsPerBatch <- function(exp, file){
         )
     })
 
-    names(sheets) <- glue::glue("Batch {batch}", batch = unique(exp$batch))
+    names(sheets) <- sprintf("Batch %s", unique(exp$batch))
 
     openxlsx::write.xlsx(
         x = sheets,
@@ -546,7 +556,6 @@ downloadZip <- function(project, exp,
                         backgroundPercent = 40, cautionRSD = 15, nonReportableRSD = 30,
                         copyDataLake = FALSE,
                         assays = c("ratio", "ratio_corrected"), cores = 1, shinyProgress = NULL) {
-
     output_folder <- file.path(getwd(), project)
 
     reports <- file.path(output_folder, "Exports")
@@ -561,11 +570,11 @@ downloadZip <- function(project, exp,
     message("Exported Tables")
 
     timeFormat <- format(lubridate::now(), "%d-%m-%Y %H.%M.%S")
-    file <- glue::glue("mzQuality_Original_{time}.tsv", time = timeFormat)
+    file <- sprintf("mzQuality_Original_%s.tsv", timeFormat)
 
     utils::write.table(
         x = expToCombined(exp),
-        file =  file.path(reports, file),
+        file = file.path(reports, file),
         sep = "\t",
         row.names = TRUE,
         quote = FALSE
@@ -633,4 +642,3 @@ downloadZip <- function(project, exp,
         message("Created Compound Reports")
     }
 }
-

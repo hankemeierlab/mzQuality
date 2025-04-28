@@ -45,5 +45,5 @@ data(mzQualityExp)
 # summaryReport(mzQualityExp,
 #    folder = tempdir(), project = "MyProject",
 #    vendor = "Agilent", output = tempfile()
-#)
+# )
 }

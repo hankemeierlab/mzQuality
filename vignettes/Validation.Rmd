@@ -9,15 +9,15 @@ vignette: >
 
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>",
-  echo = FALSE,
-  warning = FALSE
+    collapse = TRUE,
+    comment = "#>",
+    echo = FALSE,
+    warning = FALSE
 )
 ```
 
 ```{r setup, echo = FALSE, warning=FALSE}
-suppressPackageStartupMessages(library(mzQuality2))
+suppressPackageStartupMessages(library(mzQuality))
 ```
 
 
@@ -65,7 +65,7 @@ This dataset contains `r compounds` compounds and `r aliquots` aliquots. Of whic
 ```{r, echo = FALSE, message=FALSE}
 # do Analysis
 exp <- buildExperiment(df) %>%
-    doAnalysis(removeOutliers = F)
+    doAnalysis(removeOutliers = FALSE)
 ```
 
 
@@ -95,6 +95,13 @@ metrics$confidence <- ifelse(metrics$backgroundSignal > backgroundPercent, "Low 
 metrics$selected <- ifelse(metrics$use, "Yes", "No")
 
 metrics <- metrics[, c("rsdqc", "rsdqcCorrected", "backgroundSignal", "selected", "confidence")]
-DT::datatable(as.data.frame(metrics), colnames = c("RSDQC", "RSDQC Corrected", "Background Signal", "Report?", "Confidence Level"))
+
+if (requireNamespace("DT")) {
+    DT::datatable(as.data.frame(metrics), colnames = c("RSDQC", "RSDQC Corrected", "Background Signal", "Report?", "Confidence Level"))
+}
+
 ```
 
+```{r}
+sessionInfo()
+```

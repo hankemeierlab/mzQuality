@@ -15,10 +15,11 @@ buildCombined <- function(files, vendor = NA, regex = NULL) {
     if (length(files) == 1) {
         df <- arrow::read_delim_arrow(files[1], delim = "\t")
 
-        mandatoryColumns <- c("Acquisition Date & Time", "Acquisition.Date...Time",
-                              "Component Name", "Component.Name",
-                              "Retention Time", "Retention.Time",
-                              "Area"
+        mandatoryColumns <- c(
+            "Acquisition Date & Time", "Acquisition.Date...Time",
+            "Component Name", "Component.Name",
+            "Retention Time", "Retention.Time",
+            "Area"
         )
 
         if (sum(colnames(df) %in% mandatoryColumns) > 1) {
@@ -30,7 +31,6 @@ buildCombined <- function(files, vendor = NA, regex = NULL) {
         colnames(df) <- tolower(colnames(df))
 
         df$type <- toupper(df$type)
-
     } else {
         df <- setBatches(lapply(files, function(file) {
             combined <- arrow::read_delim_arrow(file, delim = "\t")
@@ -57,16 +57,16 @@ buildCombined <- function(files, vendor = NA, regex = NULL) {
 #' @param index Which index should be used as the index column
 #' @importFrom dplyr distinct
 getMetaData <- function(df, index) {
-  cols <- c(index)
-  for (col in colnames(df)) {
-    if (col != index) {
-      uniq_comb <- dplyr::distinct(df[, c(index, col)])
-      if (!any(duplicated(uniq_comb[, index]))) {
-        cols <- c(cols, col)
-      }
+    cols <- c(index)
+    for (col in colnames(df)) {
+        if (col != index) {
+            uniq_comb <- dplyr::distinct(df[, c(index, col)])
+            if (!any(duplicated(uniq_comb[, index]))) {
+                cols <- c(cols, col)
+            }
+        }
     }
-  }
-  return(cols)
+    return(cols)
 }
 
 #' @title Set the Metadata of compound or aliquot data
@@ -78,14 +78,14 @@ getMetaData <- function(df, index) {
 #' @param rows
 #' @importFrom dplyr distinct
 setMetaDataFrame <- function(rowData, rowIndex, rows) {
-  if (nrow(rowData) == 0) {
-    rowData <- DataFrame(row.names = unique(rows))
-  } else {
-    rownames(rowData) <- rows
-    rowData <- rowData[-which(colnames(rowData) == rowIndex)]
-  }
-  #return(rowData)#[order(rownames(rowData), method = "radix"), , drop = FALSE])
-  return(rowData[order(rownames(rowData), method = "radix"), , drop = FALSE])
+    if (nrow(rowData) == 0) {
+        rowData <- DataFrame(row.names = unique(rows))
+    } else {
+        rownames(rowData) <- rows
+        rowData <- rowData[-which(colnames(rowData) == rowIndex)]
+    }
+    # return(rowData)#[order(rownames(rowData), method = "radix"), , drop = FALSE])
+    return(rowData[order(rownames(rowData), method = "radix"), , drop = FALSE])
 }
 
 #' @title Create a SummarizedExperiment object from a long dataframe
@@ -137,119 +137,132 @@ buildExperiment <- function(df,
                             typeColumn = "type",
                             qc = "SQC",
                             secondaryIndex = "compound_is") {
-  df <- as.data.frame(df)
+    df <- as.data.frame(df)
 
-  colnames(df) <- tolower(colnames(df))
-  df$type <- toupper(df$type)
+    colnames(df) <- tolower(colnames(df))
+    df$type <- toupper(df$type)
 
-  if (!qc %in% df$type) {
-
-    if (length(unique(df$type)) == 1) {
-      qc <- df$type[1]
-    } else {
-      stop("Could not find the given QC type")
+    if (!qc %in% df$type) {
+        if (length(unique(df$type)) == 1) {
+            qc <- df$type[1]
+        } else {
+            stop("Could not find the given QC type")
+        }
     }
-  }
 
-  if (!any(c(rowIndex, colIndex) %in% colnames(df))) {
-      stop(glue::glue("Cannot find columns {rowIndex} and {colIndex} in `df`",
-                      rowIndex = rowIndex, colIndex = colIndex)
-      )
-  }
+    if (!any(c(rowIndex, colIndex) %in% colnames(df))) {
+        message <- sprintf(
+            "Cannot find columns %s and/or %s in `df`",
+              rowIndex, colIndex
+        )
+        stop(message)
+    }
 
-  if (!"type" %in% colnames(df)){
-      stop("Cannot find mandatory column type in `df`")
-  }
-
-
-  if (!secondaryAssay %in% colnames(df)) {
-    secondaryAssay <- primaryAssay
-  } else {
-     # If only one internal standard is used
-  }
+    if (!"type" %in% colnames(df)) {
+        stop("Cannot find mandatory column type in `df`")
+    }
 
 
-  rows <- unique(df[, rowIndex])
-  cols <- unique(df[, colIndex])
-
-  reserved <- df[, typeColumn]
-
-  columns <- sapply(colnames(df), function(x){all(df[,x] == df[1,x]) | all(is.na(df[,x]))})
-  columns[is.na(columns)] <- FALSE
-  df <- df[, !columns]
+    if (!secondaryAssay %in% colnames(df)) {
+        secondaryAssay <- primaryAssay
+    } else {
+        # If only one internal standard is used
+    }
 
 
-  df$type <- reserved
-  rowData <- dplyr::distinct(df[getMetaData(df, rowIndex)])
-  colData <- dplyr::distinct(df[getMetaData(df, colIndex)])
+    rows <- unique(df[, rowIndex])
+    cols <- unique(df[, colIndex])
+
+    reserved <- df[, typeColumn]
+
+    columns <- vapply(colnames(df), function(x) {
+        all(df[, x] == df[1, x]) | all(is.na(df[, x]))
+    }, logical(1))
+
+    columns[is.na(columns)] <- FALSE
+    df <- df[, !columns]
+
+
+    df$type <- reserved
+    rowData <- dplyr::distinct(df[getMetaData(df, rowIndex)])
+    colData <- dplyr::distinct(df[getMetaData(df, colIndex)])
 
 
 
 
-  rowData <- rowData[, which(!colnames(rowData) %in% typeColumn), drop = FALSE]
+    rowData <- rowData[, which(!colnames(rowData) %in% typeColumn), drop = FALSE]
 
 
-  assays <- colnames(df)[!colnames(df) %in% c(
-    colnames(rowData),
-    colnames(colData),
-    rowIndex,
-    colIndex
-  )]
+    assays <- colnames(df)[!colnames(df) %in% c(
+        colnames(rowData),
+        colnames(colData),
+        rowIndex,
+        colIndex
+    )]
 
-  rowData <- setMetaDataFrame(rowData, rowIndex, rows)
-  colData <- setMetaDataFrame(colData, colIndex, cols)
+    rowData <- setMetaDataFrame(rowData, rowIndex, rows)
+    colData <- setMetaDataFrame(colData, colIndex, cols)
 
-  df <- df[order(df[, colIndex], df[, rowIndex], method = "radix"), ]
-  hasIS <- secondaryAssay %in% colnames(df) & primaryAssay != secondaryAssay
+    df <- df[order(df[, colIndex], df[, rowIndex], method = "radix"), ]
+    hasIS <- secondaryAssay %in% colnames(df) & primaryAssay != secondaryAssay
 
-  if (hasIS && !secondaryIndex %in% colnames(rowData)) {
-      # error, multiple internal standards per compound
-  }
+    if (hasIS && !secondaryIndex %in% colnames(rowData)) {
+        # error, multiple internal standards per compound
+    }
 
-  hasMissing <- nrow(df) != nrow(colData) * nrow(rowData)
-  message("Missing combinations found, trying to fix with NAs..")
+    hasMissing <- nrow(df) != nrow(colData) * nrow(rowData)
+    message("Missing combinations found, trying to fix with NAs..")
 
 
-  if (hasMissing) {
-    df <- fillMissingCombinations(
-      df, rowIndex, colIndex,
-      rowData, colData, assays
+    if (hasMissing) {
+        df <- fillMissingCombinations(
+            df, rowIndex, colIndex,
+            rowData, colData, assays
+        )
+    }
+
+    assays <- lapply(setNames(assays, assays), function(assayName) {
+        matrix(
+            data = as.double(df[, assayName]),
+            ncol = nrow(colData),
+            nrow = nrow(rowData),
+            dimnames = list(rownames(rowData), rownames(colData))
+        )
+    })
+
+    exp <- SummarizedExperiment(
+        assays = assays,
+        rowData = rowData,
+        colData = colData,
+        metadata = list(
+            QC = qc,
+            primary = primaryAssay,
+            secondary = secondaryAssay,
+            hasIS = hasIS,
+            Date = lubridate::now()
+        )
     )
-  }
 
-  assays <- lapply(setNames(assays, assays), function(assayName) {
-    matrix(data = as.double(df[, assayName]),
-           ncol = nrow(colData),
-           nrow = nrow(rowData),
-           dimnames = list(rownames(rowData), rownames(colData))
-    )
-  })
+    goodAssays <- vapply(assayNames(exp), function(x) {
+        all(is.numeric(assay(exp, x)))
+    }, logical(1))
 
-  exp <- SummarizedExperiment(
-    assays = assays,
-    rowData = rowData,
-    colData = colData,
-    metadata = list(
-      QC = qc,
-      primary = primaryAssay,
-      secondary = secondaryAssay,
-      hasIS = hasIS,
-      Date = lubridate::now()
-    ))
-
-  goodAssays <- vapply(assayNames(exp), function(x){
-    all(is.numeric(assay(exp, x)))
-  }, logical(1))
-
-  assays(exp) <- lapply(names(which(goodAssays)), function(x) assay(exp, x))
-  assayNames(exp) <- names(which(goodAssays))
-  rownames(exp) <- make.names(rownames(exp))
-  dimnames(exp) <- list(rownames(rowData), rownames(colData))
+    assays(exp) <- lapply(names(which(goodAssays)), function(x) assay(exp, x))
+    assayNames(exp) <- names(which(goodAssays))
+    rownames(exp) <- make.names(rownames(exp))
+    dimnames(exp) <- list(rownames(rowData), rownames(colData))
 
 
-  finishExperiment(exp)
+    finishExperiment(exp)
 }
 
+#' @title Set the colors of the samples
+#' @description placeholder
+#' details placeholder
+#' @returns placeholder
+#' @param types Character vector with the types of the samples
+#' @param ... Additional arguments to be passed to the function
+#' @export
 setSampleColors <- function(types, ...) {
     types <- unique(types)
     colorVec <- viridis::viridis(length(types), begin = 0.2, end = 0.8, option = "H")
@@ -272,7 +285,6 @@ setSampleColors <- function(types, ...) {
 #' @importFrom lubridate format_ISO8601
 #' @noRd
 finishExperiment <- function(exp) {
-
     exp <- exp[, order(exp$injection_time, method = "radix")]
     exp$datetime <- lubridate::as_datetime(exp$injection_time)
 
@@ -286,29 +298,28 @@ finishExperiment <- function(exp) {
     }
 
     if (!"injection" %in% colnames(colData(exp))) {
-      colData(exp)$injection <- 1
-  }
+        colData(exp)$injection <- 1
+    }
 
-  if (!"order" %in% colnames(colData(exp))) {
+    if (!"order" %in% colnames(colData(exp))) {
+        order <- colData(exp) %>%
+            as.data.frame() %>%
+            arrange(.data$injection_time) %>%
+            group_by(.data$batch) %>%
+            mutate(order = seq_len(n())) %>%
+            pull(order)
 
-      order <- colData(exp) %>%
-          as.data.frame() %>%
-          arrange(.data$injection_time) %>%
-          group_by(.data$batch) %>%
-          mutate(order = 1:n()) %>%
-          pull(order)
-
-      colData(exp)$order <- order
-  }
+        colData(exp)$order <- order
+    }
 
 
-  exp <- calculateRatio(exp) %>%
-    identifyOutliers() %>%
-    identifyMisInjections() %>%
-    #addLinearRange(calType = "CAL", saveAssay = "CalRange") %>%
-    addLinearRange(calType = "ACAL", saveAssay = "ACALRange")
+    exp <- calculateRatio(exp) %>%
+        identifyOutliers() %>%
+        identifyMisInjections() %>%
+        # addLinearRange(calType = "CAL", saveAssay = "CalRange") %>%
+        addLinearRange(calType = "ACAL", saveAssay = "ACALRange")
 
-  return(exp)
+    return(exp)
 }
 
 #' @title Fill in missing aliquot-compound combinations
@@ -325,24 +336,23 @@ finishExperiment <- function(exp) {
 #' @importFrom dplyr bind_rows
 fillMissingCombinations <- function(df, rowIndex, colIndex, rowData, colData,
                                     assayNames) {
+    comps <- names(which(table(df[, rowIndex]) < nrow(colData)))
+    aliqs <- names(which(table(df[, colIndex]) < nrow(rowData)))
 
-  comps <- names(which(table(df[, rowIndex]) < nrow(colData)))
-  aliqs <- names(which(table(df[, colIndex]) < nrow(rowData)))
+    a <- paste0(df[, colIndex], df[, rowIndex])
 
-  a <- paste0(df[, colIndex], df[, rowIndex])
+    grid <- expand.grid(a = aliqs, b = comps)
+    b <- paste0(grid$a, grid$b)
 
-  grid <- expand.grid(a = aliqs, b = comps)
-  b <- paste0(grid$a, grid$b)
+    grid <- grid[!b %in% a, ]
+    colnames(grid) <- c(colIndex, rowIndex)
 
-  grid <- grid[!b %in% a, ]
-  colnames(grid) <- c(colIndex, rowIndex)
+    for (name in assayNames) {
+        grid[[name]] <- NA
+    }
 
-  for (name in assayNames) {
-    grid[[name]] <- NA
-  }
-
-  a <- dplyr::bind_rows(df[, c(colIndex, rowIndex, assayNames)], grid)
-  a[order(a[, colIndex], a[, rowIndex], method = "radix"), ]
+    a <- dplyr::bind_rows(df[, c(colIndex, rowIndex, assayNames)], grid)
+    a[order(a[, colIndex], a[, rowIndex], method = "radix"), ]
 }
 
 #' @title Convert a SummarizedExperiment to a data frame in the long format
@@ -374,32 +384,36 @@ fillMissingCombinations <- function(df, rowIndex, colIndex, rowData, colData,
 #' # Convert to a table format
 #' expToCombined(exp, rowIndex = "Compound", colIndex = "Aliquot")
 expToCombined <- function(exp, rowIndex = "Compound", colIndex = "Aliquot") {
-  if (!validateExperiment(exp)) {
-    stop("Invalid SummarizedExperiment")
-  }
+    if (!validateExperiment(exp)) {
+        stop("Invalid SummarizedExperiment")
+    }
 
-  mat <- as.matrix(assay(exp))
-  x <- reshape2::melt(mat)[, -3]
-  colnames(x) <- c(rowIndex, colIndex)
+    mat <- as.matrix(assay(exp))
+    x <- reshape2::melt(mat)[, -3]
+    colnames(x) <- c(rowIndex, colIndex)
 
-  assays <- do.call(cbind, lapply(assayNames(exp), function(assay){
-    mat <- as.matrix(assay(exp, assay))
-    reshape2::melt(mat)[, 3, drop = FALSE]
-  }))
-  colnames(assays) <- assayNames(exp)
-  cols <- c(colnames(x),
-            colnames(assays),
-            colnames(colData(exp)),
-            colnames(rowData(exp)))
+    assays <- do.call(cbind, lapply(assayNames(exp), function(assay) {
+        mat <- as.matrix(assay(exp, assay))
+        reshape2::melt(mat)[, 3, drop = FALSE]
+    }))
+    colnames(assays) <- assayNames(exp)
+    cols <- c(
+        colnames(x),
+        colnames(assays),
+        colnames(colData(exp)),
+        colnames(rowData(exp))
+    )
 
-  df <- as.data.frame(cbind(x, assays,
-                            colData(exp)[x[, colIndex], ],
-                            rowData(exp)[x[, rowIndex], ] ))
-  df <- df[order(df[, rowIndex], df[, colIndex]), ]
-  rownames(df) <- seq_len(nrow(df))
-  colnames(df) <- cols
+    df <- as.data.frame(cbind(
+        x, assays,
+        colData(exp)[x[, colIndex], ],
+        rowData(exp)[x[, rowIndex], ]
+    ))
+    df <- df[order(df[, rowIndex], df[, colIndex]), ]
+    rownames(df) <- seq_len(nrow(df))
+    colnames(df) <- cols
 
-  df[, !is.na(colnames(df))]
+    df[, !is.na(colnames(df))]
 }
 
 #' @title Add known concentrations of calibration lines
@@ -421,7 +435,6 @@ expToCombined <- function(exp, rowIndex = "Compound", colIndex = "Aliquot") {
 #' values will be `NA`.
 #' @export
 addConcentrations <- function(exp, df, filterComps = FALSE) {
-
     if (!validateExperiment(exp)) stop("Invalid Experiment")
     rownames(df) <- make.names(rownames(df))
     if (!validateCalibration(exp, df)) stop("Invalid concentration dataframe")
@@ -450,14 +463,15 @@ addConcentrations <- function(exp, df, filterComps = FALSE) {
 
 
     assay(exp, "concentration") <- matrix(
-        NA, nrow = nrow(exp), ncol = ncol(exp), dimnames = dimnames(exp)
+        NA,
+        nrow = nrow(exp), ncol = ncol(exp), dimnames = dimnames(exp)
     )
 
     # Subset concentration when not all expected callines are present
     cols <- aliqs[aliqs %in% colnames(exp[, exp$batch == unique(exp$batch)[1]])]
     df <- df[, exp[, cols]$calno + 1]
 
-    res <- do.call(cbind, lapply(unique(exp$batch), function(batch){
+    res <- do.call(cbind, lapply(unique(exp$batch), function(batch) {
         cols <- intersect(aliqs, colnames(exp[, exp$batch == batch]))
         colnames(df) <- cols
         df
@@ -466,7 +480,7 @@ addConcentrations <- function(exp, df, filterComps = FALSE) {
 
 
     if (length(comps) > 0 & length(aliqs) > 0) {
-        res <- do.call(cbind, lapply(unique(exp$batch), function(batch){
+        res <- do.call(cbind, lapply(unique(exp$batch), function(batch) {
             cols <- intersect(aliqs, colnames(exp[, exp$batch == batch]))
             colnames(df) <- cols
             df
@@ -528,20 +542,18 @@ addConcentrations <- function(exp, df, filterComps = FALSE) {
 #' assay(exp, "ratio")
 calculateRatio <- function(exp, assay1 = metadata(exp)$primary,
                            assay2 = metadata(exp)$secondary) {
-
-
-  if (!metadata(exp)$hasIS) {
-    df <- assay(exp, assay1)
-  } else {
-    df <- assay(exp, assay1) / assay(exp, assay2)
-  }
+    if (!metadata(exp)$hasIS) {
+        df <- assay(exp, assay1)
+    } else {
+        df <- assay(exp, assay1) / assay(exp, assay2)
+    }
 
     df[df <= 0] <- NA
     assay(exp, "ratio") <- df
-  #
-  # assay(exp, "ratio") <- t(apply(df, 1, function(x) {
-  #   ifelse(x <= 0, min(x[x > 0], na.rm = TRUE), x)
-  # }))
+    #
+    # assay(exp, "ratio") <- t(apply(df, 1, function(x) {
+    #   ifelse(x <= 0, min(x[x > 0], na.rm = TRUE), x)
+    # }))
 
-  exp
+    exp
 }

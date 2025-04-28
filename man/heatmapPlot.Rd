@@ -21,7 +21,7 @@ provide assay.
 }
 \examples{
 # Read the example dataset
-exp <- readRDS(system.file("data.RDS", package = "mzQuality2"))
+exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
 
 # Plot values in heatmap
 heatmapPlot(exp)

@@ -18,19 +18,17 @@
 #' @param k Number of predictors. Here it is always 1
 #' @seealso https://online.stat.psu.edu/stat462/node/247/ for the formula used here
 #' @export
-studentResiduals <- function(residuals, n, k = 1){
+studentResiduals <- function(residuals, n, k = 1) {
     rsd <- sqrt(rowSums(residuals^2, na.rm = TRUE) / (n - 2))
     standardResiduals <- residuals / rsd
-    studentResiduals <-  standardResiduals * ((n - k - 2) / (n - k - 1 - standardResiduals^2)) ** 0.5
+    studentResiduals <- standardResiduals * ((n - k - 2) / (n - k - 1 - standardResiduals^2))**0.5
     studentResiduals[!is.finite(studentResiduals)] <- NA
     return(studentResiduals)
 }
 
 #' @title Calculate concentratios for a full experiment
-#' @inheritSection batchConcentrations description details
 #' @returns SummarizedExperiment with predicted concentrations in the assay
 #' given in `saveAssay`. Defaults to `"concentration"`.
-#' @inheritDotParams batchConcentrations
 #' @param byBatch Should the concentration be calculated per batch? Defaults to
 #' TRUE.
 #' @param saveAssay Name of the assay to save the results. Defaults to
@@ -42,7 +40,6 @@ calculateConcentrations <- function(exp, byBatch = TRUE, saveAssay = "concentrat
         x <- lapply(batches, function(i) {
             batchConcentrations(exp = exp, batch = i, ...)
         })
-
     } else {
         x <- list(batchConcentrations(exp, batches, ...))
     }
@@ -91,7 +88,7 @@ calculateConcentrations <- function(exp, byBatch = TRUE, saveAssay = "concentrat
 #' @returns placeholder
 #' @param yValues Values of the response
 getWeights <- function(yValues) {
-    values <- yValues[,1]
+    values <- yValues[, 1]
     if (max(values, na.rm = TRUE) == 0) {
         values <- yValues[, 2]
     }
@@ -119,9 +116,7 @@ batchConcentrations <- function(exp, batch, assayX = "ratio",
                                 assayY = "concentration", type = "ACAL",
                                 subtractCal = FALSE, forceOrigin = FALSE,
                                 checkForOutliers = TRUE, subtractIntercept = FALSE,
-                                useWeights = FALSE){
-
-
+                                useWeights = FALSE) {
     # Select the current batch data
     batchExp <- exp[, exp$batch %in% batch]
 
@@ -129,7 +124,7 @@ batchConcentrations <- function(exp, batch, assayX = "ratio",
     training <- batchExp[, batchExp$type %in% type]
 
     # Sort names so that the order will always be from lowest cal to highest
-    #training <- training[, sort(colnames(training))]
+    # training <- training[, sort(colnames(training))]
 
 
     metadata <- colData(training) %>%
@@ -155,7 +150,7 @@ batchConcentrations <- function(exp, batch, assayX = "ratio",
     # If subtractCAL, subtract CAL0 from everything
     # because of sorting, we can take the first column
     if (subtractCal) {
-        xValues <- xValues - xValues[,1]
+        xValues <- xValues - xValues[, 1]
     }
 
 
@@ -196,9 +191,8 @@ batchConcentrations <- function(exp, batch, assayX = "ratio",
     outliers <- abs(studentResiduals) > 2
 
     if (checkForOutliers) {
-
         # only remove values from the first and last column if they are outliers
-        startOutliers <- outliers[,1]
+        startOutliers <- outliers[, 1]
         N <- ncol(outliers)
         endOutliers <- outliers[, N]
 
@@ -228,7 +222,7 @@ batchConcentrations <- function(exp, batch, assayX = "ratio",
         )
 
         # Calculate the raw residuals by subtracting the intercept and slope * x-vals
-        #residuals <- yValues - (int * !forceOrigin) - slope * xValues
+        # residuals <- yValues - (int * !forceOrigin) - slope * xValues
     }
 
 
@@ -242,7 +236,7 @@ batchConcentrations <- function(exp, batch, assayX = "ratio",
 
     # Take all the values of the batch-assay and multiply with the slope and
     # add the intercept to obtain the new values
-    predicted <- assay(batchExp, assayX) * slope  + (int * !forceOrigin)
+    predicted <- assay(batchExp, assayX) * slope + (int * !forceOrigin)
 
     r2 <- rowCorrelation(xValues, yValues)
 
@@ -264,8 +258,14 @@ batchConcentrations <- function(exp, batch, assayX = "ratio",
 #' @returns placeholder
 #' @param x Matrix of X-values
 #' @param y Matrix of y-values
-rowWiseCov <- function(x, y){
-    rowSums((x - rowMeans(x, na.rm = TRUE)) * (y - rowMeans(y, na.rm = TRUE)), na.rm = TRUE) * (1 / (rowSums(!is.na(x)) - 1))
+rowWiseCov <- function(x, y) {
+    valid <- !is.na(x) & !is.na(y) # Only consider non-NA pairs
+    n <- rowSums(valid) - 1 # Degrees of freedom
+    n[n <= 0] <- NA # Avoid division by zero
+
+    rowSums((x - rowMeans(x, na.rm = TRUE)) * (y - rowMeans(y, na.rm = TRUE)),
+        na.rm = TRUE
+    ) / n
 }
 
 #' @title Calculate the slope of a regression line by row
@@ -292,11 +292,11 @@ rowWiseIntercept <- function(x, y, slope) {
 #' @description placeholder
 #' @details placeholder
 #' @returns placeholder
-rowCorrelation <- function(x, y){
+rowCorrelation <- function(x, y) {
     mx <- x - rowMeans(x, na.rm = TRUE)
     my <- y - rowMeans(y, na.rm = TRUE)
 
-    r2 <- rowSums(mx * my,  na.rm = TRUE) / sqrt(rowSums(mx^2, na.rm = TRUE) * rowSums(my^2,  na.rm = TRUE))
+    r2 <- rowSums(mx * my, na.rm = TRUE) / sqrt(rowSums(mx^2, na.rm = TRUE) * rowSums(my^2, na.rm = TRUE))
     r2[!is.finite(r2)] <- NA
     r2
 }

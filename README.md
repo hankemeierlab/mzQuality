@@ -27,7 +27,7 @@ exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
 To use your own data, either a SummarizedExperiment with can be used, or a tab-delimited text file. A convenience function has been added to convert a tab-delimited file into a SummarizedExperiment:
 
 ```{r}
-combined <- buildCombined(system.file("example.tsv", package = "mzQuality2"))
+combined <- buildCombined(system.file("example.tsv", package = "mzQuality"))
 exp <- buildExperiment(combined)
 ```
 

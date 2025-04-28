@@ -8,7 +8,7 @@
 #' @export
 #' @examples
 #' # Read the example dataset
-#' exp <- readRDS(system.file("data.RDS", package = "mzQuality2"))
+#' exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
 #'
 #' # Plot RSDQCs
 #' rsdqcPlot(exp)
@@ -29,12 +29,11 @@ rsdqcPlot <- function(exp) {
         option = "H"
     )
     p <- heatmaply::heatmaply(as.matrix(rsdqcs),
-                              plot_method = "ggplot",
-                              dendrogram = "none",
-                              margins = c(0, 0, 0, 0), colors = cols
+        plot_method = "ggplot",
+        dendrogram = "none",
+        margins = c(0, 0, 0, 0), colors = cols
     )
     return(p)
-
 }
 
 #' @title Plot heatmap of the given assay
@@ -47,7 +46,7 @@ rsdqcPlot <- function(exp) {
 #' @export
 #' @examples
 #' # Read the example dataset
-#' exp <- readRDS(system.file("data.RDS", package = "mzQuality2"))
+#' exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
 #'
 #' # Plot values in heatmap
 #' heatmapPlot(exp)
@@ -57,7 +56,9 @@ heatmapPlot <- function(exp, assay = "ratio") {
     }
     df <- assay(exp, assay)
     df[is.infinite(df)] <- NA
-    if (all(is.na(df))) return(NULL)
+    if (all(is.na(df))) {
+        return(NULL)
+    }
 
     cols <- viridis::viridis(
         n = 256, alpha = 1, begin = 0.2, end = 0.8,
@@ -66,12 +67,11 @@ heatmapPlot <- function(exp, assay = "ratio") {
 
     p <- heatmaply::heatmaply(
         df,
-        dendrogram = "none",  plot_method = "ggplot",
+        dendrogram = "none", plot_method = "ggplot",
         margins = c(0, 0, 0, 0), colors = cols
     )
 
     return(p)
-
 }
 
 
@@ -90,10 +90,11 @@ heatmapPlot <- function(exp, assay = "ratio") {
 #' "Limit of Blank", "Limit of Detection", "Limit of Quantification")
 #' @returns ggplot object of a scatterplot with "SAMPLE", "QC" and "CAL" types.
 #' @importFrom ggplot2 xlim ggplot geom_hline aes
+#' @importFrom stats complete.cases median sd
 #' @export
 #' @examples
 #' # Read the example dataset
-#' exp <- readRDS(system.file("data.RDS", package = "mzQuality2"))
+#' exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
 #'
 #' # Create scatterplot with calibration lines
 #' calibrationPlot(exp)
@@ -126,13 +127,14 @@ calibrationPlot <- function(exp, assay = "ratio_corrected",
 
     lines <- lines[complete.cases(lines), ]
     if (nrow(lines) == 0) {
-      return(ggplot() + theme_bw())
+        return(ggplot() +
+            theme_bw())
     }
 
     dl <- dl[, -which(colnames(dl) == "calno")]
     dl <- dl[complete.cases(dl), ]
 
-    #points$text <- getAliquotPlotLabels(aliquotFilter(sub, type = c(qc, "SAMPLE")))
+    # points$text <- getAliquotPlotLabels(aliquotFilter(sub, type = c(qc, "SAMPLE")))
 
 
     p <- ggplot(points, aes(
@@ -177,7 +179,7 @@ calibrationPlot <- function(exp, assay = "ratio_corrected",
 #' @importfrom ggplot2 geom_line theme geom_point scale_color_manual scale_fill_manual
 #' @examples
 #' # Read the example dataset
-#' exp <- readRDS(system.file("data.RDS", package = "mzQuality2"))
+#' exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
 #'
 #' # Create scatterplot with Relative Standard Deviation values
 #' rsdPlot(exp, number = 10)
@@ -193,7 +195,6 @@ rsdPlot <- function(exp, assay = "ratio_corrected",
         as.integer(number)
     ), ]
     df <- do.call(cbind, lapply(unique(exp$batch), function(x) {
-
         rsdqc(exp[, exp$type == qc & exp$batch == x], assay)
     }))
 
@@ -255,36 +256,35 @@ getCompoundPlotLabels <- function(exp) {
 #' @export
 #' @examples
 #' # Read the example dataset
-#' exp <- readRDS(system.file("data.RDS", package = "mzQuality2"))
+#' exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
 #'
 #' # Create Batch Assay Plot
 #' batchAssayPlot(exp)
-batchAssayPlot <- function(exp, assay = 1, compound = 1){
-  if (!validateExperiment(exp)) {
-    stop("Invalid experiment")
-  }
-  exp <- exp[compound, ]
+batchAssayPlot <- function(exp, assay = 1, compound = 1) {
+    if (!validateExperiment(exp)) {
+        stop("Invalid experiment")
+    }
+    exp <- exp[compound, ]
 
-  df <- reshape2::melt(assay(exp, assay))
-  df <- df[order(df$Var2, df$Var1), ]
+    df <- reshape2::melt(assay(exp, assay))
+    df <- df[order(df$Var2, df$Var1), ]
 
-  labels <- paste(as.data.frame(colData(exp)), collapse = "\n")
-  df$text <- sprintf("%s\nValue: %s", labels, round(df$value, 4))
+    labels <- paste(as.data.frame(colData(exp)), collapse = "\n")
+    df$text <- sprintf("%s\nValue: %s", labels, round(df$value, 4))
 
-  df$batch <- as.factor(exp$batch)
+    df$batch <- as.factor(exp$batch)
 
-  ggplot(df, aes(
-    x = .data$batch, y = .data$value,
-    fill = .data$batch, text = .data$text
-  )) +
-    geom_boxplot() +
-    geom_point() +
-    theme_bw() +
-    theme(axis.text.x = element_text(
-      angle = 90,
-      hjust = 1
-    ), legend.position = "bottom")
-
+    ggplot(df, aes(
+        x = .data$batch, y = .data$value,
+        fill = .data$batch, text = .data$text
+    )) +
+        geom_boxplot() +
+        geom_point() +
+        theme_bw() +
+        theme(axis.text.x = element_text(
+            angle = 90,
+            hjust = 1
+        ), legend.position = "bottom")
 }
 
 #' @title Plot the batch correction factors
@@ -300,7 +300,7 @@ batchAssayPlot <- function(exp, assay = 1, compound = 1){
 #' @export
 #' @examples
 #' # Read the example dataset
-#' exp <- readRDS(system.file("data.RDS", package = "mzQuality2"))
+#' exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
 #'
 #' # Create boxplot with batch-correction values
 #' batchCorrectionPlot(exp)

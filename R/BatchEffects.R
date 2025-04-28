@@ -3,17 +3,17 @@
 #' @importFrom matrixStats rowMedians
 #' @returns SummarizedExperiment with batch-effect corrected ratios in the
 #' assay slot with name "ratio Corrected.
+#' @export
 #' @examples
 #' # Read the example dataset
-#' exp <- readRDS(system.file("data.RDS", package = "mzQuality2"))
+#' exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
 #'
 #' # Add batch correction assays
 #' exp <- addBatchCorrectionAssay(exp)
 #'
 #' # Show results of the assay
 #' assay(exp, "ratio_corrected")
-addBatchCorrectionAssay <- function(exp, assayName = "ratio", saveAssay = 'ratio_corrected', qc = metadata(exp)$QC, removeOutliers = TRUE) {
-
+addBatchCorrectionAssay <- function(exp, assayName = "ratio", saveAssay = "ratio_corrected", qc = metadata(exp)$QC, removeOutliers = TRUE) {
     # check if the experiment is valid
     if (!validateExperiment(exp)) {
         stop("Invalid experiment")
@@ -25,7 +25,7 @@ addBatchCorrectionAssay <- function(exp, assayName = "ratio", saveAssay = 'ratio
     }
 
 
-    if (qc %in% exp$type & "batch" %in% colnames(colData(exp))){
+    if (qc %in% exp$type & "batch" %in% colnames(colData(exp))) {
         # subset the experiment with only QCs
         qcExp <- exp[, exp$type == qc]
 
@@ -35,12 +35,10 @@ addBatchCorrectionAssay <- function(exp, assayName = "ratio", saveAssay = 'ratio
         # For each batch, calculate the correction factor and multiply the
         # ratio to obtain the ratio Corrected factors
         df <- do.call(cbind, lapply(unique(exp$batch), function(batch) {
-
             correction_factor <- 1
 
             # Check if the batch is present in the QC-subsetted experiment
             if (batch %in% qcExp$batch) {
-
                 # Subset the QC experiment for the current batch
                 qcBatchExp <- qcExp[, qcExp$batch == batch]
 
@@ -87,19 +85,19 @@ addBatchCorrectionAssay <- function(exp, assayName = "ratio", saveAssay = 'ratio
 #' @param qcType
 #' @export
 addWithinBatchCorrectionAssay <- function(exp, assay = "ratio", saveAssay = "ratio_corrected",
-                                         qcType = metadata(exp)$QC, removeOutliers = TRUE) {
-
+                                          qcType = metadata(exp)$QC, removeOutliers = TRUE) {
     x <- lapply(unique(exp$batch), function(j) {
-
         x <- exp[, exp$batch == j]
         qcs <- x[, x$type == qcType]
         vals <- assay(qcs, assay)
 
+
         orderMatrix <- matrix(
-            data = rep(qcs$order, nrow(vals)),
+            data = rep(x$order[x$type == qcType], nrow(vals)),
             ncol = ncol(qcs),
             byrow = TRUE
         )
+
 
         slope <- rowWiseSlope(orderMatrix, vals)
         int <- rowWiseIntercept(orderMatrix, y = vals, slope = slope)
@@ -118,9 +116,8 @@ addWithinBatchCorrectionAssay <- function(exp, assay = "ratio", saveAssay = "rat
         mostlyGood <- colSums(outliers) / nrow(outliers) < 0.7
 
         if (removeOutliers) {
-
             # only remove values from the first and last column if they are outliers
-            startOutliers <- outliers[,1]
+            startOutliers <- outliers[, 1]
 
             N <- ncol(outliers)
             endOutliers <- outliers[, N]
@@ -175,7 +172,6 @@ addWithinBatchCorrectionAssay <- function(exp, assay = "ratio", saveAssay = "rat
     m[m < 0] <- NA
 
     if (removeOutliers) {
-
         aliqs <- as.data.frame(colData(exp)) %>%
             mutate(aliquot = colnames(exp)) %>%
             arrange(.data$injection_time) %>%
@@ -183,11 +179,11 @@ addWithinBatchCorrectionAssay <- function(exp, assay = "ratio", saveAssay = "rat
             group_by(.data$batch)
 
         front <- aliqs %>%
-            filter(row_number()==1) %>%
+            filter(row_number() == 1) %>%
             pull(.data$aliquot)
 
         back <- aliqs %>%
-            filter(row_number()==n()) %>%
+            filter(row_number() == n()) %>%
             pull(.data$aliquot)
 
         m[, front][which(outlierMatrix[, front])] <- NA
@@ -212,7 +208,7 @@ addWithinBatchCorrectionAssay <- function(exp, assay = "ratio", saveAssay = "rat
 #' @export
 #' @examples
 #' # Read the example dataset
-#' exp <- readRDS(system.file("data.RDS", package = "mzQuality2"))
+#' exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
 #'
 #' # Add batch correctied assay and batch-corrected RSDQCs
 #' exp <- addBatchCorrection(exp)
@@ -224,7 +220,6 @@ addWithinBatchCorrectionAssay <- function(exp, assay = "ratio", saveAssay = "rat
 #' rowData(exp)$rsdqcCorrected
 addBatchCorrection <- function(exp, assay = "ratio", qcType = metadata(exp)$QC,
                                removeOutliers = TRUE, useWithinBatch = TRUE) {
-
     # Validate if the experiment is correct
     if (!validateExperiment(exp)) {
         stop("Invalid experiment")
@@ -232,9 +227,9 @@ addBatchCorrection <- function(exp, assay = "ratio", qcType = metadata(exp)$QC,
 
     rowData(exp)$rsdqc <- rsdqc(exp, assay = assay, type = qcType)
 
-    correctedAssay <- glue::glue("{assay}_corrected", assay = assay)
-    if (useWithinBatch) {
 
+    correctedAssay <- sprintf("%s_corrected", assay)
+    if (useWithinBatch) {
         exp <- addWithinBatchCorrectionAssay(
             exp = exp,
             assay = assay,
@@ -251,4 +246,3 @@ addBatchCorrection <- function(exp, assay = "ratio", qcType = metadata(exp)$QC,
     # Return the updated experiment
     return(exp)
 }
-

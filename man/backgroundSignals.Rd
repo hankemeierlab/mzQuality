@@ -4,7 +4,7 @@
 \alias{backgroundSignals}
 \title{Calculate background signals in compounds}
 \usage{
-backgroundSignals(exp, type = "BLANK")
+backgroundSignals(exp, type = "BLANK", NaAsZero = FALSE)
 }
 \arguments{
 \item{exp}{SummarizedExperiment Object}
@@ -25,7 +25,7 @@ signal-to-noise (SNR) ratio. Consider removing compounds with a poor SNR.
 }
 \examples{
 # Read the example dataset
-exp <- readRDS(system.file("data.RDS", package = "mzQuality2"))
+exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
 
 # Perform the calculation
 backgroundSignals(exp)
