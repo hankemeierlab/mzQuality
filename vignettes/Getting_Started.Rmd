@@ -1,0 +1,126 @@
+---
+title: "Getting Started"
+author: "Pascal Maas"
+date: "`r Sys.Date()`"
+output: html_document
+vignette: >
+  %\VignetteIndexEntry{Getting Started}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+<style type="text/css">
+div.main-container {
+  max-width: 70vw !important;
+}
+</style>
+
+```{r setup, include=FALSE, message=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(mzQuality)
+```
+
+## Reading data
+
+mzQuality requires a specific format for the input data. This section will explain how to prepare your data for analysis. 
+The data should be in a tab-delimited format with the following columns:
+
+- `aliquot`: The unique identifier for each sample.
+- `compound`: The name of the compound being measured.
+- `area`: The area under the curve for the compound.
+- `type`: The type of sample (e.g., control, test).
+- `injection_time`: The time at which the sample was injected.
+- `batch`: The batch number for the sample.
+
+
+Other columns are optional and will be matched to either aliquot, compound, or both. There are two functions that help you import your data into mzQuality. To read your data, you can use the `readData` function. This function will read in your data and check for any missing or incorrect columns. The `buildExperiment` function will then take the data and create an experiment object that can be used for analysis.
+
+
+```{r loadingData, echo=FALSE, message=FALSE}
+# Example data
+file <- system.file("example.tsv", package = "mzQuality")
+knitr::kable(head(arrow::read_delim_arrow(file, delim = "\t")))
+```
+
+
+```{r buildingExperiment, echo=TRUE}
+file <- system.file("data.RDS", package = "mzQuality")
+experiment <- readRDS(file)
+```
+
+## Analysis
+
+Once you have your data in the correct format, you can perform the analysis. The `doAnalysis` function will take the experiment object and perform the analysis. This function has several parameters that can be adjusted to customize the analysis. The following steps are performed in the analysis:
+
+1. **Calculate Ratios**: This step calculates the ratios of the compounds in the samples. The `calculateRatio` function takes several parameters, including `removeOutliers`, `useWithinBatch`, and `effectNaAsZero`. These parameters control how outliers are handled, whether to use within-batch corrections, and how to handle NaN values.
+
+2. **Batch Correction**: The `addBatchCorrection` function applies batch correction to the data. This step is important for removing any batch effects that may be present in the data. The `removeOutliers` and `useWithinBatch` parameters control how outliers are handled and whether to use within-batch corrections.
+
+3. **Background Signals**: The `backgroundSignals` function removes background signals from the data. The `NaAsZero` parameter controls how NaN values are handled.
+
+4. **Matrix Effect**: The `matrixEffect` function checks for matrix effects in the data. This step is important for ensuring that the data is accurate and reliable.
+
+5. **Quality Control**: The `ratioQcSample` function performs quality control on the ratios. This step is important for ensuring that the data is accurate and reliable.
+
+6. **Type Presence**: The `typePresence` function checks for the presence of different types of samples in the data. This step is important for ensuring that the data is accurate and reliable.
+
+7. **Median Sample Area**: The `medianSampleArea` function calculates the median sample area for each compound. This step is important for ensuring that the data is accurate and reliable.
+
+8. **Suggested Internal Standards**: The `suggestedInternalStandards` function suggests internal standards for the data. This step is important for ensuring that the data is accurate and reliable.
+
+9. **Concentration Calculation**: If the data contains concentration information, the `calculateConcentrations` function calculates the concentrations of the compounds in the samples. The `concentrationType` parameter controls how concentrations are calculated.
+
+10. **Batch Correction for Concentration**: The `addBatchCorrectionAssay` function applies batch correction to the concentration data. This step is important for removing any batch effects that may be present in the data.
+
+11. **Carry Over Effect**: The `carryOverEffect` function checks for carry over effects in the data. This step is important for ensuring that the data is accurate and reliable.
+
+12. **Blank Limits**: The `blankLimits` function checks for blank limits in the data. This step is important for ensuring that the data is accurate and reliable.
+
+```{r analysis, echo=FALSE, eval = FALSE}
+experiment <- calculateRatio(experiment) %>%
+    addBatchCorrection(removeOutliers = removeOutliers, useWithinBatch = useWithinBatch) %>%
+    backgroundSignals(NaAsZero = effectNaAsZero) %>%
+    matrixEffect() %>%
+    ratioQcSample() %>%
+    typePresence() %>%
+    medianSampleArea() %>%
+    suggestedInternalStandards(
+        removeOutliers = removeOutliers,
+        useWithinBatch = useWithinBatch
+    )
+
+
+if ("concentration" %in% assayNames(experiment)) {
+    experiment <- experiment %>%
+        calculateConcentrations(type = concentrationType) %>%
+        addBatchCorrectionAssay(assay = "concentration") %>%
+        carryOverEffect() %>%
+        blankLimits()
+}
+```
+
+All these steps have been combined into the `doAnalysis` function for convenience. The `doAnalysis` function takes several parameters that control how the analysis is performed. The following parameters are available:
+```{r analysisPipeline, echo=TRUE}
+# Combine steps into a single wrapper function
+experiment <- doAnalysis(experiment)
+```
+
+Explain each step, how it's affected by the parameters, what the output is, how to interpret it
+
+## Plotting
+
+Explain the different plots, how to interpret them, what the parameters are, how to change them
+
+## Exporting
+
+Explain how to export the results, what formats are available, how to customize the output
+
+## Example
+
+Full example from start to finish
+
+## SessionInfo
+
+```{r}
+sessionInfo()
+```

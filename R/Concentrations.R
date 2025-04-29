@@ -44,14 +44,16 @@ calculateConcentrations <- function(exp, byBatch = TRUE, saveAssay = "concentrat
         x <- list(batchConcentrations(exp, batches, ...))
     }
 
+
     r2Matrix <- do.call(cbind, lapply(x, `[[`, "R2"))
     concentrationMatrix <- do.call(cbind, lapply(x, `[[`, "Predicted"))
-    residualMatrix <- do.call(cbind, lapply(x, `[[`, "StudentResiduals"))
+    residualMatrix <- do.call(cbind, lapply(x, `[[`, "Residuals"))
     outlierMatrix <- do.call(cbind, lapply(x, `[[`, "Outliers"))
     linearRanges <- do.call(cbind, lapply(x, `[[`, "linearRanges"))
     calRatios <- do.call(cbind, lapply(x, `[[`, "calRatios"))
 
-    reportableCompoundsPerBatch <- rowData(exp)$rsdqcCorrected <= 30 &
+    reportableCompoundsPerBatch <-
+        rowData(exp)$rsdqcCorrected <= 30 &
         r2Matrix >= 0.95 &
         linearRanges >= 0.9
 
@@ -64,7 +66,7 @@ calculateConcentrations <- function(exp, byBatch = TRUE, saveAssay = "concentrat
 
 
     rowData(exp)$concentrationR2 <- r2Matrix
-    rowData(exp)$studentizedResiduals <- residualMatrix
+    rowData(exp)$concentrationResiduals <- residualMatrix
     rowData(exp)$concentrationOutliers <- outlierMatrix
     rowData(exp)$linearRanges <- linearRanges
     rowData(exp)$calRatios <- calRatios
@@ -95,6 +97,58 @@ getWeights <- function(yValues) {
     return(1 / (values + yValues^2))
 }
 
+
+#' @title Robust Linear Model with Outlier Detection
+#' @description Fits a row-wise linear model between x and y, with options
+#'   for intercept handling, outlier detection using studentized residuals,
+#'   and reweighting.
+#' @details This function calculates slope and intercept row-wise and
+#'   optionally removes outliers from the first and last samples before
+#'   refitting. Studentized residuals greater than 2 are considered outliers.
+#' @returns A list with components:
+#'   \item{slope}{Numeric vector of slopes for each row.}
+#'   \item{intercept}{Numeric vector of intercepts for each row.}
+#'   \item{residuals}{Matrix of residuals for each sample.}
+#'   \item{outliers}{Logical matrix indicating outliers.}
+#' @param xValues A numeric matrix of x-values (e.g., injections or time).
+#' @param yValues A numeric matrix of y-values (e.g., intensity values).
+#' @param weights A numeric matrix of weights. Used only if \code{useWeights}
+#'   is TRUE.
+#' @param forceOrigin Logical. If TRUE, fits the model through the origin.
+#' @param subtractIntercept Logical. If TRUE, subtracts intercept from x-values.
+#' @param checkForOutliers Logical. If TRUE, detects and removes outliers.
+#' @param useWeights Logical. If TRUE, computes and applies weights to x-values.
+#' @export
+modelWithOutliers <- function(xValues, yValues, weights,
+                              forceOrigin = FALSE, subtractIntercept = FALSE,
+                              checkForOutliers = TRUE, useWeights = FALSE) {
+
+    slope <- rowWiseSlope(xValues, yValues)
+    intercept <- rowWiseIntercept(xValues, yValues, slope)
+
+    if (subtractIntercept) xValues <- xValues - intercept
+
+    residuals <- yValues - (intercept * !forceOrigin) - slope * xValues * weights
+    studentResiduals <- studentResiduals(residuals, rowSums(!is.na(yValues)))
+    outliers <- abs(studentResiduals) > 2
+
+    if (!checkForOutliers) {
+        return(list(slope = slope, intercept = intercept,
+                    residuals = residuals, outliers = outliers))
+    }
+
+    N <- ncol(outliers)
+    yValues[, 1][outliers[, 1]] <- NA
+    yValues[, N][outliers[, N]] <- NA
+    xValues[, 1][outliers[, 1]] <- NA
+    xValues[, N][outliers[, N]] <- NA
+
+    if (useWeights) weights <- getWeights(xValues)
+
+    modelWithOutliers(xValues, yValues, weights, forceOrigin,
+                      subtractIntercept, FALSE, useWeights)
+}
+
 #' @title Calculate concentrations per batch
 #' @description placeholder
 #' @details placeholder
@@ -111,146 +165,54 @@ getWeights <- function(yValues) {
 #' is ignored.
 #' @param useWeights Boolean value, should weighted regression be used? Defaults
 #' to FALSE, which indicates no weights are used.
+#' @importFrom dplyr pull
+#' @importFrom matrixStats rowMins rowMaxs
 #' @export
 batchConcentrations <- function(exp, batch, assayX = "ratio",
                                 assayY = "concentration", type = "ACAL",
                                 subtractCal = FALSE, forceOrigin = FALSE,
                                 checkForOutliers = TRUE, subtractIntercept = FALSE,
                                 useWeights = FALSE) {
-    # Select the current batch data
-    batchExp <- exp[, exp$batch %in% batch]
 
-    # Within the batch, select the type to calulate the slope for
+    batchExp <- exp[, exp$batch %in% batch]
     training <- batchExp[, batchExp$type %in% type]
 
-    # Sort names so that the order will always be from lowest cal to highest
-    # training <- training[, sort(colnames(training))]
-
-
-    metadata <- colData(training) %>%
-        as.data.frame()
-
-    metadata$aliquot <- colnames(training)
-    calAliquots <- metadata %>%
-        arrange(.data$calno) %>%
-        pull(.data$aliquot)
-
+    calAliquots <- colnames(training)[order(colData(training)$calno)]
     training <- training[, calAliquots]
-
-    # Take the y-values for the given assay of the training data
     yValues <- assay(training, assayY)
-
-    # Similarly, take the x-values of the training-set
     xValues <- assay(training, assayX)
 
-    N <- ncol(xValues)
-    calRatios <- xValues[, seq(2, N, 1)] / xValues[, seq(1, N - 1, 1)]
+
+    cols <- seq_len(ncol(xValues) - 1)
+    calRatios <- xValues[, 1 + cols] / xValues[, cols]
     calRatios[!is.finite(calRatios)] <- NA
 
-    # If subtractCAL, subtract CAL0 from everything
-    # because of sorting, we can take the first column
-    if (subtractCal) {
-        xValues <- xValues - xValues[, 1]
-    }
-
-
-    weights <- matrix(1, nrow = nrow(xValues), ncol = ncol(xValues))
+    xValues <- xValues - xValues[, 1] * subtractCal
 
     if (useWeights) {
         weights <- getWeights(xValues)
+    } else {
+        weights <- matrix(1, nrow(xValues), ncol(xValues))
     }
 
+    model <- modelWithOutliers(xValues, yValues, weights, forceOrigin,
+                               subtractIntercept, checkForOutliers, useWeights)
 
-    # Calculate the slope given the x- and y-values
-    slope <- rowWiseSlope(
-        x = xValues,
-        y = yValues
-    )
-
-    # Next, Calculate the intercept given the x- and y-values and slope
-    int <- rowWiseIntercept(
-        x = xValues,
-        y = yValues,
-        slope = slope
-    )
-
-    if (subtractIntercept) {
-        xValues <- xValues - int
-    }
-
-    # Calculate the raw residuals by subtracting the intercept and slope * x-vals
-    residuals <- yValues - (int * !forceOrigin) - slope * xValues * weights
-
-    # Calculate the studentized-residuals (t-distributed error residuals)
-    studentResiduals <- studentResiduals(
-        residuals = residuals,
-        n = rowSums(!is.na(yValues))
-    )
-
-    # If the values are above 2, they are cosidered outliers (according to olsrr)
-    outliers <- abs(studentResiduals) > 2
-
-    if (checkForOutliers) {
-        # only remove values from the first and last column if they are outliers
-        startOutliers <- outliers[, 1]
-        N <- ncol(outliers)
-        endOutliers <- outliers[, N]
-
-        yValues[, 1][startOutliers] <- NA
-        yValues[, N][endOutliers] <- NA
-
-        # Repeat the same for x-values
-        xValues[, 1][startOutliers] <- NA
-        xValues[, N][endOutliers] <- NA
-
-        if (useWeights) {
-            weights <- getWeights(xValues)
-        }
-
-        # Recalculate the slope, now with added NA values for outliers
-        # These will be ignored due to na.rm = TRUE
-        slope <- rowWiseSlope(
-            x = xValues,
-            y = yValues
-        )
-
-        # Similarly for the intercept
-        int <- rowWiseIntercept(
-            x = xValues,
-            y = yValues,
-            slope = slope
-        )
-
-        # Calculate the raw residuals by subtracting the intercept and slope * x-vals
-        # residuals <- yValues - (int * !forceOrigin) - slope * xValues
-    }
-
-
-
-    # Check if values are within linear range (90% of study stamples between lowest and highest cal)
-    lowestCal <- matrixStats::rowMins(xValues, na.rm = TRUE)
-    highestCal <- matrixStats::rowMaxs(xValues, na.rm = TRUE)
+    lowestCal <- rowMins(xValues, na.rm = TRUE)
+    highestCal <- rowMaxs(xValues, na.rm = TRUE)
 
     studySamples <- assay(batchExp[, batchExp$type == "SAMPLE"], assayX)
-    linearRanges <- rowSums(studySamples > lowestCal & studySamples < highestCal, na.rm = TRUE) / rowSums(!is.na(studySamples))
+    linearRanges <- rowSums(studySamples > lowestCal & studySamples < highestCal, na.rm = TRUE) /
+        rowSums(!is.na(studySamples))
 
-    # Take all the values of the batch-assay and multiply with the slope and
-    # add the intercept to obtain the new values
-    predicted <- assay(batchExp, assayX) * slope + (int * !forceOrigin)
-
+    predicted <- assay(batchExp, assayX) * model$slope + (model$intercept * !forceOrigin)
     r2 <- rowCorrelation(xValues, yValues)
 
-    return(
-        list(
-            Predicted = predicted,
-            R2 = r2,
-            StudentResiduals = studentResiduals,
-            Outliers = outliers,
-            linearRanges = linearRanges,
-            calRatios = calRatios
-        )
+    list(Predicted = predicted, R2 = r2, Residuals = model$residuals,
+        Outliers = model$outliers, linearRanges = linearRanges, calRatios = calRatios
     )
 }
+
 
 #' @title Calculate covariance by row
 #' @description placeholder

@@ -3,12 +3,11 @@ suppressPackageStartupMessages(library(mzQuality))
 # Read the example dataset
 exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
 
-#exp$outlier <- NULL
+# exp$outlier <- NULL
 
 
 
 test_that("Outliers are detected correctly", {
-
     # For each assay, there should be two outliers
     assays <- c("ratio", "area", "ratio_corrected")
     a <- assays[2]

@@ -131,6 +131,7 @@ validateCalibration <- function(exp, df) {
 #' @param batch Column in the colData that represents the batch name / number.
 #' Defaults to 'Batch'
 #' @param qcType Name of the QC sample type used. Defaults to 'SQC'
+#' @importFrom SummarizedExperiment colData<-
 #' @export
 #' @examples
 #' # Read example dataset
@@ -151,7 +152,7 @@ convertExperiment <- function(
     batch = "batch", qcType = "SQC") {
     if (requireNamespace("methods", quietly = TRUE)) {
         if (!methods::is(exp, "SummarizedExperiment")) {
-            logwarn("Object is not of class 'SummarizedExperiment'")
+            message("Object is not of class 'SummarizedExperiment'")
             return(NULL)
         }
     }
@@ -198,11 +199,17 @@ convertExperiment <- function(
     colnames(x) <- cols
     colData(exp) <- x
 
-    metadata(exp) <- c(metadata(exp), list(
+    mandatory <- list(
         QC = qcType, primary = primaryAssay,
         secondary = secondaryAssay, hasIS = primaryAssay != secondaryAssay,
         Date = lubridate::now()
-    ))
-    metadata(exp) <- metadata(exp)[duplicated(names(metadata(exp)))]
+    )
+
+    toAdd <- setdiff(names(mandatory), names(metadata(exp)))
+    if (length(toAdd) > 0) {
+        metadata(exp)[toAdd] <- mandatory[toAdd]
+    }
+
+
     finishExperiment(exp)
 }

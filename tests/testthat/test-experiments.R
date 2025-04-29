@@ -12,7 +12,7 @@ concentrationsFile <- system.file("concentrations.txt", package = "mzQuality")
 
 
 test_that("A tab-delimited file can be converted into a SummarizedExperiment", {
-    combined <- buildCombined(file)
+    combined <- readData(file)
     expect_true(is(combined, "data.frame"))
 
     exp <- buildExperiment(combined)

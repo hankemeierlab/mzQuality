@@ -62,15 +62,17 @@ rsdqc <- function(exp, assay = "ratio_corrected", type = metadata(exp)$QC) {
 #' @details placeholder
 #' @param exp SummarizedExperiment object
 #' @importFrom matrixStats rowSds
+#' @export
 #' @examples
 #' # Read the example dataset
 #' exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
 #'
-#' calculateCorrectedRSDQCs2(exp)
-calculateCorrectedRSDQCs2 <- function(exp, primaryAssay = "area",
-                                      secondaryAssay = "area_is",
-                                      qcType = "SQC", returnRSDs = FALSE,
-                                      saveAssay = "ratio_corrected") {
+#' matrixRSDQCs(exp)
+matrixRSDQCs <- function(exp,
+                         primaryAssay = metadata(exp)$primary,
+                         secondaryAssay = metadata(exp)$secondary,
+                         qcType = metadata(exp)$QC) {
+
     if (metadata(exp)$hasIS) {
         comp_is <- unique(rowData(exp)$compound_is)
         df <- expand.grid(
@@ -82,104 +84,28 @@ calculateCorrectedRSDQCs2 <- function(exp, primaryAssay = "area",
 
         areas <- assay(exp, primaryAssay)[df$compound, ]
         area_is <- assay(exp, secondaryAssay)[comp_row, ]
-        ratio <- areas / area_is
+        ratios <- areas / area_is
     } else {
         comp_is <- seq_len(nrow(exp))
-        ratio <- assay(exp, primaryAssay)
+        ratios <- assay(exp, primaryAssay)
     }
 
-
-
-
-    dims <- dimnames(ratio)
-
-    # Within Batch correction
-    withinRatio <- do.call(cbind, lapply(unique(exp$batch), function(j) {
-        idx <- exp$batch == j
-        subExp <- exp[, idx]
-
-        x <- ratio[, idx]
-
-        order <- which(subExp$type == metadata(exp)$QC)
-        vals <- x[, order]
-
-        orderMatrix <- matrix(
-            data = rep(order, nrow(vals)),
-            ncol = length(order),
-            byrow = TRUE
-        )
-        slope <- rowWiseSlope(orderMatrix, vals)
-        int <- rowWiseIntercept(orderMatrix, y = vals, slope = slope)
-        orderMatrix <- matrix(
-            data = rep(seq_len(ncol(x)), nrow(vals)),
-            ncol = ncol(x),
-            byrow = TRUE
-        )
-        vals <- orderMatrix * slope + int
-        vals
-    }))
-
-
-    m <- ratio / withinRatio
-
-    m <- do.call(cbind, lapply(unique(exp$batch), function(j) {
-        idx <- exp$batch == j
-        m[, idx] * rowMedians(ratio[, idx], na.rm = TRUE)
-    }))
-
-
-    m[!is.finite(m)] <- NA
-    m[m < 0] <- NA
-
-
-    dimnames(m) <- dims
-    ratio <- m
-
-    rm(m)
-
-
-
-    # subset the experiment with only QCs
-    qcExp <- exp[, exp$type == qcType]
-
-
-    # Between Batch -----------------------------------------------------------
-
-
-    compound_qc_ratio_median <- rowMedians(ratio[, colnames(qcExp)], na.rm = TRUE)
-
-    # For each batch, calculate the correction factor and multiply the
-    # Ratio to obtain the Ratio Corrected factors
-    ratio <- do.call(cbind, lapply(unique(exp$batch), function(batch) {
-        correction_factor <- 1
-
-        # Check if the batch is present in the QC-subsetted experiment
-        if (batch %in% qcExp$batch) {
-            # Subset the QC experiment for the current batch
-            qcBatchExp <- qcExp[, qcExp$batch == batch]
-
-
-            # Calculate the median Ratio for this batch
-            med_ratio_qc <- rowMedians(ratio[, colnames(qcBatchExp)], na.rm = TRUE)
-
-            # Calculate the QC correction factor by dividing the overall median
-            # by this batch median
-            correction_factor <- compound_qc_ratio_median / med_ratio_qc
-        }
-        # Multiply the entire batch with the calculated correction factors
-        ratio[, colnames(exp[, exp$batch == batch])] * correction_factor
-    }))[, colnames(exp)]
-
+    qcs <- exp$type == qcType
+    ratios <- betweenBatchCorrection(
+        ratio = ratios,
+        qcAliquots = colnames(exp)[qcs],
+        qcBatches = exp$batch[qcs],
+        aliquots = colnames(exp),
+        batches = exp$batch
+    )
 
     # Ensure that the right column names are used, in the right order
-    qc_ratio <- ratio[, colnames(exp[, exp$type == qcType]), drop = FALSE]
+    qc_ratio <- ratios[, colnames(exp[, exp$type == qcType]), drop = FALSE]
     sds <- rowSds(qc_ratio, na.rm = TRUE)
     means <- rowMeans(qc_ratio, na.rm = TRUE)
     rsd <- sds / means * 100
 
-
     res <- split(rsd, ceiling(seq_along(rsd) / length(comp_is)))
-
     m <- do.call(cbind, res)
     dimnames(m) <- list(comp_is, rownames(exp))
     return(m)

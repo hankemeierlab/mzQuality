@@ -1,8 +1,54 @@
-#' @title Calculate the batch effection corrections
-#' @param exp SummarizedExperiment Object
+betweenBatchCorrection <- function(ratio, qcAliquots, qcBatches, aliquots, batches) {
+
+    compound_qc_ratio_median <- rowMedians(ratio[, qcAliquots], na.rm = TRUE)
+
+    # For each batch, calculate the correction factor and multiply the
+    # Ratio to obtain the Ratio Corrected factors
+    for (batch in unique(batches)) {
+        correction_factor <- 1
+
+        # Check if the batch is present in the QC-subsetted experiment
+        if (batch %in% qcBatches) {
+            # Subset the QC experiment for the current batch
+            qcAliqs <- qcAliquots[qcBatches == batch]
+
+            # Calculate the median Ratio for this batch
+            med_ratio_qc <- rowMedians(ratio[, qcAliqs], na.rm = TRUE)
+
+            # Calculate the QC correction factor by dividing the overall median
+            # by this batch median
+            correction_factor <- compound_qc_ratio_median / med_ratio_qc
+        }
+
+        # Multiply the entire batch with the calculated correction factors
+        aliqs <- aliquots[batches == batch]
+        ratio[, aliqs] <- ratio[, aliqs] * correction_factor
+    }
+
+    return(ratio)
+}
+
+#' @title Batch Effect Correction
+#' @description Applies batch-wise correction to normalize ratios across
+#'   multiple batches using QC samples.
+#' @details This function uses QC sample medians per batch and across all
+#'   batches to calculate correction factors. These are used to normalize
+#'   the specified assay across all batches, adjusting for batch effects.
+#'   Optionally, outliers identified via `exp$use` can be removed before
+#'   calculating corrections.
+#' @param exp A `SummarizedExperiment` object with metabolomics data,
+#'   including batch and type metadata.
+#' @param assayName Character string indicating which assay contains the
+#'   raw ratio values (default is "ratio").
+#' @param saveAssay Character string indicating where to store corrected
+#'   results (default is "ratio_corrected").
+#' @param qc Character string denoting the QC sample type. Defaults to
+#'   `metadata(exp)$QC`.
+#' @param removeOutliers Logical flag to exclude outlier samples using the
+#'   `use` column in `colData(exp)` (default is TRUE).
+#' @returns A `SummarizedExperiment` object with batch-corrected ratios in
+#'   a new assay slot.
 #' @importFrom matrixStats rowMedians
-#' @returns SummarizedExperiment with batch-effect corrected ratios in the
-#' assay slot with name "ratio Corrected.
 #' @export
 #' @examples
 #' # Read the example dataset
@@ -24,50 +70,18 @@ addBatchCorrectionAssay <- function(exp, assayName = "ratio", saveAssay = "ratio
         ratios[, !exp$use] <- NA
     }
 
+    qcs <- exp$type == qc
+    ratios <- betweenBatchCorrection(
+        ratio = ratios,
+        qcAliquots = colnames(exp)[qcs],
+        qcBatches = exp$batch[qcs],
+        aliquots = colnames(exp),
+        batches = exp$batch
+    )
 
-    if (qc %in% exp$type & "batch" %in% colnames(colData(exp))) {
-        # subset the experiment with only QCs
-        qcExp <- exp[, exp$type == qc]
-
-        # Calculate the median ratio per compound, across all batches
-        compound_qc_ratio_median <- rowMedians(ratios[, colnames(qcExp), drop = FALSE], na.rm = TRUE)
-
-        # For each batch, calculate the correction factor and multiply the
-        # ratio to obtain the ratio Corrected factors
-        df <- do.call(cbind, lapply(unique(exp$batch), function(batch) {
-            correction_factor <- 1
-
-            # Check if the batch is present in the QC-subsetted experiment
-            if (batch %in% qcExp$batch) {
-                # Subset the QC experiment for the current batch
-                qcBatchExp <- qcExp[, qcExp$batch == batch]
-
-                # Calculate the median ratio for this batch
-                med_ratio_qc <- rowMedians(ratios[, colnames(qcBatchExp), drop = FALSE], na.rm = TRUE)
-
-                # Calculate the QC correction factor by dividing the overall median
-                # by this batch median
-                correction_factor <- compound_qc_ratio_median / med_ratio_qc
-            }
-            # Multiply the entire batch with the calculated correction factors
-            assay(exp[, exp$batch == batch], assayName) * correction_factor
-        }))
-
-        # Ensure that the right column names are used, in the right order
-        df <- df[, colnames(exp), drop = FALSE]
-
-        # Ensure that the dimensions of the data.frame are equal to the experiments
-        dimnames(df) <- dimnames(exp)
-
-        # Set the ratio corrected values in the assay
-        assay(exp, saveAssay) <- df
-    }
-
-
-    m <- assay(exp, saveAssay)
-    m[!is.finite(m)] <- NA
-    m[, !exp$use] <- NA
-    assay(exp, saveAssay) <- m
+    ratios[!is.finite(ratios)] <- NA
+    ratios[, !exp$use] <- NA
+    assay(exp, saveAssay) <- ratios
 
     # Return the experiment
     return(exp)
@@ -75,14 +89,32 @@ addBatchCorrectionAssay <- function(exp, assayName = "ratio", saveAssay = "ratio
 
 
 
-#' @title Within-Batch correction
-#' @description placeholder
-#' @details placeholder
-#' @returns placeholder
-#' @param exp
-#' @param assay
-#' @param saveAssay
-#' @param qcType
+#' @title Within-Batch Signal Drift Correction
+#' @description Applies within-batch signal correction to assay data based
+#'   on QC sample drift using a linear model per feature.
+#' @details This function corrects for within-batch signal drift in
+#'   metabolomics data by fitting a linear model to quality control (QC)
+#'   samples across the injection order within each batch. Outliers in the
+#'   QC measurements at the beginning and end of each batch can optionally
+#'   be removed before model fitting. The correction is applied to the
+#'   target assay by dividing the original intensities by the predicted
+#'   values and rescaling using the median QC intensities.
+#' @returns A `SummarizedExperiment` object with a new assay containing
+#'   the drift-corrected values.
+#'
+#' @param exp A `SummarizedExperiment` object containing metabolomics data
+#'   with `colData` columns: `batch`, `order`, `type`, and `injection_time`.
+#' @param assay Character string specifying the name of the assay to correct
+#'   (default is "ratio").
+#' @param saveAssay Character string specifying the name of the new assay to
+#'   store corrected values (default is "ratio_corrected").
+#' @param qcType Character string specifying the sample type used for QC
+#'   (usually "SQC" or "QC"). Defaults to the value stored in
+#'   `metadata(exp)$QC`.
+#' @param removeOutliers Logical indicating whether to remove extreme QC
+#'   outliers at the batch front and back before correction (default is TRUE).
+#'
+#' @importFrom dplyr group_by row_number pull n mutate arrange filter
 #' @export
 addWithinBatchCorrectionAssay <- function(exp, assay = "ratio", saveAssay = "ratio_corrected",
                                           qcType = metadata(exp)$QC, removeOutliers = TRUE) {
@@ -202,6 +234,10 @@ addWithinBatchCorrectionAssay <- function(exp, assay = "ratio", saveAssay = "rat
 #' can be calculated. These are multiplied by the original A/IS ratio to obtain
 #' batch-corrected ratios. This usually results in improved results.
 #' @param exp SummarizedExperiment Object
+#' @param assay Assay to be used for batch correction
+#' @param qcType Type of QC to be used for batch correction
+#' @param removeOutliers Remove outliers from the batch correction
+#' @param useWithinBatch Use within batch correction
 #' @importFrom matrixStats rowSds
 #' @returns SummarizedExperiment with batch-effect corrected RSDQCs in the
 #' rowData slot

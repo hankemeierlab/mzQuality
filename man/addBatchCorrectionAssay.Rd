@@ -2,7 +2,7 @@
 % Please edit documentation in R/BatchEffects.R
 \name{addBatchCorrectionAssay}
 \alias{addBatchCorrectionAssay}
-\title{Calculate the batch effection corrections}
+\title{Batch Effect Correction}
 \usage{
 addBatchCorrectionAssay(
   exp,
@@ -13,14 +13,35 @@ addBatchCorrectionAssay(
 )
 }
 \arguments{
-\item{exp}{SummarizedExperiment Object}
+\item{exp}{A `SummarizedExperiment` object with metabolomics data,
+including batch and type metadata.}
+
+\item{assayName}{Character string indicating which assay contains the
+raw ratio values (default is "ratio").}
+
+\item{saveAssay}{Character string indicating where to store corrected
+results (default is "ratio_corrected").}
+
+\item{qc}{Character string denoting the QC sample type. Defaults to
+`metadata(exp)$QC`.}
+
+\item{removeOutliers}{Logical flag to exclude outlier samples using the
+`use` column in `colData(exp)` (default is TRUE).}
 }
 \value{
-SummarizedExperiment with batch-effect corrected ratios in the
-assay slot with name "ratio Corrected.
+A `SummarizedExperiment` object with batch-corrected ratios in
+  a new assay slot.
 }
 \description{
-Calculate the batch effection corrections
+Applies batch-wise correction to normalize ratios across
+  multiple batches using QC samples.
+}
+\details{
+This function uses QC sample medians per batch and across all
+  batches to calculate correction factors. These are used to normalize
+  the specified assay across all batches, adjusting for batch effects.
+  Optionally, outliers identified via `exp$use` can be removed before
+  calculating corrections.
 }
 \examples{
 # Read the example dataset

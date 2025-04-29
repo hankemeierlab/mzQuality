@@ -321,7 +321,7 @@ create_report <- function(path, parameters, template, output) {
         intermediates_dir = intermed,
         clean = TRUE
     )
-    system(sprintf("rm -r %s", intermed))
+    system2("rm", args = c("-r", intermed))
 }
 
 #' @title Export rowData, colData, and assays
@@ -405,10 +405,13 @@ zipFolder <- function(file, output) {
 #' @description
 #' @details
 #' @returns
+#' @importFrom dplyr mutate_if
+#' @importFrom openxlsx write.xlsx
+#' @importFrom SummarizedExperiment assays
 #' @export
-writeNewExport <- function(outFile, exp, types = exp$type,
-                           backgroundPercent = 40, cautionRSD = 15, nonReportableRSD = 30,
-                           digits = 3, selectedOnly = FALSE) {
+writeExport <- function(outFile, exp, types = exp$type,
+                        backgroundPercent = 40, cautionRSD = 15, nonReportableRSD = 30,
+                        digits = 3, selectedOnly = FALSE) {
     overallSummary <- data.frame(
         Info = c(
             ncol(exp), nrow(exp), length(unique(rowData(exp)$compound_is))
@@ -582,7 +585,7 @@ downloadZip <- function(project, exp,
     message("Exported Original File")
 
     file <- "FinalReport_All_v2.xlsx"
-    writeNewExport(
+    writeExport(
         file.path(reports, file),
         exp = exp,
         backgroundPercent = backgroundPercent,
@@ -591,7 +594,7 @@ downloadZip <- function(project, exp,
     )
 
     file <- "FinalReport_Sample_SelectedComps_v2.xlsx"
-    writeNewExport(
+    writeExport(
         file.path(reports, file),
         exp = exp[rowData(exp)$use, ],
         types = "SAMPLE",

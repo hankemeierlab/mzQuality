@@ -29,16 +29,7 @@ are stored in the rowData of the experiment.
 }
 \examples{
 # Read example dataset
-data <- read.delim(system.file(package = "mzQuality", "dataset.txt"))
-
-# Construct experiment
-exp <- buildExperiment(
-    data,
-    rowIndex = "Compound",
-    colIndex = "Aliquot",
-    primaryAssay = "Area",
-    secondaryAssay = "Area_is"
-)
+exp <- readRDS(system.file(package = "mzQuality", "data.RDS"))
 
 # Add concentrations
 concentrations <- read.delim(system.file(
@@ -48,7 +39,7 @@ concentrations <- read.delim(system.file(
 exp <- addConcentrations(exp, concentrations)
 
 # Perform analysis
-exp <- doAnalysis(exp)
+exp <- doAnalysis(exp, doAll = TRUE)
 
 # Model concentrations
 exp <- calculateConcentrations(exp)

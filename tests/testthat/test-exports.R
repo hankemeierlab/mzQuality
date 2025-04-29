@@ -16,10 +16,10 @@ test_that("mzQuality export can be made", {
     file.remove(file)
 })
 
-test_that("New Export file can be made", {
+test_that("Export file can be made", {
     file <- tempfile()
     exp <- doAnalysis(exp, doAll = TRUE)
-    writeNewExport(file, exp,
+    writeExport(file, exp,
         types = exp$type,
         backgroundPercent = 40, cautionRSD = 15, nonReportableRSD = 30,
         digits = 3, selectedOnly = FALSE

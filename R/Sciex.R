@@ -173,7 +173,7 @@ guessDates <- function(datetimes) {
 #' @noRd
 fixDates <- function(list_of_batches) {
     date_vec <- unlist(lapply(list_of_batches, function(df) {
-        unique(df$datetime)
+        as.character(unique(df$datetime))
     }))
     date_format <- guessDates(date_vec)
     lapply(list_of_batches, function(x) fixHMS(x, date_format))

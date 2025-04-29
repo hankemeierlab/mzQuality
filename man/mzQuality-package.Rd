@@ -24,6 +24,21 @@ Useful links:
 \author{
 \strong{Maintainer}: Pascal Maas \email{p.maas@lacdr.leidenuniv.nl} (\href{https://orcid.org/0000-0001-9379-6041}{ORCID})
 
+Authors:
+\itemize{
+  \item Alida Kindt \email{a.s.d.kindt@lacdr.leidenuniv.nl} (\href{https://orcid.org/0000-0001-6551-6030}{ORCID})
+  \item Agnieszka Wegrzyn (\href{https://orcid.org/0000-0003-4872-8626}{ORCID})
+}
+
+Other contributors:
+\itemize{
+  \item Marielle van der Peet \email{m.p.van.der.peet@lacdr.leidenuniv.nl} (\href{https://orcid.org/0000-0001-8155-1485}{ORCID}) [contributor]
+  \item Lieke Lamont \email{l.lamont@lacdr.leidenuniv.nl} (\href{https://orcid.org/0000-0002-2779-124X}{ORCID}) [contributor]
+  \item Recon4IMD [funder]
+  \item NGID [funder]
+  \item EXPOSOME-NL [funder]
+}
+
 }
 \keyword{BatchEffect,}
 \keyword{MassSpectrometry,}

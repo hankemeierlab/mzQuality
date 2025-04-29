@@ -2,7 +2,7 @@
 % Please edit documentation in R/BatchEffects.R
 \name{addWithinBatchCorrectionAssay}
 \alias{addWithinBatchCorrectionAssay}
-\title{Within-Batch correction}
+\title{Within-Batch Signal Drift Correction}
 \usage{
 addWithinBatchCorrectionAssay(
   exp,
@@ -12,12 +12,37 @@ addWithinBatchCorrectionAssay(
   removeOutliers = TRUE
 )
 }
+\arguments{
+\item{exp}{A `SummarizedExperiment` object containing metabolomics data
+with `colData` columns: `batch`, `order`, `type`, and `injection_time`.}
+
+\item{assay}{Character string specifying the name of the assay to correct
+(default is "ratio").}
+
+\item{saveAssay}{Character string specifying the name of the new assay to
+store corrected values (default is "ratio_corrected").}
+
+\item{qcType}{Character string specifying the sample type used for QC
+(usually "SQC" or "QC"). Defaults to the value stored in
+`metadata(exp)$QC`.}
+
+\item{removeOutliers}{Logical indicating whether to remove extreme QC
+outliers at the batch front and back before correction (default is TRUE).}
+}
 \value{
-placeholder
+A `SummarizedExperiment` object with a new assay containing
+  the drift-corrected values.
 }
 \description{
-placeholder
+Applies within-batch signal correction to assay data based
+  on QC sample drift using a linear model per feature.
 }
 \details{
-placeholder
+This function corrects for within-batch signal drift in
+  metabolomics data by fitting a linear model to quality control (QC)
+  samples across the injection order within each batch. Outliers in the
+  QC measurements at the beginning and end of each batch can optionally
+  be removed before model fitting. The correction is applied to the
+  target assay by dividing the original intensities by the predicted
+  values and rescaling using the median QC intensities.
 }

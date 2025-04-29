@@ -11,7 +11,3 @@ test_that("Internal Standards can be replaced", {
 
     expect_true(all(rowData(exp2)$suggestedIS == rowData(exp2)$compound_is))
 })
-
-test_that("calculateCorrectedRSDQCs2", {
-    calculateCorrectedRSDQCs2(exp)
-})

@@ -4,41 +4,41 @@ suppressPackageStartupMessages(library(mzQuality))
 exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
 
 test_that("pca plot can be made", {
-    plot <- suppressWarnings(pcaPlotNew(exp))
+    plot <- suppressWarnings(pcaPlot(exp))
     expect_true(is(plot, "ggplot"))
 })
 
 test_that("Violin Plot can be made", {
-    plot <- suppressWarnings(violinPlotNew(exp))
+    plot <- suppressWarnings(violinPlot(exp))
     expect_true(is(plot, "ggplot"))
 })
 
 test_that("Compound plot can be made", {
-    plot <- compoundPlotNew(exp)
+    plot <- compoundPlot(exp)
     expect_true(is(plot, "ggplot"))
 
-    plot <- compoundPlotNew(exp, assay = "area")
+    plot <- compoundPlot(exp, assay = "area")
     expect_true(is(plot, "ggplot"))
 })
 
 test_that("Plots can be facetted", {
-    plot <- compoundPlotNew(exp) %>%
+    plot <- compoundPlot(exp) %>%
         facetPlot()
     expect_true(is(plot, "ggplot"))
 })
 
 test_that("Aliquot Plot can be made", {
-    plot <- aliquotPlotNew(exp, "ratio")
+    plot <- aliquotPlot(exp, "ratio")
     expect_true(is(plot, "ggplot"))
 })
 
 test_that("Concentration Plot can be made", {
-    plot <- suppressWarnings(concentrationPlotNew(exp))
+    plot <- suppressWarnings(concentrationPlot(exp))
     expect_true(is(plot, "ggplot"))
 })
 
 test_that("Labels can be added to a PCA plot", {
-    plot <- suppressWarnings(pcaPlotNew(exp)) %>%
+    plot <- suppressWarnings(pcaPlot(exp)) %>%
         addLabels()
 
     expect_true(is(plot, "ggplot"))

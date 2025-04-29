@@ -16,10 +16,9 @@ addLinearRange <- function(exp,
                            minCalNo = 2,
                            maxCalNo = 6,
                            saveAssay = "CalRange") {
-    if (is.null(metadata(exp)$concentration)) {
+    if (is.null(calType)) {
         return(exp)
     }
-
     if (!validateExperiment(exp)) {
         stop("Invalid experiment")
     }
@@ -27,6 +26,7 @@ addLinearRange <- function(exp,
     if (!calType %in% exp$type) {
         return(exp)
     }
+
 
     # Per batch, check which compounds ratios are between the minimum and maximum
     batches <- unique(exp$batch)

@@ -63,11 +63,16 @@ identifyOutliers <- function(exp, assay = "ratio", qcType = metadata(exp)$QC) {
         stop("Invalid experiment")
     }
 
+
     if ("use" %in% colnames(colData(exp))) {
         exp$use <- colData(exp)$use
-        exp$outlier <- colData(exp)$outlier
     } else {
         exp$use <- TRUE
+    }
+
+    if ("outlier" %in% colnames(colData(exp))) {
+        exp$outlier <- colData(exp)$outlier
+    } else {
         exp$outlier <- FALSE
     }
 
@@ -101,13 +106,18 @@ identifyOutliers <- function(exp, assay = "ratio", qcType = metadata(exp)$QC) {
 
     batches <- length(unique(exp$batch))
 
+
     k <- ifelse(non_na > batches, batches, non_na - 2)
     test <- EnvStats::rosnerTest(medians, k = k, alpha = 0.05, warn = FALSE)
     outliers <- test$all.stats$Obs.Num[test$all.stats$Outlier]
 
+
     idx <- match(names(medians[outliers]), colnames(exp))
-    exp$use[idx] <- FALSE
-    exp$outlier[idx] <- TRUE
+    if (length(idx) > 0) {
+        exp$use[idx] <- FALSE
+        exp$outlier[idx] <- TRUE
+    }
+
     exp
 }
 
@@ -131,7 +141,6 @@ identifyOutliers <- function(exp, assay = "ratio", qcType = metadata(exp)$QC) {
 #' # Identify aliquot outliers and add to colData
 #' exp <- identifyOutliers(exp, assay = "Ratio")
 identifyMisInjections <- function(exp, assay = metadata(exp)$secondary, type = "SAMPLE") {
-
     identifyOutliers(
         exp = exp,
         assay = metadata(exp)$secondary,
@@ -217,15 +226,15 @@ doAnalysis <- function(exp,
     if ("concentration" %in% assayNames(exp)) {
         exp <- exp %>%
             calculateConcentrations(type = concentrationType) %>%
-            addBatchCorrectionAssay(assay = "concentration") %>%
+            addBatchCorrectionAssay(assayName = "concentration") %>%
             carryOverEffect() %>%
             blankLimits()
     }
 
     rsdThreshold <- rowData(exp)$rsdqcCorrected <= nonReportableRSD
-
     qcPresenceThreshold <- rowData(exp)[, sprintf("%sPresence", metadata(exp)$QC)] * 100 >= qcPercentage
     backgroundThreshold <- rowData(exp)$backgroundSignal * 100 <= backgroundPercentage | !is.finite(rowData(exp)$backgroundSignal)
+
     rowData(exp)$qcPresenceThreshold <- qcPresenceThreshold
 
     rowData(exp)$use <- rsdThreshold & backgroundThreshold & qcPresenceThreshold

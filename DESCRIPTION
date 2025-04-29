@@ -1,15 +1,24 @@
 Package: mzQuality
-Title: What the Package Does (One Line, Title Case)
+Title: A tool for quality monitoring and reporting of targeted mass spectrometry measurements
 Version: 2.4.0
-Authors@R: 
-    person("Pascal", "Maas", email = "p.maas@lacdr.leidenuniv.nl", role = c("aut", "cre"),
-            comment = c(ORCID = "0000-0001-9379-6041")
+Date: 2025-01-24
+Authors@R: c(
+        person("Pascal", "Maas", email = "p.maas@lacdr.leidenuniv.nl", role = c("aut", "cre"),
+                comment = c(ORCID = "0000-0001-9379-6041")
+        ),
+        person("Alida", "Kindt", email = "a.s.d.kindt@lacdr.leidenuniv.nl", role = "aut", comment = c(ORCID = "0000-0001-6551-6030")),
+        person("Agnieszka", "Wegrzyn", email = "", role = "aut", comment = c(ORCID = "0000-0003-4872-8626")),
+        person("Marielle", "van der Peet", email = "m.p.van.der.peet@lacdr.leidenuniv.nl", role = "ctb", comment = c(ORCID = "0000-0001-8155-1485")),
+        person("Lieke", "Lamont", email = "l.lamont@lacdr.leidenuniv.nl", role = "ctb", comment = c(ORCID = "0000-0002-2779-124X")),
+        person("Recon4IMD", role = "fnd"),
+        person("NGID", role = "fnd"),
+        person("EXPOSOME-NL", role = "fnd")
     )
 Description: This is an R package for monitoring technical variation in mass spectrometry measurements. It provides various metrics by utilizing pooled quality control samples, blank samples and calibration lines. mzQuality uses Bioconductors' SummarizedExperiment to facilitate implementation with existing workflows. It is fledged with an Rshiny application to support interactive assessment of measurements.
 License: GPL-3
 biocViews: Software, MassSpectrometry, BatchEffect, QualityControl, Metabolomics 
 Depends:
-    R (>= 4.0),
+    R (>= 4.5),
     dplyr,
     SummarizedExperiment
 Imports:

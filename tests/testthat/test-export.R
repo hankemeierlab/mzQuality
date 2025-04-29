@@ -10,7 +10,7 @@ exp <- readRDS(dataFile)
 concentrations <- read.delim(concentrationsFile)
 
 test_that("A combined file can be converted", {
-    combined <- buildCombined(combinedFile)
+    combined <- readData(combinedFile)
     x <- buildExperiment(combined)
     expect_true(is(x, "SummarizedExperiment"))
     expect_true(validateExperiment(x))

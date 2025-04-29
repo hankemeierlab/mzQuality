@@ -11,40 +11,29 @@
 #' @returns data.frame in a generic, common long format
 #' @importFrom arrow read_delim_arrow
 #' @export
-buildCombined <- function(files, vendor = NA, regex = NULL) {
-    if (length(files) == 1) {
-        df <- arrow::read_delim_arrow(files[1], delim = "\t")
+readData <- function(files, vendor = NA, regex = NULL) {
+    mandatoryColumns <- c(
+        "Acquisition Date & Time", "Acquisition.Date...Time",
+        "Component Name", "Component.Name",
+        "Retention Time", "Retention.Time",
+        "Area"
+    )
 
-        mandatoryColumns <- c(
-            "Acquisition Date & Time", "Acquisition.Date...Time",
-            "Component Name", "Component.Name",
-            "Retention Time", "Retention.Time",
-            "Area"
-        )
+    df <- setBatches(lapply(files, function(file) {
+        df <- arrow::read_delim_arrow(file, delim = "\t")
 
         if (sum(colnames(df) %in% mandatoryColumns) > 1) {
+            # Sciex routine
             df <- sciex(df, regex = regex)
-            df[df == "N/A"] <- NA
-            df <- setBatches(list(df))
         }
 
+        df$datetime <- as.character(df$datetime)
+
+        df[df == "N/A"] <- NA
         colnames(df) <- tolower(colnames(df))
-
         df$type <- toupper(df$type)
-    } else {
-        df <- setBatches(lapply(files, function(file) {
-            combined <- arrow::read_delim_arrow(file, delim = "\t")
-
-            if (startsWith(colnames(combined)[1], "Sample")) {
-                combined <- sciex(combined, regex = regex)
-            }
-            combined[combined == "N/A"] <- NA
-
-            colnames(combined) <- tolower(colnames(combined))
-            combined$type <- toupper(combined$type)
-            combined
-        }))
-    }
+        df
+    }))
 
     df
 }
@@ -118,16 +107,16 @@ setMetaDataFrame <- function(rowData, rowIndex, rows) {
 #' @export
 #' @examples
 #' # Read example dataset
-#' data <- read.delim(system.file(package = "mzQuality", "dataset.txt"))
+#' data <- readData(system.file(package = "mzQuality", "example.tsv"))
 #'
 #' # Construct experiment
-#' exp <- buildExperiment(
-#'     data,
-#'     rowIndex = "Compound",
-#'     colIndex = "Aliquot",
-#'     primaryAssay = "Area",
-#'     secondaryAssay = "Area_is"
-#' )
+# exp <- buildExperiment(
+#     data,
+#     rowIndex = "compound",
+#     colIndex = "aliquot",
+#     primaryAssay = "area",
+#     secondaryAssay = "area_is"
+# )
 #' exp
 buildExperiment <- function(df,
                             rowIndex = "compound",
@@ -138,9 +127,15 @@ buildExperiment <- function(df,
                             qc = "SQC",
                             secondaryIndex = "compound_is") {
     df <- as.data.frame(df)
-
     colnames(df) <- tolower(colnames(df))
     df$type <- toupper(df$type)
+
+    rowIndex <- tolower(rowIndex)
+    colIndex <- tolower(colIndex)
+    primaryAssay <- tolower(primaryAssay)
+    secondaryAssay <- tolower(secondaryAssay)
+    typeColumn <- tolower(typeColumn)
+    secondaryIndex <- tolower(secondaryIndex)
 
     if (!qc %in% df$type) {
         if (length(unique(df$type)) == 1) {
@@ -153,7 +148,7 @@ buildExperiment <- function(df,
     if (!any(c(rowIndex, colIndex) %in% colnames(df))) {
         message <- sprintf(
             "Cannot find columns %s and/or %s in `df`",
-              rowIndex, colIndex
+            rowIndex, colIndex
         )
         stop(message)
     }
@@ -165,8 +160,6 @@ buildExperiment <- function(df,
 
     if (!secondaryAssay %in% colnames(df)) {
         secondaryAssay <- primaryAssay
-    } else {
-        # If only one internal standard is used
     }
 
 
@@ -211,7 +204,6 @@ buildExperiment <- function(df,
     }
 
     hasMissing <- nrow(df) != nrow(colData) * nrow(rowData)
-    message("Missing combinations found, trying to fix with NAs..")
 
 
     if (hasMissing) {
@@ -281,8 +273,9 @@ setSampleColors <- function(types, ...) {
 #' @returns placeholder
 #' @param exp SummarizedExperiment object
 #' @importFrom viridis viridis
-#' @importFrom SummarizedExperiment colData
+#' @importFrom SummarizedExperiment colData colData<-
 #' @importFrom lubridate format_ISO8601
+#' @importFrom dplyr group_by n pull arrange mutate
 #' @noRd
 finishExperiment <- function(exp) {
     exp <- exp[, order(exp$injection_time, method = "radix")]
@@ -315,9 +308,9 @@ finishExperiment <- function(exp) {
 
     exp <- calculateRatio(exp) %>%
         identifyOutliers() %>%
-        identifyMisInjections() %>%
-        # addLinearRange(calType = "CAL", saveAssay = "CalRange") %>%
-        addLinearRange(calType = "ACAL", saveAssay = "ACALRange")
+        identifyMisInjections() # %>%
+    # addLinearRange(calType = "CAL", saveAssay = "CalRange") %>%
+    # addLinearRange(calType = "ACAL", saveAssay = "ACALRange")
 
     return(exp)
 }

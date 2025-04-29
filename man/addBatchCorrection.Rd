@@ -14,6 +14,14 @@ addBatchCorrection(
 }
 \arguments{
 \item{exp}{SummarizedExperiment Object}
+
+\item{assay}{Assay to be used for batch correction}
+
+\item{qcType}{Type of QC to be used for batch correction}
+
+\item{removeOutliers}{Remove outliers from the batch correction}
+
+\item{useWithinBatch}{Use within batch correction}
 }
 \value{
 SummarizedExperiment with batch-effect corrected RSDQCs in the
