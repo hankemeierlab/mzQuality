@@ -32,7 +32,7 @@ test_that("experiment can be converted to combined", {
     comb <- expToCombined(exp)
     expect_true(is(comb, "data.frame"))
     expect_equal(nrow(comb), nrow(exp) * ncol(exp))
-    expect_true(all(c("Aliquot", "Compound", "area", "injection_time", "type", "batch") %in% colnames(comb)))
+    expect_true(all(c("aliquot", "compound", "area", "injection_time", "type", "batch") %in% colnames(comb)))
 })
 
 
@@ -44,7 +44,7 @@ test_that("Concentrations can be added", {
 
     expect_true(sum(rowData(exp)$hasKnownConcentrations) == nrow(concentrations))
 
-    addConcentrations(exp, concentrations, filterComps = TRUE)
+    addConcentrations(exp, concentrations)
     expect_true(is(x, "SummarizedExperiment"))
     expect_true(validateExperiment(x))
     expect_true("hasKnownConcentrations" %in% colnames(rowData(exp)))

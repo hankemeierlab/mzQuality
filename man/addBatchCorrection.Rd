@@ -9,7 +9,8 @@ addBatchCorrection(
   assay = "ratio",
   qcType = metadata(exp)$QC,
   removeOutliers = TRUE,
-  useWithinBatch = TRUE
+  useWithinBatch = TRUE,
+  calculateRSDQC = FALSE
 )
 }
 \arguments{
@@ -22,6 +23,9 @@ addBatchCorrection(
 \item{removeOutliers}{Remove outliers from the batch correction}
 
 \item{useWithinBatch}{Use within batch correction}
+
+\item{calculateRSDQC}{Boolean value. Should the assay be used to
+calculate RSDQC values? Default is FALSE.}
 }
 \value{
 SummarizedExperiment with batch-effect corrected RSDQCs in the

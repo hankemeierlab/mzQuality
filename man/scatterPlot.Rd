@@ -4,14 +4,34 @@
 \alias{scatterPlot}
 \title{Compound plot function}
 \usage{
-scatterPlot(df, assay, trendTypes, colors, smooth = TRUE, doLog = TRUE)
+scatterPlot(df, assay, trendTypes, smooth = TRUE, doLog = TRUE)
+}
+\arguments{
+\item{df}{A data frame containing the data to be plotted. Must include
+columns for `aliquot`, the assay, `text`, `color`, `type`, and
+`Compound`.}
+
+\item{assay}{A character string specifying the column name of the assay
+to be plotted on the y-axis.}
+
+\item{trendTypes}{A character vector specifying the types of data to be
+used for trend lines.}
+
+\item{smooth}{A logical value indicating whether to add trend lines to
+the plot. Defaults to TRUE.}
+
+\item{doLog}{A logical value indicating whether to apply log scaling to
+the y-axis. Defaults to TRUE.}
 }
 \value{
-placeholder
+A ggplot object representing the scatter plot.
 }
 \description{
-A short description...
+Creates a scatter plot with optional trend lines and log
+    scaling.
 }
 \details{
-placeholder
+This function generates a scatter plot using ggplot2. It allows
+    for optional trend lines based on specified types and can apply log
+    scaling to the y-axis.
 }

@@ -2,30 +2,34 @@
 % Please edit documentation in R/Convert.R
 \name{fillMissingCombinations}
 \alias{fillMissingCombinations}
-\title{Fill in missing aliquot-compound combinations}
+\title{Fill Missing Aliquot-Compound Combinations}
 \usage{
 fillMissingCombinations(df, rowIndex, colIndex, rowData, colData, assayNames)
 }
 \arguments{
-\item{df}{Dataframe in long format}
+\item{df}{A dataframe in long format.}
 
-\item{rowIndex}{Column name in `df` that should be used for compounds.}
+\item{rowIndex}{The column name in `df` to be used for compounds.}
 
-\item{colIndex}{Column name in `df` that should be used for aliquots.}
+\item{colIndex}{The column name in `df` to be used for aliquots.}
 
-\item{rowData}{Dataframe with rowData}
+\item{rowData}{A dataframe containing row data (e.g., compounds).}
 
-\item{colData}{Dataframe with colData}
+\item{colData}{A dataframe containing column data (e.g., aliquots).}
 
-\item{assayName}{Column name in `df` that represents the area / intensities
-of measured compounds.}
+\item{assayNames}{A character vector of column names in `df` representing
+the area or intensities of measured compounds.}
 }
 \value{
-placeholder
+A dataframe with all aliquot-compound combinations, including
+  the missing ones filled with NA values.
 }
 \description{
-placeholder
+Identifies and fills in missing combinations of aliquots
+  and compounds in a long-format dataframe.
 }
 \details{
-placeholder
+This function ensures that all possible combinations of aliquots
+  and compounds are present in the dataframe. Missing combinations are
+  added with NA values for the assay columns.
 }

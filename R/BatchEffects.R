@@ -1,4 +1,31 @@
-betweenBatchCorrection <- function(ratio, qcAliquots, qcBatches, aliquots, batches) {
+#' @title Between-Batch Correction for Metabolomics Data
+#' @description Normalizes ratio data across multiple batches using QC samples
+#'   as reference points.
+#' @details This function calculates batch-specific correction factors based on
+#'   QC sample measurements. For each batch, it computes the median ratio of QC
+#'   samples within the batch and divides the global QC median by this
+#'   batch-specific median to obtain a correction factor. The correction factor
+#'   is then applied to all samples within that batch to normalize their values
+#'   relative to other batches.
+#'
+#'   If a batch contains no QC samples, a correction factor of 1 is used
+#'   (no correction).
+#'
+#' @param ratio Matrix of ratio values with compounds as rows and samples as
+#' columns
+#' @param qcAliquots Character vector of column names identifying QC samples
+#' @param qcBatches Vector of batch identifiers for the QC samples
+#' @param aliquots Character vector of all sample identifiers (column names)
+#' @param batches Vector of batch identifiers for all samples
+#'
+#' @return A matrix of the same dimensions as the input `ratio`, containing
+#'   the batch-corrected values
+#'
+#' @importFrom matrixStats rowMedians
+#' @keywords internal
+betweenBatchCorrection <- function(
+        ratio, qcAliquots, qcBatches, aliquots, batches
+) {
 
     compound_qc_ratio_median <- rowMedians(ratio[, qcAliquots], na.rm = TRUE)
 
@@ -18,11 +45,11 @@ betweenBatchCorrection <- function(ratio, qcAliquots, qcBatches, aliquots, batch
             # Calculate the QC correction factor by dividing the overall median
             # by this batch median
             correction_factor <- compound_qc_ratio_median / med_ratio_qc
-        }
 
-        # Multiply the entire batch with the calculated correction factors
-        aliqs <- aliquots[batches == batch]
-        ratio[, aliqs] <- ratio[, aliqs] * correction_factor
+            # Multiply the entire batch with the calculated correction factors
+            aliqs <- aliquots[batches == batch]
+            ratio[, aliqs] <- ratio[, aliqs] * correction_factor
+        }
     }
 
     return(ratio)
@@ -59,7 +86,10 @@ betweenBatchCorrection <- function(ratio, qcAliquots, qcBatches, aliquots, batch
 #'
 #' # Show results of the assay
 #' assay(exp, "ratio_corrected")
-addBatchCorrectionAssay <- function(exp, assayName = "ratio", saveAssay = "ratio_corrected", qc = metadata(exp)$QC, removeOutliers = TRUE) {
+addBatchCorrectionAssay <- function(
+        exp, assayName = "ratio", saveAssay = "ratio_corrected",
+        qc = metadata(exp)$QC, removeOutliers = TRUE
+) {
     # check if the experiment is valid
     if (!validateExperiment(exp)) {
         stop("Invalid experiment")
@@ -87,6 +117,78 @@ addBatchCorrectionAssay <- function(exp, assayName = "ratio", saveAssay = "ratio
     return(exp)
 }
 
+#' @title Perform batch-wise rotation of assay values
+#' @description Adjusts assay values within a batch using a linear model
+#'     constructed from quality control (QC) samples.
+#' @details This function performs a batch-wise rotation of assay values to
+#'     account for systematic variations within a batch. It uses QC samples to
+#'     construct a linear model (slope and intercept) and applies this model to
+#'     adjust the assay values for all samples in the batch. Values with too
+#'     many missing data points are excluded from rotation.
+#' @param exp A SummarizedExperiment object containing the experimental data.
+#' @param orders A numeric vector specifying the injection order of the samples.
+#' @param assay A numeric matrix or data frame containing the assay values to
+#'     be adjusted.
+#' @param qcColumns A logical vector indicating which columns correspond to QC
+#'     samples.
+#' @param batch A character or numeric value specifying the batch to process.
+#' @param withinBatchNonNA An integer specifying the minimum number of non-NA
+#'     values required within a batch for reliable rotation. Defaults to 3.
+#' @return A numeric matrix with the rotated assay values, adjusted for
+#'     systematic batch effects.
+#' @importFrom stats median
+#' @examples
+#' # Example usage:
+#' # exp <- SummarizedExperiment(...)
+#' # orders <- c(1, 2, 3, 4, 5)
+#' # assay <- matrix(rnorm(50), nrow = 10)
+#' # qcColumns <- c(TRUE, TRUE, FALSE, FALSE, TRUE)
+#' # batch <- "Batch1"
+#' # rotatedAssay <- performRotation(exp, orders, assay, qcColumns, batch)
+performRotation <- function(
+        exp, orders, assay, qcColumns,
+        batch, withinBatchNonNA = 3
+){
+
+    N <- nrow(exp)
+    # retrieve the data from the current batch
+    batchColumns <- exp$batch == batch
+    qcBatchColumns <- batchColumns & qcColumns
+
+    # construct order matrix using qc samples
+    qcBatchOrders <- orders[qcBatchColumns]
+
+
+    orderMatrix <- matrix(
+        data = rep(qcBatchOrders, N),
+        ncol = sum(qcBatchColumns),
+        byrow = TRUE
+    )
+
+    # Calculate the slope and intercept for the linear model
+    qcVals <- assay[, qcBatchColumns, drop = FALSE]
+    slope <- rowWiseSlope(orderMatrix, qcVals)
+    int <- rowWiseIntercept(orderMatrix, y = qcVals, slope = slope)
+
+    orderMatrix <- matrix(
+        data = rep(orders[batchColumns], N),
+        ncol = sum(batchColumns),
+        byrow = TRUE
+    )
+
+    # Calculate the rotation matrix
+    vals <- assay[, batchColumns, drop = FALSE]
+    rotation <- orderMatrix * slope + int
+    batchMedians <- apply(vals, 1, median, na.rm = TRUE)
+
+    # Fix values with too many NAs (unreliable model, should not rotate)
+    tooManyNAs <- rowSums(!is.na(vals)) < withinBatchNonNA
+
+    rotation[tooManyNAs, ] <- 1
+    batchMedians[tooManyNAs] <- 1
+
+    return((vals / rotation) * batchMedians)
+}
 
 
 #' @title Within-Batch Signal Drift Correction
@@ -104,127 +206,60 @@ addBatchCorrectionAssay <- function(exp, assayName = "ratio", saveAssay = "ratio
 #'
 #' @param exp A `SummarizedExperiment` object containing metabolomics data
 #'   with `colData` columns: `batch`, `order`, `type`, and `injection_time`.
-#' @param assay Character string specifying the name of the assay to correct
-#'   (default is "ratio").
+#' @param assayName Character string specifying the name of the assay to
+#' correct (default is "ratio").
 #' @param saveAssay Character string specifying the name of the new assay to
 #'   store corrected values (default is "ratio_corrected").
 #' @param qcType Character string specifying the sample type used for QC
 #'   (usually "SQC" or "QC"). Defaults to the value stored in
 #'   `metadata(exp)$QC`.
-#' @param removeOutliers Logical indicating whether to remove extreme QC
-#'   outliers at the batch front and back before correction (default is TRUE).
+#' @param withinBatchNonNA Integer specifying the minimum number of
+#' non-NA values before a correction is applied (default is 3).
 #'
 #' @importFrom dplyr group_by row_number pull n mutate arrange filter
-#' @export
-addWithinBatchCorrectionAssay <- function(exp, assay = "ratio", saveAssay = "ratio_corrected",
-                                          qcType = metadata(exp)$QC, removeOutliers = TRUE) {
-    x <- lapply(unique(exp$batch), function(j) {
-        x <- exp[, exp$batch == j]
-        qcs <- x[, x$type == qcType]
-        vals <- assay(qcs, assay)
+addWithinBatchCorrectionAssay <- function(
+        exp, assayName = "ratio", saveAssay = "ratio_corrected",
+        qcType = metadata(exp)$QC, withinBatchNonNA = 3
+) {
 
+    # Multiplying factor which prevents negative values when the slope
+    # goes through zero
+    factor <- 1e4
 
-        orderMatrix <- matrix(
-            data = rep(x$order[x$type == qcType], nrow(vals)),
-            ncol = ncol(qcs),
-            byrow = TRUE
-        )
+    N <- nrow(exp)
+    assay <- assay(exp, assayName)
 
+    # set all batches
+    batches <- unique(exp$batch)
 
-        slope <- rowWiseSlope(orderMatrix, vals)
-        int <- rowWiseIntercept(orderMatrix, y = vals, slope = slope)
-
-        # Calculate the raw residuals by subtracting the intercept and slope * x-vals
-        residuals <- vals - int - slope * orderMatrix
-
-        # Calculate the studentized-residuals (t-distributed error residuals)
-        studentResiduals <- studentResiduals(
-            residuals = residuals,
-            n = rowSums(!is.na(vals))
-        )
-
-        outliers <- abs(studentResiduals) > 2
-        outliers[!is.finite(outliers)] <- FALSE
-        mostlyGood <- colSums(outliers) / nrow(outliers) < 0.7
-
-        if (removeOutliers) {
-            # only remove values from the first and last column if they are outliers
-            startOutliers <- outliers[, 1]
-
-            N <- ncol(outliers)
-            endOutliers <- outliers[, N]
-
-            vals[, 1][startOutliers] <- NA
-            vals[, N][endOutliers] <- NA
-            vals <- vals[, mostlyGood]
-
-            # Repeat the same for x-values
-            orderMatrix[, 1][startOutliers] <- NA
-            orderMatrix[, N][endOutliers] <- NA
-            orderMatrix <- orderMatrix[, mostlyGood]
-
-
-            # Recalculate the slope, now with added NA values for outliers
-            # These will be ignored due to na.rm = TRUE
-            slope <- rowWiseSlope(orderMatrix, vals)
-            int <- rowWiseIntercept(orderMatrix, y = vals, slope = slope)
+    orders <- do.call(c, lapply(batches, function(batch) {
+        batchColumns <- exp$batch == batch
+        if ("injection_time" %in% colnames(colData(exp))) {
+            orders <- order(exp$injection_time[batchColumns])
+        } else {
+            orders <- seq_along(which(batchColumns))
         }
-
-        orderMatrix <- matrix(
-            data = rep(seq_len(ncol(x)), nrow(vals)),
-            ncol = ncol(x),
-            byrow = TRUE
-        )
-        vals <- orderMatrix * slope + int
-
-        return(
-            list(
-                Predicted = vals,
-                StudentResiduals = studentResiduals,
-                Outliers = outliers
-            )
-        )
-    })
-
-    all <- do.call(cbind, lapply(x, `[[`, "Predicted"))
-    residualMatrix <- do.call(cbind, lapply(x, `[[`, "StudentResiduals"))
-    outlierMatrix <- do.call(cbind, lapply(x, `[[`, "Outliers"))
-
-    dimnames(all) <- dimnames(exp)
-    m <- assay(exp, assay) / as.matrix(all)
-
-
-
-
-    m <- do.call(cbind, lapply(unique(exp$batch), function(j) {
-        m[, exp$batch == j] * rowMedians(assay(exp[, exp$batch == j & exp$type == "SQC"], assay), na.rm = TRUE)
+        orders
     }))
 
-    m[!is.finite(m)] <- NA
-    m[m < 0] <- NA
 
-    if (removeOutliers) {
-        aliqs <- as.data.frame(colData(exp)) %>%
-            mutate(aliquot = colnames(exp)) %>%
-            arrange(.data$injection_time) %>%
-            filter(.data$type == metadata(exp)$QC) %>%
-            group_by(.data$batch)
+    qcColumns <- exp$type == qcType
 
-        front <- aliqs %>%
-            filter(row_number() == 1) %>%
-            pull(.data$aliquot)
-
-        back <- aliqs %>%
-            filter(row_number() == n()) %>%
-            pull(.data$aliquot)
-
-        m[, front][which(outlierMatrix[, front])] <- NA
-        m[, back][which(outlierMatrix[, back])] <- NA
+    for (batch in batches) {
+        rotated <- performRotation(
+            exp = exp,
+            orders = orders,
+            assay = assay * factor,
+            qcColumns = qcColumns,
+            batch = batch,
+            withinBatchNonNA = withinBatchNonNA
+        )
+        rotated[!is.finite(rotated)] <- NA
+        assay[, exp$batch == batch] <- rotated / factor
     }
 
-
-    assay(exp, saveAssay) <- m[, colnames(exp)]
-    exp
+    assay(exp, saveAssay) <- assay
+    return(exp)
 }
 
 
@@ -238,6 +273,8 @@ addWithinBatchCorrectionAssay <- function(exp, assay = "ratio", saveAssay = "rat
 #' @param qcType Type of QC to be used for batch correction
 #' @param removeOutliers Remove outliers from the batch correction
 #' @param useWithinBatch Use within batch correction
+#' @param calculateRSDQC Boolean value. Should the assay be used to
+#' calculate RSDQC values? Default is FALSE.
 #' @importFrom matrixStats rowSds
 #' @returns SummarizedExperiment with batch-effect corrected RSDQCs in the
 #' rowData slot
@@ -254,31 +291,41 @@ addWithinBatchCorrectionAssay <- function(exp, assay = "ratio", saveAssay = "rat
 #'
 #' # Show batch-corrected RSDQCs
 #' rowData(exp)$rsdqcCorrected
-addBatchCorrection <- function(exp, assay = "ratio", qcType = metadata(exp)$QC,
-                               removeOutliers = TRUE, useWithinBatch = TRUE) {
+addBatchCorrection <- function(
+        exp, assay = "ratio", qcType = metadata(exp)$QC,
+        removeOutliers = TRUE, useWithinBatch = TRUE,
+        calculateRSDQC = FALSE
+) {
     # Validate if the experiment is correct
     if (!validateExperiment(exp)) {
         stop("Invalid experiment")
     }
 
-    rowData(exp)$rsdqc <- rsdqc(exp, assay = assay, type = qcType)
-
-
     correctedAssay <- sprintf("%s_corrected", assay)
     if (useWithinBatch) {
         exp <- addWithinBatchCorrectionAssay(
             exp = exp,
-            assay = assay,
-            saveAssay = correctedAssay,
-            removeOutliers = removeOutliers
+            assayName = assay,
+            saveAssay = correctedAssay
         )
         assay <- correctedAssay
     }
 
+    exp <- addBatchCorrectionAssay(
+        exp = exp,
+        assayName = assay,
+        saveAssay = correctedAssay,
+        removeOutliers = removeOutliers
+    )
 
-    exp <- addBatchCorrectionAssay(exp, assayName = assay, saveAssay = correctedAssay, removeOutliers = removeOutliers)
+    if (calculateRSDQC) {
+        rowData(exp)$rsdqc <- rsdqc(exp, assay = assay, type = qcType)
+        rowData(exp)$rsdqcCorrected <- rsdqc(
+            exp = exp, assay = correctedAssay, type = qcType
+        )
+    }
 
-    rowData(exp)$rsdqcCorrected <- rsdqc(exp, assay = correctedAssay, type = qcType)
+
     # Return the updated experiment
     return(exp)
 }

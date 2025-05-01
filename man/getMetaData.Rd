@@ -7,16 +7,21 @@
 getMetaData(df, index)
 }
 \arguments{
-\item{df}{Dataframe with only columns with > 1 unique values}
+\item{df}{A dataframe containing only columns with more than one unique
+value.}
 
-\item{index}{Which index should be used as the index column}
+\item{index}{A string specifying the column to use as the index.}
 }
 \value{
-placeholder
+A character vector of column names that contain metadata.
 }
 \description{
-placeholder
+Identifies columns in a dataframe that contain metadata based
+    on unique combinations of values in the specified index column.
 }
 \details{
-placeholder
+This function checks each column in the dataframe (excluding the
+    index column) to determine if it contains metadata. A column is
+    considered metadata if it has unique values for each unique value in
+    the index column.
 }

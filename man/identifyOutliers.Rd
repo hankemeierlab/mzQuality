@@ -2,31 +2,37 @@
 % Please edit documentation in R/Metrics.R
 \name{identifyOutliers}
 \alias{identifyOutliers}
-\title{Identifier outliers in QC}
+\title{Identify outliers in QC samples}
 \usage{
 identifyOutliers(exp, assay = "ratio", qcType = metadata(exp)$QC)
 }
 \arguments{
-\item{exp}{SummarizedExperiment Object}
+\item{exp}{A SummarizedExperiment object containing the experimental data.}
 
-\item{assay}{Which assay should be used for outlier detection}
+\item{assay}{A string specifying the assay to use for outlier detection.
+Defaults to `"ratio"`.}
+
+\item{qcType}{A string specifying the type of QC samples. Defaults to the
+`QC` metadata of the experiment.}
 }
 \value{
-placeholder
-
-SummarizedExperiment with added column called "Use" with boolean
-values suggesting if it should be used in analysis
+A SummarizedExperiment object with updated `colData` containing
+    `use` and `outlier` columns.
 }
 \description{
-placeholder
+Identifies outliers in QC samples for a specified assay in a
+    SummarizedExperiment object and updates the `colData` with outlier
+    information.
 }
 \details{
-placeholder
+This function detects outliers in QC samples based on the
+    distribution of log-transformed assay values. It uses Rosner's test to
+    identify outliers and updates the `colData` of the experiment with
+    boolean columns `use` and `outlier`. Outliers are marked as `FALSE` in
+    the `use` column and `TRUE` in the `outlier` column.
 }
 \examples{
-# Read the example dataset
-exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
-
-# Identify aliquot outliers and add to colData
-exp <- identifyOutliers(exp, assay = "Ratio")
+# Example usage:
+# exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+# exp <- identifyOutliers(exp, assay = "ratio")
 }

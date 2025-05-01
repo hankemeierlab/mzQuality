@@ -2,19 +2,27 @@
 % Please edit documentation in R/Convert.R
 \name{setSampleColors}
 \alias{setSampleColors}
-\title{Set the colors of the samples}
+\title{Set the Colors of the Samples}
 \usage{
 setSampleColors(types, ...)
 }
 \arguments{
-\item{types}{Character vector with the types of the samples}
+\item{types}{A character vector with the types of the samples.}
 
-\item{...}{Additional arguments to be passed to the function}
+\item{...}{Additional arguments to be passed to the function.}
 }
 \value{
-placeholder
+A named character vector of colors corresponding to the sample
+  types.
 }
 \description{
-placeholder
-details placeholder
+Assigns unique colors to sample types using the viridis
+  color palette. Ensures that each sample type is assigned a distinct
+  color for visualization purposes.
+}
+\details{
+This function uses the viridis color palette to generate a
+  range of colors for the provided sample types. It ensures that the
+  colors are consistent and can be overwritten if additional arguments
+  are provided.
 }

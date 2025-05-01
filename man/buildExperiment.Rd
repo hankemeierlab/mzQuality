@@ -2,7 +2,7 @@
 % Please edit documentation in R/Convert.R
 \name{buildExperiment}
 \alias{buildExperiment}
-\title{Create a SummarizedExperiment object from a long dataframe}
+\title{Create a SummarizedExperiment Object from a Long Dataframe}
 \usage{
 buildExperiment(
   df,
@@ -16,41 +16,54 @@ buildExperiment(
 )
 }
 \arguments{
-\item{df}{Dataframe in a long format. Should contain at least a column for
-compounds, aliquots, area, type and datetime. See the vignette for an
+\item{df}{A dataframe in a long format. Should contain at least a column for
+compounds, aliquots, area, type, and datetime. See the vignette for an
 example of a valid dataframe.}
 
-\item{rowIndex}{Column name in `df` that should be used for compounds.
-Defaults to 'Compound'}
+\item{rowIndex}{The column name in `df` that should be used for compounds.
+Defaults to 'compound'.}
 
-\item{colIndex}{Column name in `df` that should be used for aliquots.
-Defaults to 'Aliquot'}
+\item{colIndex}{The column name in `df` that should be used for aliquots.
+Defaults to 'aliquot'.}
 
-\item{primaryAssay}{Column name in `df` that represents the
-area / intensities of measured compounds. Defaults to 'Area'}
+\item{primaryAssay}{The column name in `df` that represents the area or
+intensities of measured compounds. Defaults to 'area'.}
 
-\item{secondaryAssay}{Column name in `df` that represents the
-area / intensities of measured internal standards.
-If no internal standards are present, this parameter can be omitted and the
- A/IS ratio will be set to 1.}
+\item{secondaryAssay}{The column name in `df` that represents the area or
+intensities of measured internal standards. If no internal standards are
+present, this parameter can be omitted, and the A/IS ratio will
+be set to 1.}
 
-\item{qc}{Name of the QC sample used for batch correction found in the
-'Type' column of `df`. Defaults to 'SQC'}
+\item{typeColumn}{The column name in `df` that specifies the type of each
+sample (e.g., 'SAMPLE', 'QC'). Defaults to 'type'.}
+
+\item{qc}{The name of the QC sample used for batch correction found in the
+'type' column of `df`. Defaults to 'SQC'.}
+
+\item{secondaryIndex}{The column name in `df` that should be used for
+internal standard compounds. Defaults to 'compound_is'.}
 }
 \value{
 A SummarizedExperiment object with dimensions compounds x aliquots.
 }
 \description{
 mzQuality works with a SummarizedExperiment object to perform
-its analysis. This function aids in that process by constructing one for
-you. It uses cardinality to identify in which slot a column should be
-stored. After creation, it will validate if the object is suitable for
-mzQuality to use.
+  its analysis. This function aids in that process by constructing one for
+  you. It uses cardinality to identify in which slot a column should be
+  stored. After creation, it will validate if the object is suitable for
+  mzQuality to use.
 }
 \examples{
 # Read example dataset
 data <- readData(system.file(package = "mzQuality", "example.tsv"))
 
 # Construct experiment
+exp <- buildExperiment(
+    data,
+    rowIndex = "compound",
+    colIndex = "aliquot",
+    primaryAssay = "area",
+    secondaryAssay = "area_is"
+)
 exp
 }

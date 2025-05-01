@@ -36,9 +36,8 @@ See below for the sample data:
 ```{r sampleTable, echo = FALSE}
 exp <- params$exp
 exp <- exp[rowData(exp)$use, exp$use]
-cols <- sapply(colData(exp), function(x) !"matrix" %in% class(x))
 
-x <- colData(exp)[, cols]
+x <- vectorDf(colData(exp))
 DT::datatable(as.data.frame(x))
 ```
 
@@ -47,9 +46,8 @@ In total, `r nrow(exp)` compounds were submitted, of which `r if ("use" %in% col
 ```{r compoundTable, echo = FALSE}
 exp <- params$exp
 exp <- exp[rowData(exp)$use, exp$use]
-cols <- sapply(rowData(exp), function(x) !"matrix" %in% class(x))
 
-x <- rowData(exp)[, cols]
+x <- vectorDf(rowData(exp))
 cols <- sapply(x, function(z) "numeric" %in% class(z))
 
 DT::datatable(as.data.frame(x[, cols]))
@@ -74,25 +72,15 @@ if ("Aliquot" %in% params$plots) {
     for (assay in params$assays) {
         cat(sprintf("## %s \n", assay))
 
-        p <- tryCatch({
-            aliquotPlotNew(
+        p <- aliquotPlot(
                 exp = exp, 
                 types = exp$type, 
                 assay = assay) %>% 
-            mzQuality::facetPlot(ncol = 2) + ggplot2::ggtitle(assay)
-            
-        }, error = function(z){
-            NULL
-        })
-        
-        if (!is.null(p)) {
-             print(p)
-            cat('<hr style="border:1px solid gray">')
-        }
+            facetPlot(ncol = 2) + 
+            ggplot2::ggtitle(assay)
+        print(p)
+        cat('<hr style="border:1px solid gray">')
     }
-
-} else {
-    cat("Aliquot plot(s) was omitted")
 }
 ```
 
@@ -105,26 +93,19 @@ if ("PCA" %in% params$plots) {
     for (assay in params$assays) {
         cat(sprintf("## %s \n", assay))
         
-        p <- tryCatch({
-            pcaPlotNew(
+        p <- pcaPlot(
                 exp = exp, 
                 assay = assay,
                 doLog = TRUE, 
                 types = c("SQC", "LQC", "SAMPLE"),
-                addConfidenceInterval = TRUE) %>% 
-            mzQuality:::addLabels() + 
+                addConfidenceInterval = TRUE
+        ) %>% 
+            mzQuality::addLabels() + 
                 ggplot2::ggtitle(assay)
-        }, error = function(z){
-            NULL
-        })
         
-        if (!is.null(p)) {
-            print(p)
-            cat('<hr style="border:1px solid gray">')
-        }
+        print(p)
+        cat('<hr style="border:1px solid gray">')
     }
-} else {
-    cat("PCA plot(s) was omitted")
 }
 ```
 
@@ -136,32 +117,18 @@ exp <- exp[rowData(exp)$use, exp$use]
 if ("QC" %in% params$plots) {
     for (assay in params$assays) {
         cat(sprintf("## %s \n", assay))
-        
-        p <- tryCatch({
-            mzQuality:::violinPlotNew(
-            
-            exp = exp, 
-            assay = assay,
-            doLog = TRUE, 
-            withinTrend = FALSE, 
-            addConfidenceInterval = TRUE,
-            addMedian = TRUE, 
-            types = "SQC" 
-        ) %>% 
-            mzQuality::facetPlot(ncol = min(N, 4)) + 
-                ggplot2::ggtitle(assay)
-        }, error = function(z){
-            NULL
-        })
-         
-        if (!is.null(p)) {
-            print(p)
-            cat('<hr style="border:1px solid gray">')
-        }
-
+        p <- violinPlot(
+              exp = exp, 
+              assay = assay,
+              doLog = TRUE, 
+              withinTrend = FALSE, 
+              addConfidenceInterval = TRUE,
+              addMedian = TRUE, 
+              types = "SQC" 
+        )
+        print(p)
+        cat('<hr style="border:1px solid gray">')
     }
-} else {
-    cat("Violin plot(s) was omitted")
 }
 ```
 
@@ -174,23 +141,14 @@ if ("Heatmap" %in% params$plots) {
     for (assay in params$assays) {
         cat(sprintf("## %s \n", assay))
         
-        p <- tryCatch({
-            mzQuality:::heatmapPlot(
+        p <- heatmapPlot(
                 exp = exp, 
                 assay = assay, 
                 method = "static"
-            )
-        }, error = function(z){
-            NULL
-        })
-        
-        if (!is.null(p)) {
-            print(p)
-            cat('<hr style="border:1px solid gray">')
-        }
+        )
+        print(p)
+        cat('<hr style="border:1px solid gray">')
     }
-} else {
-    cat("Heatmap plot(s) was omitted")
 }
 ```
 
@@ -202,21 +160,13 @@ exp <- exp[rowData(exp)$use, exp$use]
 if ("RSDQC" %in% params$plots) {
     cat(sprintf("## %s \n", assay))
     
-    p <- tryCatch({
-        mzQuality:::rsdqcPlot(
+    p <- rsdqcPlot(
             exp = exp, 
             method = "static"
-        )
-    }, error = function(z){
-        NULL
-    })
+    )
+    print(p)
+    cat('<hr style="border:1px solid gray">')
     
-    if (!is.null(p)) {
-        print(p)
-        cat('<hr style="border:1px solid gray">')
-    }
-} else {
-    cat("RSDQC plot(s) was omitted")
 }
 ```
 

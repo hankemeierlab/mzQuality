@@ -47,17 +47,25 @@ SummarizedExperiment to one capable to use with mzQuality. This function
 will change some colData and rowData columns, but will leave assays
 untouched.
 }
+\details{
+This function will convert the column names of the colData and
+rowData to the ones used in mzQuality. The function will also add
+metadata to the SummarizedExperiment object, which is used to store
+information about the experiment. The metadata will be added to the
+SummarizedExperiment object if it is not already present. The function
+will also check if the primaryAssay and secondaryAssay are the same.
+}
 \examples{
 # Read example dataset
-data <- read.delim(system.file(package = "mzQuality", "dataset.txt"))
+data <- readData(system.file(package = "mzQuality", "example.tsv"))
 
 # Construct experiment
 exp <- buildExperiment(
     data,
-    rowIndex = "Compound",
-    colIndex = "Aliquot",
-    primaryAssay = "Area",
-    secondaryAssay = "Area_is"
+    rowIndex = "compound",
+    colIndex = "aliquot",
+    primaryAssay = "area",
+    secondaryAssay = "area_is"
 )
 convertExperiment(exp, primaryAssay = "Area")
 }

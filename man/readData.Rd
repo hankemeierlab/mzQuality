@@ -2,28 +2,31 @@
 % Please edit documentation in R/Convert.R
 \name{readData}
 \alias{readData}
-\title{Construct a common Dataframe from vendor file(s)}
+\title{Construct a Common Dataframe from Vendor File(s)}
 \usage{
 readData(files, vendor = NA, regex = NULL)
 }
 \arguments{
-\item{files}{Path to batch files or combined file}
+\item{files}{A character vector of paths to batch files or a combined file.}
 
-\item{vendor}{optional Character, which vendor is used?}
+\item{vendor}{An optional character string specifying the vendor used.}
 
-\item{regex}{Regular Expression for parsing the aliquots}
+\item{regex}{A regular expression for parsing aliquot names.}
 }
 \value{
-placeholder
-
-data.frame in a generic, common long format
+A data.frame in a generic, common long format with standardized
+  column names and additional metadata such as batch numbers.
 }
 \description{
-Vendor files come in different export formats. This function
-constructs a common, human-readable table format. It ensures that all
-columnnames are titled, replaces any value equal to 'QC' to 'SQC' and adds
-a batch number if none is present. Regex are used to parse aliquot names.
+This function processes vendor files, which may come in
+  different export formats, and constructs a common, human-readable
+  table format. It ensures that all column names are standardized,
+  replaces any value equal to 'QC' with 'SQC', and adds a batch number
+  if none is present. Regular expressions are used to parse aliquot names.
 }
 \details{
-placeholder
+The function handles vendor-specific formats by applying
+  appropriate parsing routines. For Sciex files, it uses a specific
+  routine to process the data. Missing values are replaced with `NA`,
+  and column names are converted to lowercase for consistency.
 }

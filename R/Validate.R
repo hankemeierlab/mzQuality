@@ -1,15 +1,18 @@
-#' @title Validate measurements
-#' @description placeholder
-#' @details placeholder
-#' @returns Boolean value if the dataframe is valid to use with mzQuality
-#' @param dataframe data.frame with measurements.
+#' @title Validate Measurements
+#' @description Validates if a dataframe is suitable for use with the
+#'   `mzQuality` package.
+#' @details This function checks if the dataframe contains the required
+#'   columns, has no duplicate aliquot-batch-compound combinations, and
+#'   includes at least one "QC" type.
+#' @returns A boolean value indicating whether the dataframe is valid.
+#' @param dataframe A data.frame containing measurements.
 #' @importFrom dplyr %>%
 #' @export
 #' @examples
 #' # Read example dataset
-#' data <- read.delim(system.file(package = "mzQuality", "dataset.txt"))
+#' data <- readData(system.file(package = "mzQuality", "example.tsv"))
 #'
-#' # Validate if dataframe is corrct
+#' # Validate if the dataframe is correct
 #' validateDataframe(data)
 validateDataframe <- function(dataframe = NULL) {
     columns <- c("aliquot", "compound", "type", "batch", "datetime")
@@ -43,25 +46,28 @@ validateDataframe <- function(dataframe = NULL) {
     return(TRUE)
 }
 
-#' @title Validate experiment object
-#' @description placeholder
-#' @details placeholder
-#' @returns Boolean value indicating if the SummarizedExperiment is valid
-#' to use with mzQuality
-#' @param exp SummarizedExperiment object
+#' @title Validate Experiment Object
+#' @description Validates if a SummarizedExperiment object is correctly
+#'   formatted and suitable for use with the `mzQuality` package.
+#' @details This function checks that the object is a valid
+#'   SummarizedExperiment, contains the required metadata columns in
+#'   `colData`, and includes the "ratio" assay.
+#' @returns A boolean value indicating whether the SummarizedExperiment
+#'   object is valid.
+#' @param exp A SummarizedExperiment object.
 #' @export
 #' @importFrom methods is
 #' @examples
 #' # Read example dataset
-#' data <- read.delim(system.file(package = "mzQuality", "dataset.txt"))
+#' data <- readData(system.file(package = "mzQuality", "example.tsv"))
 #'
 #' # Construct experiment
 #' exp <- buildExperiment(
 #'     data,
-#'     rowIndex = "Compound",
-#'     colIndex = "Aliquot",
-#'     primaryAssay = "Area",
-#'     secondaryAssay = "Area_is"
+#'     rowIndex = "compound",
+#'     colIndex = "aliquot",
+#'     primaryAssay = "area",
+#'     secondaryAssay = "area_is"
 #' )
 #'
 #' # Validate if the experiment is formatted correctly
@@ -76,46 +82,17 @@ validateExperiment <- function(exp) {
     )
 }
 
-#' @title Validate calibration dataframe
-#' @description TO ADD
-#' @param exp SummarizedExperiment object
-#' @param df Dataframe with concentration measured in calibration lines
-#' @returns Boolean value indicating if the calibration dataframe is suitable
-#' for use with mzQuality
-#' @export
-#' @examples
-#' # Read example dataset
-#' data <- read.delim(system.file(package = "mzQuality", "dataset.txt"))
-#'
-#' # Construct experiment
-#' exp <- buildExperiment(
-#'     data,
-#'     rowIndex = "Compound",
-#'     colIndex = "Aliquot",
-#'     primaryAssay = "Area",
-#'     secondaryAssay = "Area_is"
-#' )
-#' # Add calibration file + checks
-validateCalibration <- function(exp, df) {
-    # Validate that it is correct
-    find <- gregexec("([a-zA-Z]+)([0-9]+)", colnames(df))
-    matches <- regmatches(colnames(df), find)
-    matches <- do.call(rbind, lapply(matches, t))
-    idx1 <- exp$calno %in% as.integer(matches[, 3])
-    idx2 <- exp$type %in% matches[, 2]
-    aliqs <- colnames(exp)[idx1 & idx2]
-    all(
-        any(aliqs %in% colnames(exp)),
-        any(rownames(df) %in% rownames(exp))
-    )
-}
-
 #' @title Convert an experiment to one capable with mzQuality
 #' @description This function can be used to convert an existing
 #' SummarizedExperiment to one capable to use with mzQuality. This function
 #' will change some colData and rowData columns, but will leave assays
 #' untouched.
-#' @details
+#' @details This function will convert the column names of the colData and
+#' rowData to the ones used in mzQuality. The function will also add
+#' metadata to the SummarizedExperiment object, which is used to store
+#' information about the experiment. The metadata will be added to the
+#' SummarizedExperiment object if it is not already present. The function
+#' will also check if the primaryAssay and secondaryAssay are the same.
 #' @returns SummarizedExperiment that is suitable for use with mzQuality
 #' @param exp A SummarizedExperiment object
 #' @param primaryAssay Assay that should be used for compound Areas / Intensity
@@ -135,65 +112,34 @@ validateCalibration <- function(exp, df) {
 #' @export
 #' @examples
 #' # Read example dataset
-#' data <- read.delim(system.file(package = "mzQuality", "dataset.txt"))
+#' data <- readData(system.file(package = "mzQuality", "example.tsv"))
 #'
 #' # Construct experiment
 #' exp <- buildExperiment(
 #'     data,
-#'     rowIndex = "Compound",
-#'     colIndex = "Aliquot",
-#'     primaryAssay = "Area",
-#'     secondaryAssay = "Area_is"
+#'     rowIndex = "compound",
+#'     colIndex = "aliquot",
+#'     primaryAssay = "area",
+#'     secondaryAssay = "area_is"
 #' )
 #' convertExperiment(exp, primaryAssay = "Area")
 convertExperiment <- function(
     exp, primaryAssay = "area", secondaryAssay = primaryAssay,
     istd = "compound_is", type = "type", datetime = "datetime",
-    batch = "batch", qcType = "SQC") {
-    if (requireNamespace("methods", quietly = TRUE)) {
-        if (!methods::is(exp, "SummarizedExperiment")) {
-            message("Object is not of class 'SummarizedExperiment'")
-            return(NULL)
-        }
-    }
-
-
-    assays <- assayNames(exp)
-    if (!primaryAssay %in% assays) {
-        stop(sprintf("Cannot find assay '%s' in assayNames", primaryAssay))
-    }
-    if (!secondaryAssay %in% assays) {
-        stop(sprintf("Cannot find assay '%s' in assayNames", secondaryAssay))
-    }
+    batch = "batch", qcType = "SQC"
+) {
 
     cols <- colnames(rowData(exp))
-    if (!istd %in% cols) {
-        stop(sprintf("Cannot find column '%s' in rowData", istd))
-    }
+
     if (primaryAssay != secondaryAssay) {
         cols[which(cols) == istd] <- "compound_is"
         colnames(rowData(exp)) <- cols
     }
 
     cols <- colnames(colData(exp))
-
-    if (!type %in% cols) {
-        stop(sprintf("Cannot find column '%s' in colData", type))
-    }
-    if (!datetime %in% cols) {
-        stop(sprintf("Cannot find column '%s' in colData", datetime))
-    }
-
     cols[which(cols == type)] <- "type"
     cols[which(cols == datetime)] <- "datetime"
     cols[which(cols == batch)] <- "batch"
-
-    if (!qcType %in% exp$type) {
-        stop(sprintf(
-            "Cannot find type '%s' in the column '%s'",
-            qcType, type
-        ))
-    }
 
     x <- colData(exp)
     colnames(x) <- cols
@@ -202,14 +148,13 @@ convertExperiment <- function(
     mandatory <- list(
         QC = qcType, primary = primaryAssay,
         secondary = secondaryAssay, hasIS = primaryAssay != secondaryAssay,
-        Date = lubridate::now()
+        Date = Sys.time()
     )
 
     toAdd <- setdiff(names(mandatory), names(metadata(exp)))
     if (length(toAdd) > 0) {
         metadata(exp)[toAdd] <- mandatory[toAdd]
     }
-
 
     finishExperiment(exp)
 }

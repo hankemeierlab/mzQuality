@@ -1,21 +1,29 @@
 #' @title Calculate the ratio between QCs and SAMPLEs
-#' @description placeholder
-#' @details placeholder
-#' @returns placeholder
-#' @param exp
-#' @param assay
-#' @param qcLabel
-#' @param sampleLabel
+#' @description Computes the ratio of median values between QC samples and
+#'     SAMPLEs for a specified assay in a SummarizedExperiment object.
+#' @details This function calculates the ratio of row medians for QC samples
+#'     and SAMPLEs in the specified assay. The result is stored in the
+#'     `rowData` of the SummarizedExperiment object under the column
+#'     `ratioQcSample`.
+#' @param exp A SummarizedExperiment object containing the experimental data.
+#' @param assay A string specifying the assay to use for the calculation.
+#'     Defaults to `"ratio_corrected"`.
+#' @param qcLabel A string specifying the label for QC samples. Defaults to
+#'     the `QC` metadata of the experiment.
+#' @param sampleLabel A string specifying the label for SAMPLEs. Defaults to
+#'     `"SAMPLE"`.
+#' @return A SummarizedExperiment object with the calculated ratio added to
+#'     the `rowData`.
 #' @importFrom SummarizedExperiment rowData<-
-#' @export
 #' @examples
-#' # Read the example dataset
-#' exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
-#'
-#' # Calculate the ratio between QCs and Samples of the batch-corrected ratio
-#' ratioQcSample(exp)
-ratioQcSample <- function(exp, assay = "ratio_corrected",
-                          qcLabel = metadata(exp)$QC, sampleLabel = "SAMPLE") {
+#' # Example usage:
+#' # exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+#' # exp <- ratioQcSample(exp)
+#' @export
+ratioQcSample <- function(
+        exp, assay = "ratio_corrected",
+        qcLabel = metadata(exp)$QC, sampleLabel = "SAMPLE"
+) {
     # Check if the experiment is valid
     if (!validateExperiment(exp)) {
         stop("Invalid experiment")
@@ -42,27 +50,32 @@ ratioQcSample <- function(exp, assay = "ratio_corrected",
     return(exp)
 }
 
-#' @title Identifier outliers in QC
-#' @description placeholder
-#' @details placeholder
-#' @returns placeholder
-#' @param exp SummarizedExperiment Object
-#' @param assay Which assay should be used for outlier detection
+#' @title Identify outliers in QC samples
+#' @description Identifies outliers in QC samples for a specified assay in a
+#'     SummarizedExperiment object and updates the `colData` with outlier
+#'     information.
+#' @details This function detects outliers in QC samples based on the
+#'     distribution of log-transformed assay values. It uses Rosner's test to
+#'     identify outliers and updates the `colData` of the experiment with
+#'     boolean columns `use` and `outlier`. Outliers are marked as `FALSE` in
+#'     the `use` column and `TRUE` in the `outlier` column.
+#' @param exp A SummarizedExperiment object containing the experimental data.
+#' @param assay A string specifying the assay to use for outlier detection.
+#'     Defaults to `"ratio"`.
+#' @param qcType A string specifying the type of QC samples. Defaults to the
+#'     `QC` metadata of the experiment.
+#' @return A SummarizedExperiment object with updated `colData` containing
+#'     `use` and `outlier` columns.
 #' @importFrom matrixStats colMedians
-#' @returns SummarizedExperiment with added column called "Use" with boolean
-#' values suggesting if it should be used in analysis
-#' @export
 #' @examples
-#' # Read the example dataset
-#' exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
-#'
-#' # Identify aliquot outliers and add to colData
-#' exp <- identifyOutliers(exp, assay = "Ratio")
+#' # Example usage:
+#' # exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+#' # exp <- identifyOutliers(exp, assay = "ratio")
+#' @export
 identifyOutliers <- function(exp, assay = "ratio", qcType = metadata(exp)$QC) {
     if (!validateExperiment(exp)) {
         stop("Invalid experiment")
     }
-
 
     if ("use" %in% colnames(colData(exp))) {
         exp$use <- colData(exp)$use
@@ -76,15 +89,6 @@ identifyOutliers <- function(exp, assay = "ratio", qcType = metadata(exp)$QC) {
         exp$outlier <- FALSE
     }
 
-
-    if (!assay %in% assayNames(exp)) {
-        return(exp)
-    }
-    if (!qcType %in% exp$type) {
-        return(exp)
-    }
-
-
     qc_se <- exp[, exp$type == qcType]
 
     if (nrow(qc_se) <= 3) {
@@ -92,25 +96,17 @@ identifyOutliers <- function(exp, assay = "ratio", qcType = metadata(exp)$QC) {
     }
 
     medians <- colMedians(log10(assay(qc_se, assay)), na.rm = TRUE)
-
-    idx <- is.finite(medians)
-
-    medians <- medians[idx]
+    medians <- medians[is.finite(medians)]
     non_na <- sum(!is.na(medians))
-
 
     if (non_na < 3) {
         return(exp)
     }
 
-
     batches <- length(unique(exp$batch))
-
-
     k <- ifelse(non_na > batches, batches, non_na - 2)
     test <- EnvStats::rosnerTest(medians, k = k, alpha = 0.05, warn = FALSE)
     outliers <- test$all.stats$Obs.Num[test$all.stats$Outlier]
-
 
     idx <- match(names(medians[outliers]), colnames(exp))
     if (length(idx) > 0) {
@@ -118,29 +114,34 @@ identifyOutliers <- function(exp, assay = "ratio", qcType = metadata(exp)$QC) {
         exp$outlier[idx] <- TRUE
     }
 
-    exp
+    return(exp)
 }
 
-#' @title Identifier misinjections in Samples
-#' @description placeholder
-#' @details placeholder
-#' @returns placeholder
-#' @param exp SummarizedExperiment Object
-#' @param assay Which assay should be used for outlier detection
-#' @param type
+#' @title Identify misinjections in Samples
+#' @description Identifies misinjections in SAMPLEs for a specified assay in
+#'     a SummarizedExperiment object.
+#' @details This function is a wrapper around `identifyOutliers()` to detect
+#'     misinjections in SAMPLEs based on the distribution of assay values.
+#'     It updates the `colData` of the experiment with boolean columns `use`
+#'     and `outlier`.
+#' @param exp A SummarizedExperiment object containing the experimental data.
+#' @param assay A string specifying the assay to use for outlier detection.
+#'     Defaults to the `secondary` metadata of the experiment.
+#' @param type A string specifying the type of samples to analyze. Defaults
+#'     to `"SAMPLE"`.
+#' @return A SummarizedExperiment object with updated `colData` containing
+#'     `use` and `outlier` columns.
 #' @importFrom matrixStats colMedians
 #' @importFrom EnvStats rosnerTest
 #' @importFrom SummarizedExperiment colData assay
-#' @returns SummarizedExperiment with added column called "Use" with boolean
-#' values suggesting if it should be used in analysis
-#' @export
 #' @examples
-#' # Read the example dataset
-#' exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
-#'
-#' # Identify aliquot outliers and add to colData
-#' exp <- identifyOutliers(exp, assay = "Ratio")
-identifyMisInjections <- function(exp, assay = metadata(exp)$secondary, type = "SAMPLE") {
+#' # Example usage:
+#' # exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+#' # exp <- identifyMisInjections(exp, assay = "Ratio")
+#' @export
+identifyMisInjections <- function(
+        exp, assay = metadata(exp)$secondary, type = "SAMPLE"
+) {
     identifyOutliers(
         exp = exp,
         assay = metadata(exp)$secondary,
@@ -148,16 +149,49 @@ identifyMisInjections <- function(exp, assay = metadata(exp)$secondary, type = "
     )
 }
 
-typePresence <- function(exp, area = metadata(exp)$primary,
-                         type = metadata(exp)$QC) {
+#' @title Calculate the presence of a specific type in the experiment
+#' @description Computes the proportion of non-missing values for a specific
+#'     type (e.g., QC) in the assay data of a SummarizedExperiment object.
+#' @details This function calculates the proportion of non-missing values for
+#'     a specified type (e.g., QC) in the assay data. The result is stored in
+#'     the `rowData` of the experiment under a column named
+#'     `<type>Presence`.
+#' @param exp A SummarizedExperiment object containing the experimental data.
+#' @param area A string specifying the assay to use for the calculation.
+#'     Defaults to the `primary` metadata of the experiment.
+#' @param type A string specifying the type of samples to analyze. Defaults
+#'     to the `QC` metadata of the experiment.
+#' @return A SummarizedExperiment object with the calculated presence added
+#'     to the `rowData`.
+typePresence <- function(
+        exp, area = metadata(exp)$primary,
+        type = metadata(exp)$QC
+) {
     useExp <- exp[, exp$use]
     areas <- assay(useExp, area)
     cols <- useExp$type == type
-    rowData(exp)[[sprintf("%sPresence", type)]] <- rowSums(!is.na(areas[, cols, drop = FALSE])) / sum(cols)
+    rowData(exp)[[sprintf("%sPresence", type)]] <-
+        rowSums(!is.na(areas[, cols, drop = FALSE])) / sum(cols)
     return(exp)
 }
 
-medianSampleArea <- function(exp, type = "SAMPLE", assayName = metadata(exp)$primary) {
+#' @title Calculate the median sample area for each compound
+#' @description Computes the median area for each compound in SAMPLEs for a
+#'     specified assay in a SummarizedExperiment object.
+#' @details This function calculates the median area for each compound in
+#'     SAMPLEs based on the specified assay. The result is stored in the
+#'     `rowData` of the experiment under the column `MedianSampleArea`.
+#' @param exp A SummarizedExperiment object containing the experimental data.
+#' @param type A string specifying the type of samples to analyze. Defaults
+#'     to `"SAMPLE"`.
+#' @param assayName A string specifying the assay to use for the calculation.
+#'     Defaults to the `primary` metadata of the experiment.
+#' @return A SummarizedExperiment object with the calculated median sample
+#'     area added to the `rowData`.
+#' @importFrom stats median
+medianSampleArea <- function(
+        exp, type = "SAMPLE", assayName = metadata(exp)$primary
+) {
     m <- assay(exp[, exp$type == type], assayName)
     medians <- unlist(apply(m, 1, median, na.rm = TRUE))
 
@@ -166,52 +200,118 @@ medianSampleArea <- function(exp, type = "SAMPLE", assayName = metadata(exp)$pri
     return(exp)
 }
 
-#' @title Perform the main analysis of mzQuality
-#' @description This function is the main analysis function of mzQuality. It
-#' starts by validating the SummarizedExperiment object is valid. Next, it will
-#' calculate the batch-corrected RSDQC, background signals, retention time
-#' shifts and lastly calculates a suggested internal standard that results in
-#' the lowest batch-corrected RSDQC.
-#' @details placeholder
-#' @returns SummarizedExperiment with added slots and assays with
-#' batch-corrected values, including RSDQC, background signal, rt shift and
-#' suggested internal standards.
-#' @param exp SummarizedExperiment Object
-#' @param aliquots
-#' @param doAll
-#' @importFrom dplyr %>%
-#' @export
+#' @title Calculate compound usability metrics
+#' @description Evaluates the usability of compounds in a SummarizedExperiment
+#'     object based on RSDQC, background signal, and QC presence thresholds.
+#' @details This function calculates whether each compound meets the
+#'     predefined thresholds for RSDQC, background signal, and QC presence.
+#'     The result is stored in the `rowData` of the experiment under the
+#'     column `use`.
+#' @param exp A SummarizedExperiment object containing the experimental data.
+#' @param backgroundPercentage Numeric, the maximum allowable percentage of
+#'     background signal. Defaults to 40.
+#' @param qcPercentage Numeric, the minimum percentage of QC presence
+#'     required. Defaults to 80.
+#' @param nonReportableRSD Numeric, the maximum allowable RSDQC for compounds
+#'     to be considered usable. Defaults to 30.
+#' @return A SummarizedExperiment object with the usability metrics added to
+#'     the `rowData`.
 #' @examples
-#' # Read the example dataset
-#' exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
-#'
-#' # Perform analysis
-#' exp <- doAnalysis(exp)
-#' exp
-doAnalysis <- function(exp,
-                       aliquots = colnames(exp),
-                       doAll = FALSE,
-                       removeBadCompounds = FALSE,
-                       removeOutliers = FALSE,
-                       useWithinBatch = FALSE,
-                       effectNaAsZero = FALSE,
-                       concentrationType = "ACAL",
-                       backgroundPercentage = 40,
-                       qcPercentage = 80,
-                       nonReportableRSD = 30) {
-    message("Start Analysis")
+#' # Example usage:
+#' # exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+#' # exp <- calculateMetrics(exp)
+#' @export
+calculateMetrics <- function(
+        exp, backgroundPercentage = 40,
+        qcPercentage = 80, nonReportableRSD = 30
+) {
+    df <- rowData(exp)
 
+    rowData(exp)$rsdqc <- rsdqc(
+        exp = exp,
+        assay = "ratio",
+        type = metadata(exp)$QC
+    )
+
+    rowData(exp)$rsdqcCorrected <- rsdqc(
+        exp = exp,
+        assay = "ratio_corrected",
+        type = metadata(exp)$QC
+    )
+
+    rsdThreshold <- df$rsdqcCorrected <= nonReportableRSD
+    column <- sprintf("%sPresence", metadata(exp)$QC)
+    qcPresenceThreshold <- df[, column] * 100 >= qcPercentage
+
+    lowBackground <- df$backgroundSignal * 100 <= backgroundPercentage
+    noBackground <- is.na(df$backgroundSignal)
+    backgroundThreshold <- lowBackground | noBackground
+
+    df$use <- rsdThreshold & backgroundThreshold & qcPresenceThreshold
+    df$use[is.na(df$use)] <- FALSE
+
+    rowData(exp) <- df
+    return(exp)
+}
+
+#' @title Perform the main analysis of mzQuality
+#' @description Executes the main analysis pipeline for mzQuality, including
+#'     batch correction, RSDQC calculation, background signal estimation, and
+#'     internal standard suggestion.
+#' @details This function validates the input SummarizedExperiment object and
+#'     performs a series of analyses, including ratio calculation, batch
+#'     correction, background signal estimation, and RSDQC calculation. If
+#'     concentration data is available, it also calculates concentrations and
+#'     applies additional corrections. The function can optionally filter out
+#'     bad compounds and outliers.
+#' @param exp A SummarizedExperiment object containing the experimental data.
+#' @param aliquots A character vector specifying the aliquots to include in
+#'     the analysis. Defaults to all aliquots.
+#' @param doAll Logical, whether to force recalculation of all metrics.
+#'     Defaults to `FALSE`.
+#' @param removeBadCompounds Logical, whether to remove compounds that do not
+#'     meet usability thresholds. Defaults to `FALSE`.
+#' @param removeOutliers Logical, whether to remove outliers during batch
+#'     correction. Defaults to `FALSE`.
+#' @param useWithinBatch Logical, whether to use within-batch correction.
+#'     Defaults to `FALSE`.
+#' @param effectNaAsZero Logical, whether to treat missing values as zero
+#'     during background signal estimation. Defaults to `FALSE`.
+#' @param concentrationType A string specifying the concentration type to use
+#'     for calculations. Defaults to `"ACAL"`.
+#' @param backgroundPercentage Numeric, the maximum allowable percentage of
+#'     background signal. Defaults to 40.
+#' @param qcPercentage Numeric, the minimum percentage of QC presence
+#'     required. Defaults to 80.
+#' @param nonReportableRSD Numeric, the maximum allowable RSDQC for compounds
+#'     to be considered usable. Defaults to 30.
+#' @return A SummarizedExperiment object with added assays and metadata
+#'     reflecting the analysis results.
+#' @examples
+#' # Example usage:
+#' # exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+#' # exp <- doAnalysis(exp)
+#' @export
+doAnalysis <- function(
+        exp, aliquots = colnames(exp), doAll = FALSE,
+        removeBadCompounds = FALSE, removeOutliers = FALSE,
+        useWithinBatch = FALSE, effectNaAsZero = FALSE,
+        concentrationType = "ACAL", backgroundPercentage = 40,
+        qcPercentage = 80, nonReportableRSD = 30
+) {
     if (!validateExperiment(exp)) {
         stop("Invalid experiment")
     }
-
     doAliquots <- length(aliquots) != ncol(exp)
-
     exp <- exp[, aliquots]
 
     if (doAliquots | doAll | !"rsdqc" %in% colnames(rowData(exp))) {
         exp <- calculateRatio(exp) %>%
-            addBatchCorrection(removeOutliers = removeOutliers, useWithinBatch = useWithinBatch) %>%
+            addBatchCorrection(
+                removeOutliers = removeOutliers,
+                useWithinBatch = useWithinBatch,
+                calculateRSDQC = TRUE
+            ) %>%
             backgroundSignals(NaAsZero = effectNaAsZero) %>%
             matrixEffect() %>%
             ratioQcSample() %>%
@@ -221,72 +321,89 @@ doAnalysis <- function(exp,
                 removeOutliers = removeOutliers,
                 useWithinBatch = useWithinBatch
             )
+
+        if ("concentration" %in% assayNames(exp)) {
+            exp <- exp %>%
+                calculateConcentrations() %>%
+                addBatchCorrection(assay = "concentration") %>%
+                carryOverEffect() %>%
+                blankLimits()
+        }
     }
 
-    if ("concentration" %in% assayNames(exp)) {
-        exp <- exp %>%
-            calculateConcentrations(type = concentrationType) %>%
-            addBatchCorrectionAssay(assayName = "concentration") %>%
-            carryOverEffect() %>%
-            blankLimits()
-    }
-
-    rsdThreshold <- rowData(exp)$rsdqcCorrected <= nonReportableRSD
-    qcPresenceThreshold <- rowData(exp)[, sprintf("%sPresence", metadata(exp)$QC)] * 100 >= qcPercentage
-    backgroundThreshold <- rowData(exp)$backgroundSignal * 100 <= backgroundPercentage | !is.finite(rowData(exp)$backgroundSignal)
-
-    rowData(exp)$qcPresenceThreshold <- qcPresenceThreshold
-
-    rowData(exp)$use <- rsdThreshold & backgroundThreshold & qcPresenceThreshold
-    rowData(exp)$use[is.na(rowData(exp)$use)] <- FALSE
+    exp <- calculateMetrics(
+        exp = exp, backgroundPercentage = backgroundPercentage,
+        qcPercentage = qcPercentage, nonReportableRSD = nonReportableRSD
+    )
 
     if (removeBadCompounds) {
         exp <- exp[rowData(exp)$use, ]
     }
-    message("Finished Analysis")
-
-
-
-    exp
+    return(exp)
 }
 
-suggestedInternalStandards <- function(experiment, removeOutliers, useWithinBatch) {
-    if (!metadata(experiment)$hasIS) {
-        return(experiment)
+#' @title Suggest internal standards for compounds
+#' @description Identifies the internal standard that minimizes the
+#'     batch-corrected RSDQC for each compound in a SummarizedExperiment
+#'     object.
+#' @details This function evaluates all available internal standards and
+#'     suggests the one that results in the lowest batch-corrected RSDQC for
+#'     each compound. The results are stored in the `rowData` of the
+#'     experiment under the columns `suggestedIS` and `suggestedRSDQC`.
+#' @param exp A SummarizedExperiment object containing the experimental
+#'     data.
+#' @param removeOutliers Logical, whether to remove outliers during batch
+#'     correction. Defaults to `FALSE`.
+#' @param useWithinBatch Logical, whether to use within-batch correction.
+#'     Defaults to `FALSE`.
+#' @return A SummarizedExperiment object with the suggested internal standards
+#'     and their corresponding RSDQC values added to the `rowData`.
+#' @examples
+#' # Example usage:
+#' # exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+#' # exp <- suggestedInternalStandards(exp, removeOutliers = TRUE)
+#' @export
+suggestedInternalStandards <- function(exp, removeOutliers, useWithinBatch) {
+    if (!metadata(exp)$hasIS) {
+        return(exp)
     }
 
-    rowData(experiment)$compound <- rownames(experiment)
-    comp_is <- unique(rowData(experiment)$compound_is)
+    rowData(exp)$compound <- rownames(exp)
+    comp_is <- unique(rowData(exp)$compound_is)
     df <- expand.grid(
         compound_is = comp_is,
-        compound = rownames(experiment)
+        compound = rownames(exp)
     )
-    comp_row <- match(df$compound, rownames(experiment))
-    exp <- experiment[comp_row, ]
-    rownames(exp) <- seq_len(nrow(exp))
+    comp_row <- match(df$compound, rownames(exp))
+    testExp <- exp[comp_row, ]
+    rownames(testExp) <- seq_len(nrow(testExp))
 
-    comp_is_row <- match(df$compound_is, rowData(exp)$compound_is)
+    comp_is_row <- match(df$compound_is, rowData(testExp)$compound_is)
 
-    assay(exp, "area_is", withDimnames = FALSE) <- assay(exp, "area_is")[comp_is_row, , drop = FALSE]
-    rowData(exp)$compound_is <- df$compound_is
+    m <- assay(testExp, "area_is")[comp_is_row, , drop = FALSE]
+    assay(testExp, "area_is", withDimnames = FALSE) <- m
 
-    testExp <- calculateRatio(exp) %>%
-        addBatchCorrection(removeOutliers = removeOutliers, useWithinBatch = useWithinBatch)
+    rowData(testExp)$compound_is <- df$compound_is
+
+    testExp <- calculateRatio(testExp) %>%
+        addBatchCorrection(
+            removeOutliers = removeOutliers,
+            useWithinBatch = useWithinBatch
+        )
+
 
     x <- as.data.frame(rowData(testExp))
 
-    rowData(experiment)$suggestedIS <- unlist(lapply(split(x, x$compound), function(z) {
-        if (all(is.na(z$rsdqcCorrected))) {
-            return(NA)
-        }
-        as.character(z$compound_is[which.min(z$rsdqcCorrected)])
-    }))
 
-    rowData(experiment)$suggestedRSDQC <- unlist(lapply(split(x, x$compound), function(z) {
-        if (all(is.na(z$rsdqcCorrected))) {
-            return(NA)
-        }
-        min(z$rsdqcCorrected, na.rm = TRUE)
-    }))
-    experiment
+    metrics <- x %>%
+        group_by(.data$compound) %>%
+        summarise(
+            suggestedRSDQC = min(.data$rsdqcCorrected, na.rm = TRUE),
+            suggestedIS = .data$compound_is[which.min(.data$rsdqcCorrected)]
+        )
+
+    rowData(exp)$suggestedIS <- metrics$suggestedIS
+    rowData(exp)$suggestedRSDQC <- metrics$suggestedRSDQC
+
+    return(exp)
 }

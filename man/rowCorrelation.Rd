@@ -2,16 +2,34 @@
 % Please edit documentation in R/Concentrations.R
 \name{rowCorrelation}
 \alias{rowCorrelation}
-\title{Calculate the R2 manually}
+\title{Calculate row-wise correlation (R-squared)}
 \usage{
 rowCorrelation(x, y)
 }
+\arguments{
+\item{x}{A numeric matrix or data frame.}
+
+\item{y}{A numeric matrix or data frame with the same dimensions as `x`.}
+}
 \value{
-placeholder
+A numeric vector containing the row-wise R-squared values.
 }
 \description{
-placeholder
+Computes the row-wise correlation (R-squared) between two
+    matrices or data frames.
 }
 \details{
-placeholder
+This function calculates the row-wise correlation (R-squared)
+    values between corresponding rows of two matrices or data frames. It
+    subtracts the row means from each element, computes the dot product
+    between the rows, and normalizes by the product of the row-wise
+    standard deviations.
+
+    Non-finite values in the result (e.g., due to division by zero) are
+    replaced with `NA`.
+}
+\examples{
+x <- matrix(rnorm(20), nrow = 5)
+y <- matrix(rnorm(20), nrow = 5)
+rowCorrelation(x, y)
 }

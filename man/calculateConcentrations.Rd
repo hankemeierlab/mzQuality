@@ -2,21 +2,51 @@
 % Please edit documentation in R/Concentrations.R
 \name{calculateConcentrations}
 \alias{calculateConcentrations}
-\title{Calculate concentratios for a full experiment}
+\title{Calculate Concentrations for a Full Experiment}
 \usage{
-calculateConcentrations(exp, byBatch = TRUE, saveAssay = "concentration", ...)
+calculateConcentrations(
+  exp,
+  calibrationLineTypes = metadata(exp)$concentration,
+  ...
+)
 }
 \arguments{
-\item{byBatch}{Should the concentration be calculated per batch? Defaults to
-TRUE.}
+\item{exp}{A SummarizedExperiment object containing the experimental data.}
 
-\item{saveAssay}{Name of the assay to save the results. Defaults to
-`"Concentration"`}
+\item{calibrationLineTypes}{A character vector specifying the calibration
+line types to use for concentration calculations. Defaults to the
+concentration given in the metadata of the experiment}
+
+\item{...}{Additional arguments passed to the `batchConcentrations` function.}
 }
 \value{
-SummarizedExperiment with predicted concentrations in the assay
-given in `saveAssay`. Defaults to `"concentration"`.
+A SummarizedExperiment object with predicted concentrations
+  stored in the assay specified by `saveAssay` (default: `"concentration"`).
+  Additional metadata is added to `rowData`, including R² values, residuals,
+  outliers, linear ranges, and calibration ratios.
 }
 \description{
-Calculate concentratios for a full experiment
+This function calculates predicted concentrations for all
+  compounds in a SummarizedExperiment object. It processes each batch
+  individually, aggregates results, and updates the experiment object
+  with calculated concentrations and associated metadata.
+}
+\details{
+The function computes concentrations for each batch in the
+  experiment using the `batchConcentrations` function. It aggregates
+  results such as R² values, residuals, outliers, linear ranges, and
+  calibration ratios. The function also evaluates the reportability of
+  compounds based on RSD, linearity, and linear range thresholds.
+  Concentrations below zero are replaced with `NA`.
+}
+\examples{
+# Example usage:
+# Load example dataset
+exp <- readRDS(system.file(package = "mzQuality", "data.RDS"))
+
+# Calculate concentrations
+exp <- calculateConcentrations(exp)
+
+# Access the calculated concentrations
+assay(exp, "concentration")
 }

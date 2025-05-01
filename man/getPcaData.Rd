@@ -2,7 +2,7 @@
 % Please edit documentation in R/Plots.R
 \name{getPcaData}
 \alias{getPcaData}
-\title{Transform data into PCA data}
+\title{Transform Data into PCA Data}
 \usage{
 getPcaData(
   exp,
@@ -12,12 +12,31 @@ getPcaData(
   doLog = TRUE
 )
 }
+\arguments{
+\item{exp}{An experimental data object containing the data to be
+transformed.}
+
+\item{assay}{A character string specifying the assay column to be used
+for PCA. Defaults to the first assay in `assayNames(exp)`.}
+
+\item{batches}{A vector specifying the batches to include in the PCA.
+Defaults to `exp$batch`.}
+
+\item{types}{A vector specifying the types to include in the PCA.
+Defaults to `exp$type`.}
+
+\item{doLog}{A logical value indicating whether to apply log scaling to
+the data. Defaults to TRUE.}
+}
 \value{
-placeholder
+A prcomp object containing the PCA results.
 }
 \description{
-A short description...
+Prepares data for PCA analysis by transforming and imputing
+    missing or infinite values.
 }
 \details{
-placeholder
+This function processes experimental data for PCA analysis. It
+    imputes missing or infinite values, converts data to a wide format,
+    and performs PCA using prcomp.
 }

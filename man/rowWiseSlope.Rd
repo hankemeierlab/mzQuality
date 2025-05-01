@@ -7,10 +7,20 @@
 rowWiseSlope(x, y)
 }
 \arguments{
-\item{x}{Matrix of X-values}
+\item{x}{A numeric matrix of X-values.}
 
-\item{y}{Matrix of y-values}
+\item{y}{A numeric matrix of Y-values.}
+}
+\value{
+A numeric vector containing the row-wise slope values.
 }
 \description{
-Calculate the slope of a regression line by row
+Computes the row-wise slope of a simple linear regression model,
+where each row represents an independent dataset.
+}
+\details{
+The function calculates the slope as the ratio of the row-wise
+covariance of `x` and `y` to the row-wise covariance of `x` with itself.
+This follows the standard linear regression formula:
+`slope = Cov(x, y) / Cov(x, x)`.
 }

@@ -4,18 +4,16 @@
 \alias{carryOverEffect}
 \title{Calculate Carry-over Effect}
 \usage{
-carryOverEffect(
-  exp,
-  type = "PROC",
-  assay = "concentration",
-  method = c("previous", "calibration")[1]
-)
+carryOverEffect(exp, type = "PROC", assay = "concentration")
 }
 \arguments{
 \item{exp}{A SummarizedExperiment object}
 
 \item{type}{Name of the sample type that represents a blank sample,
 defaults to 'BLANK'.}
+
+\item{assay}{Name of the assay to use for the calculation, defaults to
+'concentration'.}
 }
 \value{
 SummarizedExperiment with an added column in the rowData slot

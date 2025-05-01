@@ -7,16 +7,21 @@
 rowWiseCov(x, y)
 }
 \arguments{
-\item{x}{Matrix of X-values}
+\item{x}{A numeric matrix of X-values.}
 
-\item{y}{Matrix of y-values}
+\item{y}{A numeric matrix of Y-values.}
 }
 \value{
-placeholder
+A numeric vector containing the row-wise covariance values.
 }
 \description{
-placeholder
+This function computes the covariance for each row of two matrices,
+handling missing values appropriately. It calculates the pairwise
+covariance between corresponding rows of `x` and `y`.
 }
 \details{
-placeholder
+The function removes `NA` values from each row-wise computation and
+applies the standard covariance formula with an unbiased estimator
+(dividing by `n-1`). If a row has less than two non-NA values,
+the covariance is set to `NA` to prevent division errors.
 }

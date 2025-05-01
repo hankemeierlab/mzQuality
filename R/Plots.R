@@ -1,52 +1,80 @@
 #' @title Prepare plot data
-#' @description placeholder
-#' @details placeholder
-#' @returns placeholder
-#' @param exp
-#' @param assay
-#' @param batches
-#' @param types
-#' @param doLog
+#' @description Prepares a data frame for plotting by reshaping assay data
+#'     from a SummarizedExperiment object into a long format and adding
+#'     metadata.
+#' @details This function reshapes assay data into a long format, merges it
+#'     with metadata, and filters the data based on specified batches and
+#'     types. It also supports optional log transformation and imputation of
+#'     missing values. A color column is added to distinguish between sample
+#'     types (e.g., SQC and LQC).
+#' @param exp A SummarizedExperiment object containing the experimental data.
+#' @param assay A string specifying the assay to use for plotting. Defaults to
+#'     the first assay in `assayNames(exp)`.
+#' @param batches A vector specifying the batches to include in the plot.
+#'     Defaults to all batches in `exp$batch`.
+#' @param types A vector specifying the sample types to include in the plot.
+#'     Defaults to all types in `exp$type`.
+#' @param doLog Logical, whether to apply a log2 transformation to the assay
+#'     values. Defaults to `FALSE`.
+#' @return A data frame in long format with columns for aliquots, compounds,
+#'     assay values, metadata, and a color column for sample types.
 #' @importFrom dplyr filter arrange %>%
-#' @importFrom imputeLCMD impute.QRILC
-preparePlotData <- function(exp, assay = assayNames(exp)[1], batches = exp$batch,
-                            types = exp$type, doLog = FALSE, doImpute = FALSE) {
-    if (grepl("concentration", assay)) {
-        exp <- exp[rowData(exp)$hasKnownConcentrations, ]
-    }
+#' @examples
+#' # Example usage:
+#' # exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+#' # df <- preparePlotData(exp, assay = "ratio", doLog = TRUE)
+#' @export
+preparePlotData <- function(
+        exp, assay, batches = exp$batch,
+        types = exp$type, doLog = FALSE
+) {
 
-    df <- reshape2::melt(unlist(t(assay(exp, assay))), value.name = assay)
-    rownames(df) <- seq_len(nrow(df))
-    df <- cbind(df, colData(exp)) %>%
-        filter(.data$batch %in% batches) %>%
-        filter(.data$type %in% types) %>%
-        arrange(.data$datetime)
 
+
+    # Convert assay data to long format using base R
+    assayData <- assay(exp, assay)
+
+    df <- data.frame(
+        aliquot = rep(colnames(assayData), times = nrow(assayData)),
+        compound = rep(rownames(assayData), each = ncol(assayData)),
+        value = c(unlist(t(assayData)))
+    )
+    colnames(df)[3] <- assay
+
+    # Add metadata and filter
+    metadata <- as.data.frame(colData(exp))
+    df <- merge(df, metadata, by.x = "aliquot", by.y = "row.names")
+    df <- df[df$batch %in% batches & df$type %in% types, ]
+    df <- df[order(df$datetime), ]
+
+    # Add color column
+    df$color <- NA
     df$color[df$type == "SQC"] <- "black"
     df$color[df$type == "LQC"] <- "gray"
 
+    # Apply log transformation if requested
     if (doLog) {
         df[, assay] <- log2(df[, assay])
     }
 
-    if (doImpute) {
-        df[, assay] <- imputeLCMD::impute.QRILC(as.matrix(df[, assay]))
-    }
-
-    df
+    return(df)
 }
 
 #' @title Add labels to a plot
-#' @description
-#' @details
-#' @returns
-#' @param p
-#' @param textcolor
-#' @param textSize
+#' @description Adds labels to a ggplot object using ggrepel.
+#' @details This function uses ggrepel to add labels to a ggplot object. It
+#'     requires the ggrepel package to be installed.
+#' @returns A ggplot object with added labels.
+#' @param p A ggplot object to which labels will be added.
+#' @param textColor A character string specifying the color of the text.
+#'     Defaults to "white".
+#' @param textSize A numeric value specifying the size of the text.
+#'     Defaults to 3.
 #' @export
 addLabels <- function(p, textColor = "white", textSize = 3) {
     if (requireNamespace("ggrepel", quietly = TRUE)) {
         p <- p + ggrepel::geom_label_repel(
+            mapping = aes(label = .data$aliquot),
             color = textColor,
             segment.color = "black",
             size = textSize
@@ -56,20 +84,25 @@ addLabels <- function(p, textColor = "white", textSize = 3) {
 }
 
 #' @title Facet a ggplot by a column
-#' @description placeholder
-#' @details placeholder
-#' @returns placeholder
-#' @param plot A ggplot2 object
-#' @param by Character vector that matches one of the properties of the
-#' `colData(exp)`. Defaults to `"batch"`
-#' @param ncol Number of columns, defaults to 1
-#' @param shareY Boolean value, should the y-axis be shared among facets?
-#' Defaults to TRUE
-#' @param shareX Boolean value, should the x-axis be shared among facets?
-#' Defaults to FALSE
+#' @description Facets a ggplot object by a specified column.
+#' @details This function uses ggplot2's facet_wrap to create facets for a
+#'     ggplot object based on a specified column. It allows customization of
+#'     the number of columns and whether axes are shared.
+#' @returns A faceted ggplot object.
+#' @param plot A ggplot2 object to be faceted.
+#' @param by A character vector specifying the column to facet by. Defaults
+#'     to "batch".
+#' @param ncol An integer specifying the number of columns in the facet.
+#'     Defaults to 1.
+#' @param shareY A logical value indicating whether the y-axis should be
+#'     shared among facets. Defaults to TRUE.
+#' @param shareX A logical value indicating whether the x-axis should be
+#'     shared among facets. Defaults to FALSE.
 #' @importFrom ggplot2 facet_wrap
 #' @export
-facetPlot <- function(plot, by = "batch", ncol = 1, shareY = TRUE, shareX = FALSE) {
+facetPlot <- function(
+        plot, by = "batch", ncol = 1, shareY = TRUE, shareX = FALSE
+) {
     if (shareY & shareX) {
         scales <- "fixed"
     } else if (shareY) {
@@ -80,13 +113,36 @@ facetPlot <- function(plot, by = "batch", ncol = 1, shareY = TRUE, shareX = FALS
         scales <- "free"
     }
 
+    plot <- plot +
+        facet_wrap(facets = by, ncol = ncol, scales = scales)
 
-    plot + facet_wrap(facets = by, ncol = ncol, scales = scales)
+    return(plot)
 }
 
-#' @title Add text bubble to a plot
-#' @description
-#' @details
+#' @title Add text bubbles to a data frame for visualization
+#' @description Adds detailed metadata as text bubbles to a data frame for
+#'     use in visualizations, based on either aliquot-level or compound-level
+#'     metadata from a SummarizedExperiment object.
+#' @details This function generates text annotations for each row in the
+#'     provided data frame (`df`) by extracting metadata from the
+#'     SummarizedExperiment object (`exp`). The annotations are added as a
+#'     new column (`text`) in the data frame. The function supports both
+#'     aliquot-level and compound-level metadata, depending on the value of
+#'     the `type` parameter.
+#' @param exp A SummarizedExperiment object containing the experimental data.
+#' @param df A data frame to which the text bubbles will be added. It must
+#'     include a column matching the `type` parameter (e.g., "aliquot" or
+#'     "compound").
+#' @param type A string specifying the type of metadata to use for the text
+#'     bubbles. Can be `"aliquot"` for aliquot-level metadata or any other
+#'     string for compound-level metadata. Defaults to `"aliquot"`.
+#' @return A data frame with an additional column, `text`, containing the
+#'     generated text bubbles.
+#' @examples
+#' # Example usage:
+#' # exp <- SummarizedExperiment(...)
+#' # df <- data.frame(aliquot = c("A1", "A2", "A3"))
+#' # df <- addTextBubble(exp, df, type = "aliquot")
 #' @export
 addTextBubble <- function(exp, df, type = "aliquot") {
     if (type == "aliquot") {
@@ -99,8 +155,8 @@ addTextBubble <- function(exp, df, type = "aliquot") {
             paste0(sprintf("%s: %s", names, values), collapse = "\n")
         }, character(1))
     } else {
-        cols <- vapply(rowData(exp), function(x) !"matrix" %in% class(x), logical(1))
-        x <- rowData(exp)[, as.vector(which(cols)), drop = FALSE]
+
+        x <- vectorDf(rowData(exp))
 
         metadata <- as.data.frame(x)
         rownames(metadata) <- rownames(x)
@@ -115,7 +171,6 @@ addTextBubble <- function(exp, df, type = "aliquot") {
 
         df$text <- res[as.vector(unlist(df[, type]))]
     }
-
     df
 }
 
@@ -161,17 +216,21 @@ addTextBubble <- function(exp, df, type = "aliquot") {
 #' @importFrom methods is
 #' @importFrom stats reorder
 #' @export
-compoundPlot <- function(exp, compound = 1, batches = exp$batch, types = exp$type,
-                         assay = "ratio_corrected", doLog = TRUE,
-                         withinTrend = FALSE, shortName = FALSE,
-                         trendTypes = metadata(exp)$QC,
-                         addInternalStandards = FALSE, smooth = TRUE) {
-    if (is(compound, "numeric")) {
-        compound <- rownames(exp)[compound]
-    }
+compoundPlot <- function(
+        exp, compound = 1, batches = exp$batch, types = exp$type,
+        assay = "ratio_corrected", doLog = TRUE,
+        withinTrend = FALSE, shortName = FALSE,
+        trendTypes = metadata(exp)$QC,
+        addInternalStandards = FALSE, smooth = TRUE
+) {
 
-    df <- preparePlotData(exp[compound, ], assay, batches = batches, types = types, doLog = FALSE)
-
+    df <- preparePlotData(
+        exp = exp[compound, ],
+        assay = assay,
+        batches = batches,
+        types = types,
+        doLog = FALSE
+    )
 
     if (addInternalStandards | assay == "area" & metadata(exp)$hasIS) {
         df_is <- as.data.frame(preparePlotData(exp[compound, ],
@@ -180,17 +239,13 @@ compoundPlot <- function(exp, compound = 1, batches = exp$batch, types = exp$typ
             doLog = FALSE
         ))
 
-        df_is$Var2 <- rowData(exp[compound, ])$compound_is
+        df_is$compound <- rowData(exp[compound, ])$compound_is
         colnames(df_is)[colnames(df_is) == "area_is"] <- assay
 
         df_is$type <- "ISTD"
         df_is$color <- "pink"
-
-
         df <- rbind(df, df_is)
     }
-
-
 
     df <- df %>%
         mutate(group = paste(
@@ -198,58 +253,63 @@ compoundPlot <- function(exp, compound = 1, batches = exp$batch, types = exp$typ
             .data[[ifelse(withinTrend, "batch", "type")]],
             ifelse(grepl("CAL", .data$type), .data$injection, 1),
             sep = "_"
-        ))
-
-
-
-    colors <- setNames(unique(df$color), unique(df$type))
-
-    if (shortName) {
-        df$Var1 <- order(df$injection_time)
-    }
-
-    df <- df %>%
+        ))  %>%
         arrange(.data$datetime) %>%
-        mutate(aliquot = reorder(.data$Var1, .data$injection_time))
-
+        mutate(aliquot = reorder(.data$aliquot, .data$injection_time))
 
     df <- addTextBubble(exp, df, type = "aliquot")
-
-
-    p <- scatterPlot(df, assay, trendTypes, colors)
+    p <- scatterPlot(df, assay, trendTypes)
     return(p)
 }
 
 #' @title Compound plot function
-#' @description
-#' A short description...
-#' @details placeholder
-#' @returns placeholder
+#' @description Creates a scatter plot with optional trend lines and log
+#'     scaling.
+#' @details This function generates a scatter plot using ggplot2. It allows
+#'     for optional trend lines based on specified types and can apply log
+#'     scaling to the y-axis.
+#' @returns A ggplot object representing the scatter plot.
+#' @param df A data frame containing the data to be plotted. Must include
+#'     columns for `aliquot`, the assay, `text`, `color`, `type`, and
+#'     `Compound`.
+#' @param assay A character string specifying the column name of the assay
+#'     to be plotted on the y-axis.
+#' @param trendTypes A character vector specifying the types of data to be
+#'     used for trend lines.
+#' @param smooth A logical value indicating whether to add trend lines to
+#'     the plot. Defaults to TRUE.
+#' @param doLog A logical value indicating whether to apply log scaling to
+#'     the y-axis. Defaults to TRUE.
 #' @importFrom dplyr filter arrange mutate
 #' @importFrom ggplot2 ggplot aes scale_color_manual ylab theme_minimal xlab
-#' theme element_text geom_smooth
+#'     theme element_text geom_smooth .data ggtitle
 #' @importFrom stats lm
 #' @export
-scatterPlot <- function(df, assay, trendTypes, colors, smooth = TRUE, doLog = TRUE) {
-    p <- ggplot(df, aes(x = .data$aliquot, y = .data[[assay]], text = .data$text)) +
-        geom_point(aes(fill = .data$type), color = "black", stroke = 0.2, size = 3, shape = 21, na.rm = TRUE) +
-        scale_fill_manual(values = colors) +
+scatterPlot <- function(df, assay, trendTypes, smooth = TRUE, doLog = TRUE) {
+    p <- ggplot(df, aes(
+        x = .data$aliquot, y = .data[[assay]], text = .data$text,
+        color = .data$color, fill = .data$color
+    )) +
+        geom_point(
+            aes(fill = .data$type), color = "black", stroke = 0.2, size = 3,
+            shape = 21, na.rm = TRUE
+        ) +
         ylab(assay) +
         xlab("") +
         theme_minimal() +
-        ggplot2::ggtitle(df$Compound[1]) +
+        ggtitle(df$Compound[1]) +
         theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7))
 
     trendData <- filter(df, .data$type %in% trendTypes)
     if (smooth && nrow(trendData) > 0) {
-        p <- p + scale_color_manual(values = colors) +
+        p <- p +
             geom_smooth(
-                formula = "y ~ x", inherit.aes = TRUE, method = lm, show.legend = FALSE, na.rm = TRUE,
+                formula = "y ~ x", inherit.aes = TRUE, method = lm,
+                show.legend = FALSE, na.rm = TRUE,
                 aes(group = .data$group, color = .data$type), level = .95,
                 data = trendData
             )
     }
-
 
     if (doLog) {
         p <- p + scale_y_log10()
@@ -259,26 +319,34 @@ scatterPlot <- function(df, assay, trendTypes, colors, smooth = TRUE, doLog = TR
 }
 
 #' @title Aliquot Plot
-#' @description
-#' A short description...
-#' @details placeholder
-#' @returns placeholder
-#' @param exp
-#' @param assay
-#' @param batches
-#' @param types
-#' @param doLog
+#' @description Creates a boxplot for aliquots with optional log scaling.
+#' @details This function generates a boxplot for aliquots using ggplot2. It
+#'     allows for optional log scaling of the y-axis and customizes the plot
+#'     based on the provided experimental data.
+#' @returns A ggplot object representing the aliquot plot.
+#' @param exp A data frame containing experimental data. Must include columns
+#'     for `batch`, `type`, `Aliquot`, and `injection_time`.
+#' @param assay A character string specifying the column name of the assay
+#'     to be plotted on the y-axis.
+#' @param batches A vector specifying the batches to include in the plot.
+#'     Defaults to `exp$batch`.
+#' @param types A vector specifying the types to include in the plot.
+#'     Defaults to `exp$type`.
+#' @param doLog A logical value indicating whether to apply log scaling to
+#'     the y-axis. Defaults to FALSE.
 #' @importFrom dplyr filter arrange mutate
 #' @importFrom ggplot2 ggplot aes scale_color_manual ylab theme_minimal xlab
-#' theme element_text scale_y_log10
+#'     theme element_text scale_y_log10 .data
 #' @export
-aliquotPlot <- function(exp, assay, batches = exp$batch, types = exp$type,
-                        doLog = FALSE) {
+aliquotPlot <- function(
+        exp, assay, batches = exp$batch,
+        types = exp$type, doLog = FALSE
+) {
     df <- preparePlotData(exp, assay, batches, types = types, doLog = doLog)
-    vals <- setNames(unique(df$color), unique(df$type))
+    vals <- setNames(df$color, df$type)
     p <- df %>%
         arrange(.data$datetime) %>%
-        mutate(sample = reorder(.data$Var1, .data$injection_time)) %>%
+        mutate(sample = reorder(.data$aliquot, .data$injection_time)) %>%
         ggplot(aes(x = .data$sample, y = .data[[assay]], text = .data$sample)) +
         geom_boxplot(aes(fill = .data$type), na.rm = TRUE) +
         scale_fill_manual(values = vals) +
@@ -293,58 +361,91 @@ aliquotPlot <- function(exp, assay, batches = exp$batch, types = exp$type,
     p
 }
 
+#' @title Adding confidence lines
+#' @description Adds confidence interval lines to a ggplot object.
+#' @details This function calculates the mean and standard deviation of
+#'     medians for each aliquot and adds dashed horizontal lines to the plot
+#'     at ±3 standard deviations from the mean.
+#' @returns A ggplot object with added confidence interval lines.
+#' @param plot A ggplot object to which confidence interval lines will be
+#'     added.
+#' @param df A data frame containing the data used to calculate confidence
+#'     intervals. Must include columns for `Aliquot` and the assay.
+#' @param assay A character string specifying the column name of the assay
+#'     to be used for calculating confidence intervals.
+#' @importFrom dplyr group_by summarise pull
+#' @importFrom ggplot2 geom_hline .data
+#' @importFrom stats sd
+addPlotConfidenceInterval <- function(plot, df, assay){
+    medians <- df %>%
+        group_by(.data$aliquot) %>%
+        summarise(median = median(.data[[assay]], na.rm = TRUE)) %>%
+        pull(.data$median)
+
+    m <- mean(medians, na.rm = TRUE)
+    sd <- sd(medians, na.rm = TRUE)
+
+    plot <- plot +
+        geom_hline(
+            yintercept = m + sd * 3,
+            linetype = "dashed",
+            show.legend = FALSE
+        ) +
+        geom_hline(
+            yintercept = m - sd * 3,
+            linetype = "dashed",
+            show.legend = FALSE
+        )
+
+    return(plot)
+}
+
 #' @title Violin Plot
-#' @description
-#' A short description...
-#' @details placeholder
-#' @returns placeholder
-#' @param exp
-#' @param assay
-#' @param batches
-#' @param types
-#' @param doLog
-#' @param addMedian
-#' @param addConfidenceInterval
-#' @param withinTrend
+#' @description Creates a violin plot with optional median points and
+#'     confidence intervals.
+#' @details This function generates a violin plot using ggplot2. It allows
+#'     for optional log scaling, adding median points, and confidence
+#'     intervals.
+#' @returns A ggplot object representing the violin plot.
+#' @param exp An experimental data object containing the data to be plotted.
+#' @param assay A character string specifying the assay column to be plotted
+#'     on the y-axis. Defaults to "ratio_corrected".
+#' @param batches A vector specifying the batches to include in the plot.
+#'     Defaults to `exp$batch`.
+#' @param types A vector specifying the types to include in the plot.
+#'     Defaults to `metadata(exp)$QC`.
+#' @param doLog A logical value indicating whether to apply log scaling to
+#'     the y-axis. Defaults to FALSE.
+#' @param addMedian A logical value indicating whether to add median points
+#'     to the plot. Defaults to TRUE.
+#' @param addConfidenceInterval A logical value indicating whether to add
+#'     confidence intervals to the plot. Defaults to TRUE.
+#' @param withinTrend A logical value indicating whether to inherit trend
+#'     line aesthetics. Defaults to FALSE.
 #' @importFrom dplyr filter arrange mutate
 #' @importFrom ggplot2 ggplot aes scale_color_manual ylab theme_minimal xlab
-#' theme element_text scale_y_log10 stat_summary geom_violin
+#'     theme element_text scale_y_log10 stat_summary geom_violin .data
 #' @importFrom stats sd
 #' @importFrom dplyr group_by ungroup summarise pull n
+#' @importFrom viridis viridis
 #' @export
-violinPlot <- function(exp, assay = "ratio_corrected",
-                       batches = exp$batch, types = metadata(exp)$QC,
-                       doLog = FALSE, addMedian = TRUE,
-                       addConfidenceInterval = TRUE,
-                       withinTrend = FALSE) {
-    df <- preparePlotData(exp, assay, batches, types = types, doLog = doLog) %>%
-        group_by(.data$Var2, .data$batch) %>%
-        mutate(order = seq_len(n())) %>%
-        ungroup()
+violinPlot <- function(
+        exp, assay = "ratio_corrected",
+        batches = exp$batch, types = metadata(exp)$QC,
+        doLog = FALSE, addMedian = TRUE,
+        addConfidenceInterval = TRUE, withinTrend = FALSE
+) {
+    df <- preparePlotData(exp, assay, batches, types = types, doLog = doLog)
 
-    vals <- viridis::viridis(
-        length(unique(df$batch)),
-        begin = 0.2,
-        end = 0.8,
-        option = "H"
-    )
-    vals <- setNames(vals, unique(df$batch))
-
-    df$batch <- as.factor(df$batch)
-
-
-
-    df$compound <- as.character(df$Var2)
     df <- addTextBubble(exp, df, type = "compound")
 
+    mapping <- aes(x = .data$Aliquot, y = .data[[assay]], fill = .data$batch)
 
-    p <- ggplot(df, aes(x = .data$Var1, y = .data[[assay]], fill = .data$batch)) +
+    p <- ggplot(df, mapping = mapping) +
         geom_violin(na.rm = TRUE) +
         geom_point(
-            aes(text = .data$text),
-            size = .2,
-            position = position_jitter(0.2),
-            show.legend = FALSE
+            aes(text = .data$text), size = .2,
+            position = position_jitter(0.2), show.legend = FALSE
         ) +
         theme_minimal() +
         theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
@@ -362,51 +463,55 @@ violinPlot <- function(exp, assay = "ratio_corrected",
     }
 
     if (addConfidenceInterval) {
-        medians <- df %>%
-            group_by(.data$Var1) %>%
-            summarise(median = median(.data[[assay]], na.rm = TRUE)) %>%
-            pull(.data$median)
-
-        m <- mean(medians, na.rm = TRUE)
-        sd <- sd(medians, na.rm = TRUE)
-
-        p <- p + geom_hline(yintercept = m + sd * 3, linetype = "dashed", show.legend = FALSE) +
-            geom_hline(yintercept = m - sd * 3, linetype = "dashed", show.legend = FALSE)
+        p <- addPlotConfidenceInterval(p, df, assay)
     }
-    p
+    return(p)
 }
 
-#' @title Transform data into PCA data
-#' @description
-#' A short description...
-#' @details placeholder
-#' @returns placeholder
+#' @title Transform Data into PCA Data
+#' @description Prepares data for PCA analysis by transforming and imputing
+#'     missing or infinite values.
+#' @details This function processes experimental data for PCA analysis. It
+#'     imputes missing or infinite values, converts data to a wide format,
+#'     and performs PCA using prcomp.
+#' @returns A prcomp object containing the PCA results.
+#' @param exp An experimental data object containing the data to be
+#'     transformed.
+#' @param assay A character string specifying the assay column to be used
+#'     for PCA. Defaults to the first assay in `assayNames(exp)`.
+#' @param batches A vector specifying the batches to include in the PCA.
+#'     Defaults to `exp$batch`.
+#' @param types A vector specifying the types to include in the PCA.
+#'     Defaults to `exp$type`.
+#' @param doLog A logical value indicating whether to apply log scaling to
+#'     the data. Defaults to TRUE.
 #' @importFrom stats prcomp var xtabs
-#' @importFrom dplyr group_by mutate ungroup if_else
-getPcaData <- function(exp, assay = assayNames(exp)[1],
-                       batches = exp$batch, types = exp$type,
-                       doLog = TRUE) {
+#' @importFrom dplyr group_by mutate ungroup if_else .data
+getPcaData <- function(
+        exp, assay = assayNames(exp)[1],
+        batches = exp$batch, types = exp$type, doLog = TRUE
+) {
     df <- preparePlotData(
         exp = exp, assay = assay, batches = batches,
-        types = types, doLog = doLog, doImpute = FALSE
+        types = types, doLog = doLog
     )
 
-    df <- df[is.finite(df[, assay]), ]
+    df <- df[is.finite(df[[assay]]), ]
 
     pc <- df %>%
-        group_by(.data$Var1) %>%
+        group_by(.data$aliquot) %>%
         # Impute infinite values
-        mutate(value = if_else(condition = is.infinite(.data[[assay]]) | is.na(.data[[assay]]),
+        mutate(value = if_else(
+            condition = is.infinite(.data[[assay]]) | is.na(.data[[assay]]),
             true = min(.data[[assay]][is.finite(.data[[assay]])]) * 0.01,
             false = .data[[assay]]
         )) %>%
         ungroup() %>%
-        mutate(Var1 = factor(.data$Var1))
+        mutate(aliquot = factor(.data$aliquot))
 
     # Convert long to wide
-    pc <- xtabs(value ~ Var1 + Var2, data = pc, subset = NULL) %>%
+    pc <- xtabs(value ~ aliquot + compound, data = pc, subset = NULL) %>%
         as.data.frame.matrix()
-
 
     pc <- pc[, which(apply(pc, 2, var) != 0)]
     pc <- prcomp(pc, scale = TRUE, center = TRUE)
@@ -414,6 +519,53 @@ getPcaData <- function(exp, assay = assayNames(exp)[1],
     return(pc)
 }
 
+#' @title Create a PCA plot with optional confidence intervals
+#' @description Generates a PCA plot using ggplot2, with options to add
+#'     confidence intervals for each group.
+#' @details This function creates a PCA plot from the provided data, with
+#'     points colored by group and optional confidence intervals (ellipses)
+#'     for each group. The x-axis and y-axis labels can be customized, and
+#'     colors for the groups are specified using a color vector.
+#' @param data A data frame containing the PCA results. It must include
+#'     columns `PC1`, `PC2`, `type`, and `text`.
+#' @param xAxis A string specifying the label for the x-axis.
+#' @param yAxis A string specifying the label for the y-axis.
+#' @param addConfidenceInterval Logical, whether to add confidence intervals
+#'     (ellipses) for each group. Defaults to `TRUE`.
+#' @return A ggplot object representing the PCA plot.
+#' @importFrom ggplot2 ggplot aes geom_point theme_minimal xlab ylab
+#' scale_color_manual scale_fill_manual guides stat_ellipse .data
+#' @return A ggplot object representing the PCA plot.
+createPcaPlot <- function(data, xAxis, yAxis, addConfidenceInterval = TRUE) {
+
+    pointMapping <- aes(
+        x = .data$PC1, y = .data$PC2, fill = .data$type,
+        group = .data$type, text = .data$text
+    )
+
+    intervalMapping <- aes(
+        x = .data$PC1, y = .data$PC2,
+        group = .data$type, color = .data$type
+    )
+
+    p <- ggplot(data = data, mapping = pointMapping) +
+        geom_point(size = 3, stroke = 0.2, shape = 21, color = "black") +
+        scale_color_manual(values = setNames(data$color, data$type)) +
+        scale_fill_manual(values = setNames(data$color, data$type)) +
+        theme_minimal() +
+        xlab(xAxis) +
+        ylab(yAxis) +
+        guides(color = "legend")
+
+    if (addConfidenceInterval) {
+        p <- p + stat_ellipse(
+            data = data, mapping = intervalMapping, inherit.aes = TRUE,
+            na.rm = TRUE, level = 0.9
+        )
+    }
+
+    return(p)
+}
 
 #' @title PCA Plot of Metabolomics Data
 #' @description Performs principal component analysis (PCA) on
@@ -446,164 +598,215 @@ getPcaData <- function(exp, assay = assayNames(exp)[1],
 #'   ellipse is drawn around each group (default is TRUE).
 #' @param typeColors Named vector of colors used for each sample type or
 #'   batch (default includes black for SQC and grey for LQC).
-#' @importFrom ggplot2 guides stat_ellipse
-#' @importFrom dplyr select bind_cols arrange all_of mutate filter
+#' @importFrom ggplot2 guides stat_ellipse .data
+#' @importFrom dplyr select bind_cols arrange all_of mutate filter .data
 #' @importFrom viridis viridis
 #' @export
-pcaPlot <- function(exp, assay = assayNames(exp)[1],
-                    batches = exp$batch, types = exp$type,
-                    pc1 = 1, pc2 = 2,
-                    doLog = TRUE, sampleAsBatch = TRUE,
-                    addConfidenceInterval = TRUE,
-                    typeColors = c(SQC = "black", LQC = "grey")) {
-    # PCA
+pcaPlot <- function(
+        exp, assay = assayNames(exp)[1],
+        batches = exp$batch, types = exp$type,
+        pc1 = 1, pc2 = 2, doLog = TRUE,
+        sampleAsBatch = TRUE, addConfidenceInterval = TRUE,
+        typeColors = c(SQC = "black", LQC = "grey")
+) {
+
     pc <- getPcaData(exp, assay, batches, types, doLog)
 
-
-    # Create axis labels
     expvar <- (pc$sdev)^2 / sum(pc$sdev^2)
+    xAxis <- sprintf("PC%s (%s%%)", pc1, format(expvar[pc1] * 100, digits = 4))
+    yAxis <- sprintf("PC%s (%s%%)", pc2, format(expvar[pc2] * 100, digits = 4))
 
-    exp <- exp[, exp$type %in% types & exp$batch %in% batches]
-    exp <- exp[, rownames(pc$x)]
+    exp <- exp[, exp$type %in% types & exp$batch %in% batches][, rownames(pc$x)]
 
     data <- pc$x %>%
         as.data.frame() %>%
-        # Select the PCs chosen
         select(all_of(c(pc1, pc2))) %>%
-        # Bind column metadata
         bind_cols(as.data.frame(colData(exp))) %>%
-        mutate(batch = formatC(
-            as.integer(.data$batch),
-            max(nchar(.data$batch)),
-            format = "d", flag = "0"
-        )) %>%
-        arrange(.data$batch) %>%
-        mutate(type = ifelse(.data$type == "SAMPLE" & sampleAsBatch,
-            .data$batch, .data$type
-        ))
+        arrange(.data$batch)
 
     data$aliquot <- rownames(data)
-    types <- sort(unique(data$type))
-    colorVec <- viridis(length(types), begin = 0.2, end = 0.8, option = "H")
 
-    samps <- !types %in% exp$type
-    types[samps] <- paste("Batch", types[samps])
-    colorVec <- setNames(colorVec, types)
-    colorVec <- c(typeColors, colorVec)
-    colorVec <- colorVec[!duplicated(names(colorVec))]
-
-    samps <- !data$type %in% exp$type
-    data$type[samps] <- paste("Batch", data$type[samps])
-    data <- addTextBubble(exp, data, type = "aliquot")
-
-
-    loadings <- data.frame(pc$rotation, variable = rownames(pc$rotation))
-    scale_factor <- max(abs(data[, c(1, 2)])) / max(abs(loadings[, c(1, 2)]))
-    loadings[, c(1, 2)] <- loadings[, c(1, 2)] * scale_factor
-
-    # Make plot
-    p <- ggplot(
-        data = data,
-        mapping = aes(
-            x = .data$PC1, y = .data$PC2, fill = .data$type,
-            group = .data$type, text = .data$text
-        )
-    ) +
-        geom_point(size = 3, stroke = 0.2, shape = 21, color = "black") +
-        theme_minimal() +
-        xlab(sprintf("PC%s (%s%%)", pc1, format(expvar[pc1] * 100, digits = 4))) +
-        ylab(sprintf("PC%s (%s%%)", pc2, format(expvar[pc2] * 100, digits = 4))) +
-        scale_color_manual(values = colorVec) +
-        scale_fill_manual(values = colorVec) +
-        guides(color = "legend")
-
-    if (addConfidenceInterval) {
-        p <- p + stat_ellipse(
-            data = data,
-            mapping = aes(
-                group = .data$type, color = .data$type,
-                x = .data$PC1, y = .data$PC2
-            ),
-            inherit.aes = TRUE,
-            na.rm = TRUE,
-            level = 0.9
-        )
+    if (sampleAsBatch) {
+        idx <- data$type == "SAMPLE"
+        data$type[idx] <- data$batch[idx]
     }
 
-    return(p)
+    types <- unique(data$type)
+    colorVec <- viridis(length(types), begin = 0.2, end = 0.8, option = "H")
+    names(colorVec) <- types
+
+    colorVec <- coalesce(exp$color[types], colorVec)
+    data$color <- colorVec[data$type]
+
+    data <- addTextBubble(exp, data, type = "aliquot")
+
+    createPcaPlot(
+        data = data, xAxis = xAxis, yAxis = yAxis,
+        addConfidenceInterval = addConfidenceInterval
+    )
 }
 
-#' @title Concentration Plot
-#' @description placeholder
-#' @details placeholder
-#' @returns placeholder
-#' @param exp
-#' @param assay
-#' @param compound
-#' @param batch
-#' @param types
-#' @param calType
-#' @param removeOutliers
-#' @param withinTrend
-#' @export
-concentrationPlot <- function(exp, assay = "ratio_corrected", compound = 1,
-                              batch = 1, types = c("SAMPLE", "SQC"),
-                              calType = metadata(exp)$concentration,
-                              removeOutliers = TRUE, withinTrend = TRUE,
-                              plotOnCalibrationLine = TRUE) {
-    cals <- exp$type == calType
-
-    df <- preparePlotData(exp[compound, ], "concentration", batch, types = c(calType, types), doLog = FALSE)
-    vals <- setNames(unique(df$color), unique(df$type))
-
-    df$ratio <- preparePlotData(exp[compound, ], assay, batch, types = c(calType, types), doLog = FALSE)[, assay]
-
-    df$batch <- as.factor(df$batch)
-
-
+#' @title Get Concentration Model Data
+#' @description Prepares model data for concentration plots by filtering and
+#'     optionally removing outliers.
+#' @details This function filters the input data frame for a specific
+#'     calibration type and optionally removes outliers based on the
+#'     concentration outliers in the experimental data.
+#' @returns A data frame containing the filtered and processed model data.
+#' @param df A data frame containing the data to be processed.
+#' @param exp An experimental data object containing metadata and outlier
+#'     information.
+#' @param calType A character string specifying the calibration type to
+#'     filter the data.
+#' @param removeOutliers A logical value indicating whether to remove
+#'     outliers from the model data. Defaults to TRUE.
+getConcentrationModelData <- function(df, exp, calType, removeOutliers) {
     modelData <- df %>%
         filter(.data$type == calType)
+
+
+    if (removeOutliers) {
+
+        if (modelData$outliers[1] == 1) {
+            modelData <- modelData[-1, ]
+        }
+
+
+        if (modelData$outliers[nrow(modelData)] == 1) {
+            modelData <- modelData[-nrow(modelData), ]
+        }
+    }
+
+    return(modelData)
+}
+
+#' @title Prepare Data for Concentration Plot
+#' @description Prepares the data required for generating a concentration plot,
+#'     including calibration and sample data, with optional adjustments for
+#'     plotting on the calibration line.
+#' @details This function processes the experimental data to extract and
+#'     structure the necessary information for creating a concentration plot.
+#'     It supports filtering by batch and types, and optionally adjusts
+#'     concentration values for specific types when not plotting on the
+#'     calibration line. Additional annotations, such as text bubbles, are
+#'     added to the data for enhanced visualization.
+#' @returns A dataframe containing the processed data for the
+#'     concentration plot.
+#' @param exp A SummarizedExperiment object containing the experimental data.
+#' @param assay A character string specifying the assay to be used for
+#'     plotting. Defaults to "concentration".
+#' @param batch An integer specifying the batch index to filter the data.
+#' @param types A character vector specifying the types of data to include
+#'     in the plot (e.g., "SAMPLE", "SQC").
+#' @param calType A character string specifying the calibration type to include
+#'     in the plot. Defaults to the concentration metadata in `exp`.
+#' @param plotOnCalibrationLine A logical value indicating whether to plot
+#'     data on the calibration line. Defaults to TRUE.
+#' @importFrom dplyr select all_of
+getConcentrationPlotData <- function(
+        exp, assay, batch, calType, types, plotOnCalibrationLine = TRUE
+){
+
+    df <- preparePlotData(
+        exp = exp,
+        assay = "concentration",
+        batches = batch,
+        types = c(calType, types),
+        doLog = FALSE
+    )
+
+    cols <- exp$type %in% c(calType, types) & exp$batch %in% batch
+
+    df$assay <- c(unlist(t(assay(exp[, cols], assay))))
+
+    outlierAssay <- sprintf("%s_Outliers", calType)
+    df$outliers <- c(unlist(t(assay(exp[, cols], outlierAssay))))
+
+    df$outliers[is.na(df$outliers)] <- 0
+    df$batch <- as.factor(df$batch)
 
     if (!plotOnCalibrationLine) {
         df$concentration[df$type %in% types] <- 0
     }
 
+    df <- addTextBubble(exp, df, type = "aliquot")
+    return(df)
+}
 
-    modelData$outlier <- c(rowData(exp[compound, ])$concentrationOutliers[, unique(as.vector(modelData$Var1))])
+#' @title Concentration Plot
+#' @description Creates a concentration plot with optional calibration lines
+#'     and trend lines.
+#' @details This function generates a concentration plot using ggplot2. It
+#'     allows for customization of calibration types, outlier removal, and
+#'     whether to plot on the calibration line.
+#' @returns A ggplot object representing the concentration plot.
+#' @param exp An experimental data object containing the data to be plotted.
+#' @param assay A character string specifying the assay column to be plotted
+#'     on the y-axis. Defaults to "ratio_corrected".
+#' @param compound An integer specifying the compound index to be plotted.
+#'     Defaults to 1.
+#' @param batch An integer specifying the batch index to be plotted.
+#'     Defaults to 1.
+#' @param types A character vector specifying the types of data to include
+#'     in the plot. Defaults to `c("SAMPLE", "SQC")`.
+#' @param calType A character string specifying the calibration type.
+#'     Defaults to the concentration metadata in `exp`.
+#' @param removeOutliers A logical value indicating whether to remove
+#'     outliers from the data. Defaults to TRUE.
+#' @param withinTrend A logical value indicating whether to inherit trend
+#'     line aesthetics. Defaults to TRUE.
+#' @param plotOnCalibrationLine A logical value indicating whether to plot
+#'     data on the calibration line. Defaults to TRUE.
+#' @importFrom ggplot2 ggplot aes geom_point geom_hline geom_smooth
+#'     theme_minimal
+#' @export
+concentrationPlot <- function(
+        exp, assay = "ratio_corrected", compound = 1,
+        batch = 1, types = c("SAMPLE", "SQC"),
+        calType = metadata(exp)$concentration,
+        removeOutliers = TRUE, withinTrend = TRUE,
+        plotOnCalibrationLine = TRUE
+) {
 
-    df$outlier <- FALSE
-    df <- dplyr::bind_rows(
-        df %>% filter(.data$type != calType),
-        modelData
+    exp <- exp[rowData(exp)$hasKnownConcentrations, ]
+
+    df <- getConcentrationPlotData(
+        exp = exp[compound, ],
+        assay = assay,
+        batch = batch,
+        calType = calType,
+        types = types,
+        plotOnCalibrationLine = plotOnCalibrationLine
     )
 
-    if (removeOutliers) {
-        if (modelData$outlier[1]) {
-            modelData <- modelData[-1, ]
-        }
-        if (modelData$outlier[nrow(modelData)]) {
-            modelData <- modelData[-nrow(modelData), ]
-        }
-    }
-
-    df$aliquot <- as.character(df$Var1)
-    df <- addTextBubble(exp, df, type = "aliquot")
+    modelData <- getConcentrationModelData(
+        df = df,
+        exp = exp[compound, ],
+        calType = calType,
+        removeOutliers = removeOutliers
+    )
 
     ggplot(df, aes(
-        x = .data$concentration, y = .data$ratio, color = .data$type,
-        group = .data$batch
-    )) +
+        x = .data$concentration, y = .data$assay,
+        color = .data$type, group = .data$batch
+        )) +
         geom_point(size = 2, aes(text = .data$text)) +
-        scale_color_manual(values = vals) +
-        geom_hline(mapping = aes(yintercept = max(.data$ratio)), linetype = "dashed", data = modelData) +
-        geom_hline(mapping = aes(yintercept = min(.data$ratio)), linetype = "dashed", data = modelData) +
-        geom_smooth(
-            formula = "y ~ x", method = lm, inherit.aes = withinTrend, level = .95,
-            aes(x = .data$concentration, y = .data$ratio),
-            na.rm = TRUE, show.legend = FALSE,
-            data = modelData
+        geom_hline(
+            mapping = aes(yintercept = max(.data$assay)),
+            linetype = "dashed", data = modelData
         ) +
-        theme_minimal()
+        geom_hline(
+            mapping = aes(yintercept = min(.data$assay)),
+            linetype = "dashed", data = modelData
+        ) +
+        geom_smooth(
+            formula = "y ~ x", method = lm, inherit.aes = withinTrend,
+            aes(x = .data$concentration, y = .data$assay),
+            na.rm = TRUE, show.legend = FALSE,
+            data = modelData, level = .95
+        ) +
+        theme_minimal() +
+        ylab(assay)
 }
 
 #' @title Plot heatmap of RSDQCs with internal standards
@@ -613,6 +816,7 @@ concentrationPlot <- function(exp, assay = "ratio_corrected", compound = 1,
 #' internal standard should be picked.
 #' @param exp SummarizedExperiment object
 #' @returns Plotly heatmap of compound - internal standard RSDQCs
+#' @importFrom heatmaply heatmaply
 #' @export
 #' @examples
 #' # Read the example dataset
@@ -630,13 +834,13 @@ rsdqcPlot <- function(exp) {
     }
 
     exp <- exp[!is.na(rowData(exp)$rsdqcCorrected), ]
-    rsdqcs <- matrixRSDQCs(exp, returnRSDs = TRUE)
+    rsdqcs <- matrixRSDQCs(exp)
 
     cols <- viridis::viridis(
         n = 256, alpha = 1, begin = 0.2, end = 0.8,
         option = "H"
     )
-    p <- heatmaply::heatmaply(as.matrix(rsdqcs),
+    p <- heatmaply(as.matrix(rsdqcs),
         plot_method = "ggplot",
         dendrogram = "none",
         margins = c(0, 0, 0, 0), colors = cols
@@ -651,6 +855,8 @@ rsdqcPlot <- function(exp) {
 #' @param exp SummarizedExperiment object
 #' @param assay Which assay to use for plotting the values
 #' @returns Plotly heatmap of values in the provided assay
+#' @importFrom heatmaply heatmaply
+#' @importFrom viridis viridis
 #' @export
 #' @examples
 #' # Read the example dataset
@@ -668,109 +874,18 @@ heatmapPlot <- function(exp, assay = "ratio") {
         return(NULL)
     }
 
-    cols <- viridis::viridis(
+    cols <- viridis(
         n = 256, alpha = 1, begin = 0.2, end = 0.8,
         option = "H"
     )
 
-    p <- heatmaply::heatmaply(
+    p <- heatmaply(
         df,
         dendrogram = "none", plot_method = "ggplot",
         margins = c(0, 0, 0, 0), colors = cols
     )
 
     return(p)
-}
-
-
-
-
-#' @title Create calibration plot
-#' @description The calibration plot shows the CAL Lines, Samples, and QCs of
-#' a single compound in a different view to the compoundPlot. The CAL lines
-#' are here shown as lines, which aids in determining if the samples are
-#' between the lowest and highest CAL line.
-#' @param exp SummarizeExperiment object
-#' @param assay which assay to plot
-#' @param compound Which compound to plot
-#' @param batch Batch number
-#' @param guides Which guides to add. Options available are c("95% CI",
-#' "Limit of Blank", "Limit of Detection", "Limit of Quantification")
-#' @returns ggplot object of a scatterplot with "SAMPLE", "QC" and "CAL" types.
-#' @importFrom ggplot2 xlim ggplot geom_hline aes
-#' @importFrom stats complete.cases median sd
-#' @export
-#' @examples
-#' # Read the example dataset
-#' exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
-#'
-#' # Create scatterplot with calibration lines
-#' calibrationPlot(exp)
-calibrationPlot <- function(exp, assay = "ratio_corrected",
-                            compound = 1, batch = 1, guides = NULL) {
-    if (!validateExperiment(exp)) {
-        stop("Invalid experiment")
-    }
-
-    if (!any(exp$type %in% c("CAL", "ACAL")) || !"calno" %in%
-        colnames(colData(exp))) {
-        return(NULL)
-    }
-
-    qc <- metadata(exp)$QC
-    types <- c(qc, "SAMPLE", "CAL", "ACAL")
-
-    sub <- exp[compound, exp$type %in% types & exp$batch == batch]
-
-    dl <- as.data.frame(cbind(
-        calno = as.factor(as.integer(sub$calno)),
-        type = sub$type, reshape2::melt(assay(sub, assay))
-    ))
-
-
-    dl$order <- seq_len(nrow(dl))
-    points <- dl[dl$type %in% c(qc, "SAMPLE"), ]
-    points <- points[, -which(colnames(points) == "calno")]
-    lines <- dl[dl$type %in% c("CAL", "ACAL"), ]
-
-    lines <- lines[complete.cases(lines), ]
-    if (nrow(lines) == 0) {
-        return(ggplot() +
-            theme_bw())
-    }
-
-    dl <- dl[, -which(colnames(dl) == "calno")]
-    dl <- dl[complete.cases(dl), ]
-
-    # points$text <- getAliquotPlotLabels(aliquotFilter(sub, type = c(qc, "SAMPLE")))
-
-
-    p <- ggplot(points, aes(
-        x = .data$order, y = .data$value,
-        fill = .data$type, text = .data$text
-    )) +
-        geom_hline(aes(
-            yintercept = .data$value,
-            color = .data$calno
-        ), data = lines) +
-        geom_point(shape = 21, size = 3) +
-        xlim(min(dl$order,
-            na.rm = TRUE
-        ), max(dl$order, na.rm = TRUE)) +
-        theme_bw() +
-        xlab("Injection order") +
-        ylab(assay)
-
-    if ("95% CI" %in% guides) {
-        df <- dl[dl$type == qc, ]
-
-        p <- p + geom_hline(yintercept = median(df$value) +
-            sd(df$value) * 2, linetype = "dashed") +
-            geom_hline(yintercept = mean(df$value) -
-                sd(df$value) * 2, linetype = "dashed")
-    }
-
-    p
 }
 
 #' @title Plot the Relative Standard Deviation
@@ -784,15 +899,18 @@ calibrationPlot <- function(exp, assay = "ratio_corrected",
 #' @returns ggplot object of a scatter- / lineplot of RSDs per compound
 #' and batch
 #' @export
-#' @importfrom ggplot2 geom_line theme geom_point scale_color_manual scale_fill_manual
+#' @importFrom ggplot2 geom_line theme geom_point scale_color_manual
+#' scale_fill_manual theme_bw
 #' @examples
 #' # Read the example dataset
 #' exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
 #'
 #' # Create scatterplot with Relative Standard Deviation values
 #' rsdPlot(exp, number = 10)
-rsdPlot <- function(exp, assay = "ratio_corrected",
-                    qc = "SQC", number = nrow(exp)) {
+rsdPlot <- function(
+        exp, assay = "ratio_corrected",
+        qc = "SQC", number = nrow(exp)
+) {
     if (!validateExperiment(exp)) {
         stop("Invalid experiment")
     }
@@ -807,8 +925,12 @@ rsdPlot <- function(exp, assay = "ratio_corrected",
     }))
 
     colnames(df) <- unique(exp$batch)
-    df <- reshape2::melt(df)
-    colnames(df) <- c("compound", "batch", "RSD")
+    df <- data.frame(
+        compound = rep(rownames(df), times = ncol(df)),
+        batch = rep(colnames(df), each = nrow(df)),
+        RSD = as.vector(as.matrix(df))
+    )
+
     df$batch <- factor(df$batch, levels = unique(df$batch))
 
 
@@ -861,6 +983,7 @@ getCompoundPlotLabels <- function(exp) {
 #' @param compound Compound to plot
 #' @returns ggplot object of a Batch Assay Plot
 #' @importFrom ggplot2 ggplot aes geom_point geom_boxplot position_jitter
+#' theme_bw theme
 #' @export
 #' @examples
 #' # Read the example dataset
@@ -874,8 +997,14 @@ batchAssayPlot <- function(exp, assay = 1, compound = 1) {
     }
     exp <- exp[compound, ]
 
-    df <- reshape2::melt(assay(exp, assay))
-    df <- df[order(df$Var2, df$Var1), ]
+    m <- assay(exp, assay)
+    df <- data.frame(
+        aliquot = rep(rownames(m), times = ncol(m)),
+        compound = rep(colnames(m), each = nrow(m)),
+        value = as.vector(m)
+    )
+
+    df <- df[order(df$compound, df$aliquot), ]
 
     labels <- paste(as.data.frame(colData(exp)), collapse = "\n")
     df$text <- sprintf("%s\nValue: %s", labels, round(df$value, 4))
@@ -889,63 +1018,6 @@ batchAssayPlot <- function(exp, assay = 1, compound = 1) {
         geom_boxplot() +
         geom_point() +
         theme_bw() +
-        theme(axis.text.x = element_text(
-            angle = 90,
-            hjust = 1
-        ), legend.position = "bottom")
-}
-
-#' @title Plot the batch correction factors
-#' @description The batch correction plot shows a boxplot of correction factors
-#' per batch. These are the calculated multipliers, which ideally should be
-#' as close to 1. A value near 1 indicates the batch is similar to the median
-#' of all batches. This plot can be used to see if compounds are
-#' over-corrected, or if a batch has bad measurements.
-#' @param exp SummarizedExperiment Object
-#' @returns ggplot object of a boxplot of batch-effect correction factors
-#' @importFrom ggplot2 ggplot aes geom_boxplot theme_bw xlab ylab theme
-#' element_text .data scale_fill_manual
-#' @export
-#' @examples
-#' # Read the example dataset
-#' exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
-#'
-#' # Create boxplot with batch-correction values
-#' batchCorrectionPlot(exp)
-batchCorrectionPlot <- function(exp) {
-    if (!validateExperiment(exp)) {
-        stop("Invalid experiment")
-    }
-
-    sub <- exp[, which(!duplicated(exp$batch))]
-    df <- assay(sub, "ratio") / assay(sub, "ratio_corrected")
-
-    colnames(df) <- unique(exp$batch)
-    df <- reshape2::melt(df)
-    df$text <- getCompoundPlotLabels(sub)
-
-    df <- df[complete.cases(df), ]
-    df <- df[order(df$Var2), ]
-    df$batch <- paste("Batch", df$Var2)
-
-    x <- unique(df$batch)
-    df$batch <- factor(df$batch, levels = x, ordered = TRUE)
-
-    typeColors <- setNames(viridis::viridis(length(x),
-        begin = 0.2, end = 0.8, option = "H"
-    ), x)
-
-
-    ggplot(df, aes(
-        x = .data$batch, y = .data$value,
-        fill = .data$batch, text = .data$text
-    )) +
-        geom_boxplot(outlier.shape = NA, outlier.size = 0) +
-        geom_point(position = position_jitter(0.1)) +
-        theme_bw() +
-        xlab("") +
-        ylab("Correction Factor") +
-        scale_fill_manual(values = typeColors) +
         theme(axis.text.x = element_text(
             angle = 90,
             hjust = 1

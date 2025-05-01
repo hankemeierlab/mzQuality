@@ -7,19 +7,22 @@
 rowWiseIntercept(x, y, slope)
 }
 \arguments{
-\item{x}{Matrix of X-values}
+\item{x}{A numeric matrix of X-values.}
 
-\item{y}{Matrix of y-values}
+\item{y}{A numeric matrix of Y-values.}
 
-\item{slope}{Vector of named slope values, usually
-obtained from [rowWiseSlope]}
+\item{slope}{A numeric vector of slopes, typically obtained from
+[rowWiseSlope].}
 }
 \value{
-placeholder
+A numeric vector containing the row-wise intercept values.
 }
 \description{
-placeholder
+Computes the row-wise intercept of a simple linear regression model,
+where each row represents an independent dataset.
 }
 \details{
-placeholder
+The function calculates the intercept using the standard formula:
+`intercept = mean(y) - slope * mean(x)`, applied row-wise. The slope
+values should be computed using [rowWiseSlope].
 }

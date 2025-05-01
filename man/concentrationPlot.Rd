@@ -16,12 +16,42 @@ concentrationPlot(
   plotOnCalibrationLine = TRUE
 )
 }
+\arguments{
+\item{exp}{An experimental data object containing the data to be plotted.}
+
+\item{assay}{A character string specifying the assay column to be plotted
+on the y-axis. Defaults to "ratio_corrected".}
+
+\item{compound}{An integer specifying the compound index to be plotted.
+Defaults to 1.}
+
+\item{batch}{An integer specifying the batch index to be plotted.
+Defaults to 1.}
+
+\item{types}{A character vector specifying the types of data to include
+in the plot. Defaults to `c("SAMPLE", "SQC")`.}
+
+\item{calType}{A character string specifying the calibration type.
+Defaults to the concentration metadata in `exp`.}
+
+\item{removeOutliers}{A logical value indicating whether to remove
+outliers from the data. Defaults to TRUE.}
+
+\item{withinTrend}{A logical value indicating whether to inherit trend
+line aesthetics. Defaults to TRUE.}
+
+\item{plotOnCalibrationLine}{A logical value indicating whether to plot
+data on the calibration line. Defaults to TRUE.}
+}
 \value{
-placeholder
+A ggplot object representing the concentration plot.
 }
 \description{
-placeholder
+Creates a concentration plot with optional calibration lines
+    and trend lines.
 }
 \details{
-placeholder
+This function generates a concentration plot using ggplot2. It
+    allows for customization of calibration types, outlier removal, and
+    whether to plot on the calibration line.
 }

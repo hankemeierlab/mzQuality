@@ -2,26 +2,29 @@
 % Please edit documentation in R/Validate.R
 \name{validateDataframe}
 \alias{validateDataframe}
-\title{Validate measurements}
+\title{Validate Measurements}
 \usage{
 validateDataframe(dataframe = NULL)
 }
 \arguments{
-\item{dataframe}{data.frame with measurements.}
+\item{dataframe}{A data.frame containing measurements.}
 }
 \value{
-Boolean value if the dataframe is valid to use with mzQuality
+A boolean value indicating whether the dataframe is valid.
 }
 \description{
-placeholder
+Validates if a dataframe is suitable for use with the
+  `mzQuality` package.
 }
 \details{
-placeholder
+This function checks if the dataframe contains the required
+  columns, has no duplicate aliquot-batch-compound combinations, and
+  includes at least one "QC" type.
 }
 \examples{
 # Read example dataset
-data <- read.delim(system.file(package = "mzQuality", "dataset.txt"))
+data <- readData(system.file(package = "mzQuality", "example.tsv"))
 
-# Validate if dataframe is corrct
+# Validate if the dataframe is correct
 validateDataframe(data)
 }

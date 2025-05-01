@@ -4,7 +4,7 @@
 \alias{filterBackground}
 \title{Filter the Background Signal}
 \usage{
-filterBackground(exp, min = 0, max = 0.4, type = "BLANK", include.na = FALSE)
+filterBackground(exp, min = 0, max = 0.4, include.na = FALSE)
 }
 \arguments{
 \item{exp}{SummarizedExperiment object}
@@ -12,9 +12,6 @@ filterBackground(exp, min = 0, max = 0.4, type = "BLANK", include.na = FALSE)
 \item{min}{Minimum background signal value, defaults to 0}
 
 \item{max}{Maximum background signal value, defaults to 0.4}
-
-\item{type}{Aliquot type to use for background signal calculation. Defaults
-to "BLANK"}
 
 \item{include.na}{Should NA's be included?}
 }
@@ -27,19 +24,21 @@ This function can be used to only keep compounds with a
 low background signal.
 }
 \details{
-placeholder
+This function is useful when you want to filter compounds based on
+the background signal values. It filters the compounds based on the
+provided minimum and maximum background signal values.
 }
 \examples{
 # Read example dataset
-data <- read.delim(system.file(package = "mzQuality", "dataset.txt"))
+data <- readData(system.file(package = "mzQuality", "example.tsv"))
 
 # Construct experiment
 exp <- buildExperiment(
     data,
-    rowIndex = "Compound",
-    colIndex = "Aliquot",
-    primaryAssay = "Area",
-    secondaryAssay = "Area_is"
+    rowIndex = "compound",
+    colIndex = "aliquot",
+    primaryAssay = "area",
+    secondaryAssay = "area_is"
 )
 
 # Filter by background signal

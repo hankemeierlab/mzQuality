@@ -19,28 +19,57 @@ doAnalysis(
 )
 }
 \arguments{
-\item{exp}{SummarizedExperiment Object}
+\item{exp}{A SummarizedExperiment object containing the experimental data.}
+
+\item{aliquots}{A character vector specifying the aliquots to include in
+the analysis. Defaults to all aliquots.}
+
+\item{doAll}{Logical, whether to force recalculation of all metrics.
+Defaults to `FALSE`.}
+
+\item{removeBadCompounds}{Logical, whether to remove compounds that do not
+meet usability thresholds. Defaults to `FALSE`.}
+
+\item{removeOutliers}{Logical, whether to remove outliers during batch
+correction. Defaults to `FALSE`.}
+
+\item{useWithinBatch}{Logical, whether to use within-batch correction.
+Defaults to `FALSE`.}
+
+\item{effectNaAsZero}{Logical, whether to treat missing values as zero
+during background signal estimation. Defaults to `FALSE`.}
+
+\item{concentrationType}{A string specifying the concentration type to use
+for calculations. Defaults to `"ACAL"`.}
+
+\item{backgroundPercentage}{Numeric, the maximum allowable percentage of
+background signal. Defaults to 40.}
+
+\item{qcPercentage}{Numeric, the minimum percentage of QC presence
+required. Defaults to 80.}
+
+\item{nonReportableRSD}{Numeric, the maximum allowable RSDQC for compounds
+to be considered usable. Defaults to 30.}
 }
 \value{
-SummarizedExperiment with added slots and assays with
-batch-corrected values, including RSDQC, background signal, rt shift and
-suggested internal standards.
+A SummarizedExperiment object with added assays and metadata
+    reflecting the analysis results.
 }
 \description{
-This function is the main analysis function of mzQuality. It
-starts by validating the SummarizedExperiment object is valid. Next, it will
-calculate the batch-corrected RSDQC, background signals, retention time
-shifts and lastly calculates a suggested internal standard that results in
-the lowest batch-corrected RSDQC.
+Executes the main analysis pipeline for mzQuality, including
+    batch correction, RSDQC calculation, background signal estimation, and
+    internal standard suggestion.
 }
 \details{
-placeholder
+This function validates the input SummarizedExperiment object and
+    performs a series of analyses, including ratio calculation, batch
+    correction, background signal estimation, and RSDQC calculation. If
+    concentration data is available, it also calculates concentrations and
+    applies additional corrections. The function can optionally filter out
+    bad compounds and outliers.
 }
 \examples{
-# Read the example dataset
-exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
-
-# Perform analysis
-exp <- doAnalysis(exp)
-exp
+# Example usage:
+# exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+# exp <- doAnalysis(exp)
 }

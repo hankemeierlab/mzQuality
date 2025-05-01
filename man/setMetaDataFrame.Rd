@@ -2,16 +2,27 @@
 % Please edit documentation in R/Convert.R
 \name{setMetaDataFrame}
 \alias{setMetaDataFrame}
-\title{Set the Metadata of compound or aliquot data}
+\title{Set the metadata of compound or aliquot data}
 \usage{
 setMetaDataFrame(rowData, rowIndex, rows)
 }
+\arguments{
+\item{rowData}{A DataFrame containing the metadata.}
+
+\item{rowIndex}{A string specifying the column to use as the row index.}
+
+\item{rows}{A character vector of row names to include in the metadata.}
+}
 \value{
-placeholder
+A DataFrame containing the updated metadata, ordered by rownames.
 }
 \description{
-placeholder
+Creates or updates a metadata DataFrame for compounds or
+    aliquots, ensuring proper row ordering and handling of missing rows.
 }
 \details{
-placeholder
+This function ensures that the metadata DataFrame is properly
+    formatted and ordered based on the provided rows. If the metadata
+    DataFrame is empty, it initializes it with the unique rows. Otherwise,
+    it updates the rownames and removes the specified index column.
 }

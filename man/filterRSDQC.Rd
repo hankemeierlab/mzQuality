@@ -25,19 +25,23 @@ a RSDQC threshold. This ensures that only reliably measured compounds
 are kept.
 }
 \details{
-placeholder
+This function is useful when you want to filter compounds based on
+the RSDQC values. It filters the compounds based on the provided
+minimum and maximum RSDQC values. The function uses regular expressions
+to match the tag, so you can use any pattern that matches the RSDQC
+values.
 }
 \examples{
 # Read example dataset
-data <- read.delim(system.file(package = "mzQuality", "dataset.txt"))
+data <- readData(system.file(package = "mzQuality", "example.tsv"))
 
 # Construct experiment
 exp <- buildExperiment(
     data,
-    rowIndex = "Compound",
-    colIndex = "Aliquot",
-    primaryAssay = "Area",
-    secondaryAssay = "Area_is"
+    rowIndex = "compound",
+    colIndex = "aliquot",
+    primaryAssay = "area",
+    secondaryAssay = "area_is"
 )
 
 # Perform analysis

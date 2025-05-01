@@ -8,54 +8,36 @@ compoundReports(
   exp,
   folder,
   assays = c("ratio", "ratio_corrected"),
-  project = "mzQuality",
-  cores = 1,
-  verbose = FALSE,
-  shinyProgress = NULL
+  project = "mzQuality"
 )
 }
 \arguments{
-\item{exp}{SummarizedExperiment object}
+\item{exp}{SummarizedExperiment object containing the experiment data.}
 
-\item{folder}{Folder where to store the compound report.}
+\item{folder}{Output folder to store the compound reports.}
 
-\item{project}{Project name, defaults to "mzQuality"}
+\item{assays}{Character vector of assay names to visualize in the reports.
+Must exist in `exp`.}
 
-\item{compounds}{Which compounds to create a report for. Defaults to all
-compounds in `exp`}
-
-\item{vendor}{Vendor name of the files, defaults to "Unknown"}
-
-\item{output}{Output file}
+\item{project}{Character string denoting the project name. Defaults to
+"mzQuality".}
 }
 \value{
-placeholder
-
-Creates a HTML file with dynamic visualizations
+One HTML report per compound is saved in the specified folder.
 }
 \description{
-A compound report is a dynamic report containing plots
-regarding a single compound. By default, this function produces a plot for
-each compound, but can also be made for a single compound.
+Generates interactive HTML reports for individual compounds
+    from a SummarizedExperiment object. Each report includes compound-
+    specific plots across selected assays for quality control and visual
+    inspection.
 }
 \details{
-placeholder
+The function parallelizes report generation over the number of
+    compounds using `multiApply()`, supporting multicore environments. Each
+    compound report is stored as a separate HTML file named after the
+    compound.
 }
 \examples{
-# Read example dataset
-data <- read.delim(system.file(package = "mzQuality", "dataset.txt"))
-
-# Construct experiment
-exp <- buildExperiment(
-    data,
-    rowIndex = "Compound",
-    colIndex = "Aliquot",
-    primaryAssay = "Area",
-    secondaryAssay = "Area_is"
-)
-
-# Perform analysis
-exp <- doAnalysis(exp)
-
-# Request a compound report
+# exp <- readRDS(system.file(package = "mzQuality", "data.RDS"))
+# compoundReports(exp[1:2, ], folder = tempdir())
 }

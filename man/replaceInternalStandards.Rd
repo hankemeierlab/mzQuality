@@ -6,16 +6,38 @@
 \usage{
 replaceInternalStandards(exp, internalStandards = rowData(exp)$suggestedIS)
 }
+\arguments{
+\item{exp}{A SummarizedExperiment object containing the experimental data.}
+
+\item{internalStandards}{A character vector specifying the new internal
+standards to use. Defaults to the suggested internal standards
+(`rowData(exp)$suggestedIS`).}
+}
 \value{
-placeholder
+A SummarizedExperiment object with updated internal standards and
+    secondary assay values.
 }
 \description{
-placeholder
+Replaces the internal standards in a SummarizedExperiment
+    object with the specified internal standards or the suggested ones.
 }
 \details{
-placeholder
+This function updates the internal standards (`compound_is`) in
+    the `rowData` of the SummarizedExperiment object. If no internal
+    standards are provided, the function uses the suggested internal
+    standards (`rowData(exp)$suggestedIS`). It also updates the secondary
+    assay (`area_is`) to reflect the new internal standards.
 }
 \examples{
+# Example usage:
 # Read the example dataset
 exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+
+# Replace internal standards with suggested ones
+exp <- replaceInternalStandards(exp)
+
+# Replace internal standards with a randomized vector of already present
+# internal standards
+customIS <- sample(rowData(exp)$compound_is)
+exp <- replaceInternalStandards(exp, internalStandards = customIS)
 }

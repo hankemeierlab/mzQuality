@@ -2,34 +2,37 @@
 % Please edit documentation in R/Validate.R
 \name{validateExperiment}
 \alias{validateExperiment}
-\title{Validate experiment object}
+\title{Validate Experiment Object}
 \usage{
 validateExperiment(exp)
 }
 \arguments{
-\item{exp}{SummarizedExperiment object}
+\item{exp}{A SummarizedExperiment object.}
 }
 \value{
-Boolean value indicating if the SummarizedExperiment is valid
-to use with mzQuality
+A boolean value indicating whether the SummarizedExperiment
+  object is valid.
 }
 \description{
-placeholder
+Validates if a SummarizedExperiment object is correctly
+  formatted and suitable for use with the `mzQuality` package.
 }
 \details{
-placeholder
+This function checks that the object is a valid
+  SummarizedExperiment, contains the required metadata columns in
+  `colData`, and includes the "ratio" assay.
 }
 \examples{
 # Read example dataset
-data <- read.delim(system.file(package = "mzQuality", "dataset.txt"))
+data <- readData(system.file(package = "mzQuality", "example.tsv"))
 
 # Construct experiment
 exp <- buildExperiment(
     data,
-    rowIndex = "Compound",
-    colIndex = "Aliquot",
-    primaryAssay = "Area",
-    secondaryAssay = "Area_is"
+    rowIndex = "compound",
+    colIndex = "aliquot",
+    primaryAssay = "area",
+    secondaryAssay = "area_is"
 )
 
 # Validate if the experiment is formatted correctly

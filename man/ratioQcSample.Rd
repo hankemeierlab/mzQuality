@@ -11,19 +11,34 @@ ratioQcSample(
   sampleLabel = "SAMPLE"
 )
 }
+\arguments{
+\item{exp}{A SummarizedExperiment object containing the experimental data.}
+
+\item{assay}{A string specifying the assay to use for the calculation.
+Defaults to `"ratio_corrected"`.}
+
+\item{qcLabel}{A string specifying the label for QC samples. Defaults to
+the `QC` metadata of the experiment.}
+
+\item{sampleLabel}{A string specifying the label for SAMPLEs. Defaults to
+`"SAMPLE"`.}
+}
 \value{
-placeholder
+A SummarizedExperiment object with the calculated ratio added to
+    the `rowData`.
 }
 \description{
-placeholder
+Computes the ratio of median values between QC samples and
+    SAMPLEs for a specified assay in a SummarizedExperiment object.
 }
 \details{
-placeholder
+This function calculates the ratio of row medians for QC samples
+    and SAMPLEs in the specified assay. The result is stored in the
+    `rowData` of the SummarizedExperiment object under the column
+    `ratioQcSample`.
 }
 \examples{
-# Read the example dataset
-exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
-
-# Calculate the ratio between QCs and Samples of the batch-corrected ratio
-ratioQcSample(exp)
+# Example usage:
+# exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+# exp <- ratioQcSample(exp)
 }

@@ -6,12 +6,30 @@
 \usage{
 aliquotPlot(exp, assay, batches = exp$batch, types = exp$type, doLog = FALSE)
 }
+\arguments{
+\item{exp}{A data frame containing experimental data. Must include columns
+for `batch`, `type`, `Aliquot`, and `injection_time`.}
+
+\item{assay}{A character string specifying the column name of the assay
+to be plotted on the y-axis.}
+
+\item{batches}{A vector specifying the batches to include in the plot.
+Defaults to `exp$batch`.}
+
+\item{types}{A vector specifying the types to include in the plot.
+Defaults to `exp$type`.}
+
+\item{doLog}{A logical value indicating whether to apply log scaling to
+the y-axis. Defaults to FALSE.}
+}
 \value{
-placeholder
+A ggplot object representing the aliquot plot.
 }
 \description{
-A short description...
+Creates a boxplot for aliquots with optional log scaling.
 }
 \details{
-placeholder
+This function generates a boxplot for aliquots using ggplot2. It
+    allows for optional log scaling of the y-axis and customizes the plot
+    based on the provided experimental data.
 }

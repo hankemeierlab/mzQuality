@@ -25,14 +25,15 @@ meaning that each residual is scored according to the t-distribution.
 This allows for determining outliers in regression lines
 }
 \details{
-This function effectively calculates the studentized residuals without
-recalculating the model. The basic idea is to delete the observations one at
-a time, each time refitting the regression model on the remaining n–1
+This function effectively calculates the studentized residuals
+without recalculating the model. The basic idea is to delete the observations
+one at a time, each time refitting the regression model on the remaining n–1
 observations. Then, we compare the observed response values to their
 fitted values based on the models with the ith observation deleted. This
 produces deleted residuals. Standardizing the deleted residuals produces
 studentized residuals.
 }
 \seealso{
-https://online.stat.psu.edu/stat462/node/247/ for the formula used here
+https://online.stat.psu.edu/stat462/node/247/ for the
+formula used here
 }

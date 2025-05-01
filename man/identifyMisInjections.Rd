@@ -2,31 +2,35 @@
 % Please edit documentation in R/Metrics.R
 \name{identifyMisInjections}
 \alias{identifyMisInjections}
-\title{Identifier misinjections in Samples}
+\title{Identify misinjections in Samples}
 \usage{
 identifyMisInjections(exp, assay = metadata(exp)$secondary, type = "SAMPLE")
 }
 \arguments{
-\item{exp}{SummarizedExperiment Object}
+\item{exp}{A SummarizedExperiment object containing the experimental data.}
 
-\item{assay}{Which assay should be used for outlier detection}
+\item{assay}{A string specifying the assay to use for outlier detection.
+Defaults to the `secondary` metadata of the experiment.}
+
+\item{type}{A string specifying the type of samples to analyze. Defaults
+to `"SAMPLE"`.}
 }
 \value{
-placeholder
-
-SummarizedExperiment with added column called "Use" with boolean
-values suggesting if it should be used in analysis
+A SummarizedExperiment object with updated `colData` containing
+    `use` and `outlier` columns.
 }
 \description{
-placeholder
+Identifies misinjections in SAMPLEs for a specified assay in
+    a SummarizedExperiment object.
 }
 \details{
-placeholder
+This function is a wrapper around `identifyOutliers()` to detect
+    misinjections in SAMPLEs based on the distribution of assay values.
+    It updates the `colData` of the experiment with boolean columns `use`
+    and `outlier`.
 }
 \examples{
-# Read the example dataset
-exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
-
-# Identify aliquot outliers and add to colData
-exp <- identifyOutliers(exp, assay = "Ratio")
+# Example usage:
+# exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+# exp <- identifyMisInjections(exp, assay = "Ratio")
 }

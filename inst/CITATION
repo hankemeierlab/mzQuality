@@ -1,0 +1,21 @@
+citHeader("To cite mzQuality in publications use:")
+
+bibentry(
+  bibtype = "Article",
+  key = "van der Peet2025.01.22.633547",
+  author = c(
+    person("Marielle", "van der Peet"),
+    person("Pascal", "Maas"),
+    person("Agnieszka", "Wegrzyn"),
+    person("Lieke", "Lamont"),
+    person("Ronan", "Fleming"),
+    person("Amy", "Harms"),
+    person("Thomas", "Hankemeier"),
+    person("Alida", "Kindt")
+  ),
+  title = "mzQuality: A tool for quality monitoring and reporting of targeted mass spectrometry measurements",
+  journal = "bioRxiv",
+  year = "2025",
+  doi = "10.1101/2025.01.22.633547",
+  url = "https://www.biorxiv.org/content/early/2025/01/24/2025.01.22.633547"
+)

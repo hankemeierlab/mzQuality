@@ -7,25 +7,28 @@
 facetPlot(plot, by = "batch", ncol = 1, shareY = TRUE, shareX = FALSE)
 }
 \arguments{
-\item{plot}{A ggplot2 object}
+\item{plot}{A ggplot2 object to be faceted.}
 
-\item{by}{Character vector that matches one of the properties of the
-`colData(exp)`. Defaults to `"batch"`}
+\item{by}{A character vector specifying the column to facet by. Defaults
+to "batch".}
 
-\item{ncol}{Number of columns, defaults to 1}
+\item{ncol}{An integer specifying the number of columns in the facet.
+Defaults to 1.}
 
-\item{shareY}{Boolean value, should the y-axis be shared among facets?
-Defaults to TRUE}
+\item{shareY}{A logical value indicating whether the y-axis should be
+shared among facets. Defaults to TRUE.}
 
-\item{shareX}{Boolean value, should the x-axis be shared among facets?
-Defaults to FALSE}
+\item{shareX}{A logical value indicating whether the x-axis should be
+shared among facets. Defaults to FALSE.}
 }
 \value{
-placeholder
+A faceted ggplot object.
 }
 \description{
-placeholder
+Facets a ggplot object by a specified column.
 }
 \details{
-placeholder
+This function uses ggplot2's facet_wrap to create facets for a
+    ggplot object based on a specified column. It allows customization of
+    the number of columns and whether axes are shared.
 }

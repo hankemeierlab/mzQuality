@@ -4,18 +4,19 @@
 #' @noRd
 sciex <- function(df, regex = NULL) {
     samples <- as.vector(unlist(df[, 1]))
-    if (sum(trimws(samples, which = "right") == "") > 0) {
-        df <- whitespaceFix(df)
-    }
+    df <- whitespaceFix(df)
 
     aliquot_df <- parseAliquots(samples, regex)
 
-    if (!any(c("IS Retention Time", "IS Area", "IS.Name", "IS.Area", "IS.Retention.Time") %in% colnames(df))) {
+    IScolumns <- c(
+        "IS Name", "IS Retention Time", "IS Area",
+        "IS.Name", "IS.Area", "IS.Retention.Time"
+    )
+    if (!any(IScolumns %in% colnames(df))) {
         df$`IS Area` <- 1
         df$`IS Retention Time` <- 1
         df$`IS Name` <- "NA"
     }
-
 
     mandatoryColumns <- c(
         "Acquisition Date & Time", "Acquisition.Date...Time",
@@ -31,23 +32,14 @@ sciex <- function(df, regex = NULL) {
         df[, which(colnames(df) == x)]
     }))
 
-
-
     colnames(mandatoryData) <- c(
         "datetime", "compound", "rt", "area",
         "compound_is", "rt_is", "area_is"
     )
 
-    res <- cbind(data.frame(
-        aliquot = aliquot_df$Aliquot,
-        sample = aliquot_df$Sample,
-        type = aliquot_df$Type,
-        calNo = aliquot_df$CalNo,
-        replicate = aliquot_df$Replicate,
-        injection = aliquot_df$Injection
-    ), mandatoryData)
+    res <- cbind(aliquot_df, mandatoryData)
 
-    otherColumns <- colnames(df)[!colnames(df) %in% c(colnames(df)[1], mandatoryColumns)]
+    otherColumns <- setdiff(colnames(df), mandatoryColumns)
     if (length(otherColumns) > 0) {
         res <- cbind(res, df[, otherColumns, drop = FALSE])
     }
@@ -60,8 +52,12 @@ sciex <- function(df, regex = NULL) {
 #' @importFrom dplyr coalesce
 #' @noRd
 whitespaceFix <- function(f1) {
-    message("Found inconsistencies in your file. Trying to fix..")
+
     indexes <- which(trimws(f1[, 1], which = "right") == "")
+    if (length(indexes) == 0) {
+        return(f1)
+    }
+
     all <- sort(c(indexes, indexes - 1))
     f1[f1 == ""] <- NA
     df <- do.call(rbind, lapply(indexes - 1, function(i) {
@@ -92,14 +88,14 @@ parseAliquots <- function(aliquots, regex = NULL) {
     conv <- lapply(matches, t)
     df <- as.data.frame(do.call(rbind, conv))
     colnames(df) <- c(
-        "Aliquot", "Sample", "Type", "CalNo", "Replicate",
-        "Injection"
+        "aliquot", "sample", "type", "calno", "replicate",
+        "injection"
     )
 
-    df$Type[df$Type == ""] <- "SAMPLE"
-    df$Type <- toupper(df$Type)
-    df$CalNo[df$CalNo == ""] <- NA
-    df$CalNo[!is.na(df$CalNo)] <- as.integer(df$CalNo[!is.na(df$CalNo)])
+    df$type[df$type == ""] <- "SAMPLE"
+    df$type <- toupper(df$type)
+    df$calno[df$calno == ""] <- NA
+    df$calno[!is.na(df$calno)] <- as.integer(df$calno[!is.na(df$calno)])
 
 
     df
@@ -169,7 +165,6 @@ guessDates <- function(datetimes) {
 #' @title Fix the dates to actual date type
 #' @param list_of_batches List object with all batches
 #' @importFrom lubridate parse_date_time as_datetime
-#' @importFrom stringr str_count
 #' @noRd
 fixDates <- function(list_of_batches) {
     date_vec <- unlist(lapply(list_of_batches, function(df) {
@@ -181,7 +176,8 @@ fixDates <- function(list_of_batches) {
 
 fixHMS <- function(df, date_format) {
     # Check if the time is hours:minutes or hours:minutes:seconds
-    counts <- stringr::str_count(df$datetime, ":")
+    time <- gregexpr(":", df$datetime)
+    counts <- vapply(time, function(x) sum(x > 0), double(1))
     no_seconds <- which(counts == 1)
     if (length(no_seconds) > 0) {
         # No seconds, parse as H:M

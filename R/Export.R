@@ -1,315 +1,103 @@
-#' @title Export Excel workbook
-#' @description placeholder
-#' @details placeholder
-#' @returns placeholder
-#' @param exp SummarizedExperiment object
-#' @param outfile File to export to
-#' @importFrom openxlsx createWorkbook addWorksheet writeData saveWorkbook
-#' @importFrom stats setNames
-#' @returns A workbook object from `openxlsx`
-#' @export
+#' @title Create a dynamic mzQuality summary report
+#' @description Generates an interactive HTML report summarizing the full
+#'     experiment across all compounds. Includes plots such as heatmaps, PCA
+#'     plots, and quality control (QC) visualizations to help evaluate batch
+#'     effects, sample distributions, and analytical variation.
+#' @details This report helps to assess the overall quality of the experiment
+#'     and offers a visual overview of sample-level patterns across selected
+#'     assays. The plots are rendered interactively (via Plotly) for easier
+#'     exploration and interpretation.
+#' @param exp SummarizedExperiment object containing the experiment data.
+#' @param folder Character string specifying the output directory for the
+#'     report.
+#' @param output File name for the HTML output. Defaults to
+#'     "mzquality-report.html".
+#' @param plots Character vector of plots to include in the report. Supported:
+#'     "Aliquot", "PCA", "QC".
+#' @param assays Character vector specifying which assays in `exp` to include.
+#'     Only existing assay names will be used.
+#' @returns An interactive HTML report is saved to the specified `folder`.
 #' @examples
-#' # Read example dataset
-#' data <- read.delim(system.file(package = "mzQuality", "dataset.txt"))
-#'
-#' # Construct experiment
-#' exp <- buildExperiment(
-#'     data,
-#'     rowIndex = "Compound",
-#'     colIndex = "Aliquot",
-#'     primaryAssay = "Area",
-#'     secondaryAssay = "Area_is"
-#' )
-#'
-#' # Perform analysis
-#' exp <- doAnalysis(exp)
-#'
-#' # Export used aliquots and metabolites
-#' exportFilterWorkbook(exp, outfile = tempfile())
-exportFilterWorkbook <- function(exp, outfile = "Metabolites_to_keep.xlsx") {
-    metabolites <- data.frame(
-        Compound = rownames(exp),
-        Used = rowData(exp)$use
-    )
-
-    aliquots <- data.frame(
-        Aliquot = colnames(exp),
-        Used = exp$use
-    )
-
-    tabs <- list(
-        Summary = summaryTable(exp),
-        Metabolites = metabolites,
-        Aliquots = aliquots
-    )
-
-    openxlsx::write.xlsx(
-        x = tabs,
-        file = outfile,
-        rowNames = TRUE,
-        colNames = TRUE,
-        keepNA = TRUE,
-        na.string = "NA"
-    )
-}
-
-
-#' @title Format SummarizedExperiment to dataframe
-#' @description placeholder
-#' @details placeholder
-#' @returns placeholder
-#' @param exp SummarizedExperiment object
-#' @noRd
-formatExport <- function(exp) {
-    exp <- exp[order(rownames(exp)), order(colnames(exp))]
-    ratios <- t(as.data.frame(assay(exp, "ratio_corrected")))
-    rsdqc <- t(data.frame(RSDQC = rowData(exp)$rsdqcCorrected))
-
-    if ("backgroundSignal" %in% colnames(rowData(exp))) {
-        be <- t(data.frame(Background = rowData(exp)$backgroundSignal * 100))
-    } else {
-        be <- t(data.frame(Background = rep(NA, nrow(exp))))
-    }
-
-    be[is.nan(be)] <- NA
-    rsdqc[is.nan(rsdqc)] <- NA
-    ratios[is.nan(ratios)] <- NA
-
-    colnames(be) <- rownames(exp)
-    colnames(rsdqc) <- rownames(exp)
-    rsdqc <- cbind(Type = NA, Batch = NA, rbind(rsdqc, be))
-    as.data.frame(rbind(rsdqc, cbind(Type = exp$type, Batch = exp$batch, ratios)))
-}
-
-
-
-#' @title Retrieve a summary of the SummarizedExperiment
-#' @description placeholder
-#' @details placeholder
-#' @returns placeholder
-#' @param exp SummarizedExperiment object
-#' @param project Project name, defaults to "mzQuality"
-#' @param vendor Vendor name of the files, defaults to "Unknown"
-#' @returns data.frame with a column "Info" and several rows of basic
-#' information.
-#' @export
-#' @examples
-#' # Read example dataset
-#' data <- read.delim(system.file(package = "mzQuality", "dataset.txt"))
-#'
-#' # Construct experiment
-#' exp <- buildExperiment(
-#'     data,
-#'     rowIndex = "Compound",
-#'     colIndex = "Aliquot",
-#'     primaryAssay = "Area",
-#'     secondaryAssay = "Area_is"
-#' )
-#'
-#' # Request a summary in table format
-#' summaryTable(exp, project = "MyProject", vendor = "Sciex")
-summaryTable <- function(exp, project = "mzQuality", vendor = "Unknown") {
-    df <- t(data.frame(
-        Project = project,
-        Date = lubridate::format_ISO8601(metadata(exp)$Date),
-        Vendor = vendor,
-        QC = metadata(exp)$QC,
-        Batches = length(unique(exp$batch)),
-        Aliquots = ncol(exp), Compounds = nrow(exp),
-        Version = as.character(utils::packageVersion("mzQuality"))
-    ))
-    colnames(df) <- "Info"
-    as.data.frame(df)
-}
-
-#' @title Export to Excel
-#' @description placeholder
-#' @details placeholder
-#' @returns placeholder
-#' @param exp SummarizedExperiment Object
-#' @param file Name of the file to export to
-#' @importFrom openxlsx write.xlsx
-#' @returns A workbook object from `openxlsx`
-#' @export
-#' @examples
-#' # Read example dataset
-#' data <- read.delim(system.file(package = "mzQuality", "dataset.txt"))
-#'
-#' # Construct experiment
-#' exp <- buildExperiment(
-#'     data,
-#'     rowIndex = "Compound",
-#'     colIndex = "Aliquot",
-#'     primaryAssay = "Area",
-#'     secondaryAssay = "Area_is"
-#' )
-#'
-#' # Perform analysis
-#' exp <- doAnalysis(exp)
-#'
-#' # Request a summary in table format
-#' exportExcel(exp, file = tempfile())
-exportExcel <- function(exp, file, backgroundPercent = 40, cautionRSD = 15, nonReportableRSD = 30) {
-    exp <- exp[, exp$use]
-
-    df <- summaryTable(exp)
-
-    qcPresenceThreshold <- rowData(exp)$qcPresenceThreshold
-
-    hc <- filterRSDQC(exp[qcPresenceThreshold, ], min = 0, max = cautionRSD)
-    if (all(dim(hc) > 0)) {
-        hc <- filterBackground(hc, include.na = TRUE, max = backgroundPercent / 100)
-    }
-    hc <- formatExport(hc)
-
-    lc <- filterRSDQC(exp[qcPresenceThreshold, ], min = cautionRSD, max = nonReportableRSD)
-    if (all(dim(lc) > 0)) {
-        lc <- filterBackground(lc, include.na = TRUE, max = backgroundPercent / 100)
-    }
-    lc <- formatExport(lc)
-    comps <- exp[setdiff(rownames(exp), c(colnames(hc), colnames(lc))), ]
-
-
-
-    non_reported <- formatExport(comps)
-
-
-    openxlsx::write.xlsx(
-        list(
-            Summary = df, `High Confidence` = hc,
-            `With Caution` = lc, `Low SignalNoise` = non_reported
-        ),
-        file = file,
-        rowNames = TRUE, colNames = TRUE, keepNA = TRUE, na.string = "NA"
-    )
-}
-
-
-#' @title Create a dynamic mzQuality report
-#' @description A summary report is a dynamic report containing plots involving
-#' all compounds. Examples include a heatmap, aliquot plot and violin plot.
-#' All plots are interactive and can be used for assessing experiments at a
-#' later stage.
-#' @details placeholder
-#' @returns placeholder
-#' @param exp SummarizedExperiment Object
-#' @param folder Directory where to store the report.
-#' @param project Project name, defaults to "mzQuality"
-#' @param vendor Vendor name of the files, defaults to "Unknown"
-#' @param output Output file
-#' @returns Creates a HTML file with dynamic visualizations
-#' @export
-#' @examples
-#' # Read example dataset
-#' data(mzQualityExp)
-#'
-#' # Request a summary report
-#' # summaryReport(mzQualityExp,
-#' #    folder = tempdir(), project = "MyProject",
-#' #    vendor = "Agilent", output = tempfile()
-#' # )
-summaryReport <- function(exp, folder, output = "mzquality-report.html",
-                          plots = c("Aliquot", "PCA", "QC"),
-                          assays = c("ratio", "ratio_corrected")) {
+#' # dexp <- readRDS(system.file(package = "mzQuality", "data.RDS"))
+#' # summaryReport(exp, folder = tempdir(),
+#' #               project = "MyProject", vendor = "Agilent")
+summaryReport <- function(
+        exp, folder, output = "mzquality-report.html",
+        plots = c("Aliquot", "PCA", "QC"),
+        assays = c("ratio", "ratio_corrected")
+) {
     if (!validateExperiment(exp)) stop("Invalid Experiment")
 
     assays <- assays[assays %in% assayNames(exp)]
 
     create_report(
-        path = file.path(folder),
+        path = file.path(folder, "Plots"),
         parameters = list(exp = exp, plots = plots, assays = assays),
         template = "mzquality-report-se.Rmd",
         output = output
     )
 }
 
-#' @title Report job
-#' @noRd
-compoundReportJob <- function(i, exp, folder, assays, project, vendor) {
-    output <- sprintf("%s.html", make.names(rownames(exp)[i]))
-    create_report(
-        path = file.path(folder),
-        parameters = list(
-            exp = exp[i, ],
-            assays = assays,
-            plots = "",
-            project = project,
-            vendor = vendor
-        ),
-        template = "mzquality-compounds-se.Rmd",
-        output = output
-    )
-    NULL
-}
-
 #' @title Create dynamic compound report(s)
-#' @description A compound report is a dynamic report containing plots
-#' regarding a single compound. By default, this function produces a plot for
-#' each compound, but can also be made for a single compound.
-#' @details placeholder
-#' @returns placeholder
-#' @param exp SummarizedExperiment object
-#' @param folder Folder where to store the compound report.
-#' @param compounds Which compounds to create a report for. Defaults to all
-#' compounds in `exp`
-#' @param project Project name, defaults to "mzQuality"
-#' @param vendor Vendor name of the files, defaults to "Unknown"
-#' @param output Output file
-#' @returns Creates a HTML file with dynamic visualizations
-#' @importFrom foreach foreach %dopar% %do%
-#' @export
+#' @description Generates interactive HTML reports for individual compounds
+#'     from a SummarizedExperiment object. Each report includes compound-
+#'     specific plots across selected assays for quality control and visual
+#'     inspection.
+#' @details The function parallelizes report generation over the number of
+#'     compounds using `multiApply()`, supporting multicore environments. Each
+#'     compound report is stored as a separate HTML file named after the
+#'     compound.
+#' @param exp SummarizedExperiment object containing the experiment data.
+#' @param folder Output folder to store the compound reports.
+#' @param assays Character vector of assay names to visualize in the reports.
+#'     Must exist in `exp`.
+#' @param project Character string denoting the project name. Defaults to
+#'     "mzQuality".
+#' @returns One HTML report per compound is saved in the specified folder.
 #' @examples
-#' # Read example dataset
-#' data <- read.delim(system.file(package = "mzQuality", "dataset.txt"))
-#'
-#' # Construct experiment
-#' exp <- buildExperiment(
-#'     data,
-#'     rowIndex = "Compound",
-#'     colIndex = "Aliquot",
-#'     primaryAssay = "Area",
-#'     secondaryAssay = "Area_is"
-#' )
-#'
-#' # Perform analysis
-#' exp <- doAnalysis(exp)
-#'
-#' # Request a compound report
-compoundReports <- function(exp, folder, assays = c("ratio", "ratio_corrected"),
-                            project = "mzQuality", cores = 1, verbose = FALSE, shinyProgress = NULL) {
-    if (!validateExperiment(exp)) stop("Invalid Experiment")
-
-    multiApply(
-        func = compoundReportJob,
-        jobs = nrow(exp),
-        cores = cores,
-        shinyProgress = shinyProgress,
-        progressTitle = "Construction Compound reports",
-        verbose = verbose,
-        exp = exp,
-        folder = folder,
-        assays = assays,
-        project = project,
-        vendor = "Unknown"
-    )
+#' # exp <- readRDS(system.file(package = "mzQuality", "data.RDS"))
+#' # compoundReports(exp[1:2, ], folder = tempdir())
+compoundReports <- function(
+        exp, folder, assays = c("ratio", "ratio_corrected"),
+        project = "mzQuality"
+) {
+    outputNames <- sprintf("%s.html", make.names(rownames(exp)))
+    for (i in which(rowData(exp)$use)) {
+        create_report(
+            path = file.path(folder, "Plots", "Compounds"),
+            parameters = list(
+                exp = exp[i, ],
+                assays = assays,
+                plots = "",
+                project = project,
+                vendor = "Unknown"
+            ),
+            template = "mzquality-compounds-se.Rmd",
+            output = outputNames[i]
+        )
+    }
 }
 
 #' @title Create an Rmarkdown report
-#' @description placeholder
-#' @details placeholder
-#' @returns placeholder
-#' @param path Where to store the report
-#' @param parameters List of parameters
-#' @param template Name of template file
-#' @param output Name of the report
+#' @description Renders an Rmarkdown template into a self-contained HTML
+#'     report.
+#' @details Used internally to render experiment- or compound-specific
+#'     reports. Handles creation of temporary intermediate directories and
+#'     cleanup after rendering.
+#' @param path Output directory where the final HTML report is stored.
+#' @param parameters Named list of parameters to pass to the Rmarkdown
+#'     template.
+#' @param template Name of the Rmarkdown template file (located in the "rmd"
+#'     directory of the package).
+#' @param output Output file name (HTML).
+#' @returns HTML file is rendered and saved to disk. Function returns NULL
+#'     invisibly.
 #' @importFrom rmarkdown render
 #' @importFrom utils assignInNamespace
 #' @noRd
 create_report <- function(path, parameters, template, output) {
     file <- system.file("rmd", template, package = "mzQuality")
 
-    random_part <- sample(c(letters, LETTERS, seq_len(10)), 10, replace = TRUE)
-    intermed <- paste0("intermediates_", paste0(random_part, collapse = ""))
     render(
         input = file,
         params = parameters,
@@ -318,169 +106,207 @@ create_report <- function(path, parameters, template, output) {
         output_dir = path,
         output_format = "html_document",
         output_options = list(self_contained = TRUE),
-        intermediates_dir = intermed,
         clean = TRUE
     )
-    system2("rm", args = c("-r", intermed))
 }
 
-#' @title Export rowData, colData, and assays
-#' @description This function produces human-readable tables of rowData,
-#' colData and assays of a SummarizedExperiment object. rowData will be stored
-#' as 'Compounds.tsv', colData will be stored as 'Aliquots.tsv' and assays will
-#' be stored under their assay name.
-#' @details placeholder
-#' @returns placeholder
-#' @param exp A SummarizedExperiment object
-#' @param folder Folder where to store the tables
-#' @returns Creates files of rowData, colData and assays stored in `exp`
+#' @title Export rowData, colData, and Assays
+#' @description Produces human-readable tables of rowData, colData, and assays
+#'   from a SummarizedExperiment object. The rowData is stored as
+#'   'Compounds.tsv', colData as 'Aliquots.tsv', and assays are stored under
+#'   their respective assay names.
+#' @details This function creates a folder named "Export" in the specified
+#'   directory and writes the rowData, colData, and assays of the
+#'   SummarizedExperiment object into separate tab-separated files.
+#' @returns Creates files of rowData, colData, and assays stored in `exp`.
+#' @param exp A SummarizedExperiment object.
+#' @param folder A folder where the tables will be stored.
+#' @importFrom utils write.table
 #' @export
 #' @examples
 #' # Read example dataset
-#' data <- read.delim(system.file(package = "mzQuality", "dataset.txt"))
+#' exp <- readRDS(system.file(package = "mzQuality", "data.RDS"))
 #'
-#' # Construct experiment
-#' exp <- buildExperiment(
-#'     data,
-#'     rowIndex = "Compound",
-#'     colIndex = "Aliquot",
-#'     primaryAssay = "Area",
-#'     secondaryAssay = "Area_is"
-#' )
-#' # Do Analysis
-#' exp <- doAnalysis(exp)
+#' # Perform analysis
+#' exp <- doAnalysis(exp, doAll = TRUE)
 #'
-#' # Export tables in Experiment
-#' exportTables(exp, folder = tempdir())
+#' # Export tables in the experiment
+#' exportTables(exp[1:10, 1:10], folder = tempdir())
 exportTables <- function(exp, folder) {
-    if (!validateExperiment(exp)) stop("Invalid Experiment")
 
-    folder <- file.path(folder)
+    timeFormat <- format(Sys.time(), "%d-%m-%Y %H.%M.%S")
+    file <- sprintf("mzQuality_Original_%s.tsv", timeFormat)
 
+    folder <- file.path(folder, "Export")
+    if (!dir.exists(folder)) {
+        dir.create(folder, recursive = TRUE, showWarnings = FALSE)
+    }
 
-    cols <- vapply(colData(exp), function(x) !"matrix" %in% class(x), logical(1))
+    write.table(
+        x = expToCombined(exp),
+        file = file.path(folder, file),
+        sep = "\t",
+        row.names = TRUE,
+        quote = FALSE
+    )
 
-    x <- colData(exp)[, cols]
-    utils::write.table(
+    x <- vectorDf(colData(exp))
+    write.table(
         file = file.path(folder, "Aliquots.tsv"),
         row.names = TRUE,
-        x = as.data.frame(x), sep = "\t"
+        x = x, sep = "\t"
     )
 
 
-    cols <- vapply(rowData(exp), function(x) !"matrix" %in% class(x), logical(1))
-    x <- rowData(exp)[, cols]
+    x <- vectorDf(rowData(exp))
 
-    utils::write.table(
+    write.table(
         file = file.path(folder, "Compounds.tsv"),
         row.names = TRUE,
-        x = as.data.frame(x), sep = "\t"
+        x = x, sep = "\t"
     )
 
     for (assay in assayNames(exp)) {
-        utils::write.table(
+        write.table(
             file = file.path(folder, sprintf("%s.tsv", assay)),
             row.names = TRUE, x = assay(exp, assay), sep = "\t"
         )
     }
 }
 
+#' @title Generate a summary of aliquot-level metadata
+#' @description Creates a summary data frame of aliquot-level metadata from
+#'     the provided experiment object.
+#' @details This function extracts aliquot-level metadata from the
+#'     `colData` of the experiment object, excluding columns specified in
+#'     `pkg.env$colDataExclude`. It adds a column indicating whether each
+#'     aliquot is selected based on the presence of outliers and rounds
+#'     numeric columns to three decimal places.
+#' @param exp A SummarizedExperiment object containing the experimental data.
+#' @return A data frame summarizing aliquot-level metadata, including a
+#'     column for selection status and rounded numeric values.
+getAliquotSummary <- function(exp){
+    df <- colData(exp)
+    df <- df[!colnames(df) %in% pkg.env$colDataExclude]
 
-#' @title Zip the folder with results
-#' @description placeholder
-#' @details placeholder
-#' @returns placeholder
-#' @param file output name of file
-#' @param output Folder to be zipped
-#' @returns A zip file is created of the folders created with the export
-#' functions and reports.
-#' @export
-zipFolder <- function(file, output) {
-    if (requireNamespace("zip", quietly = TRUE)) {
-        zip::zip(zipfile = file, files = list.files(output), root = output)
-    }
-}
+    aliquotSummary <- vectorDf(df)
 
-#' @title Write the new export file
-#' @description
-#' @details
-#' @returns
-#' @importFrom dplyr mutate_if
-#' @importFrom openxlsx write.xlsx
-#' @importFrom SummarizedExperiment assays
-#' @export
-writeExport <- function(outFile, exp, types = exp$type,
-                        backgroundPercent = 40, cautionRSD = 15, nonReportableRSD = 30,
-                        digits = 3, selectedOnly = FALSE) {
-    overallSummary <- data.frame(
-        Info = c(
-            ncol(exp), nrow(exp), length(unique(rowData(exp)$compound_is))
-        )
-    )
-    rownames(overallSummary) <- c(
-        "Aliquots",
-        "Compounds",
-        "Internal Standards"
-    )
-
-    if (selectedOnly) {
-        exp <- exp[rowData(exp)$use, exp$use]
-    }
-
-    toUse <- !colnames(colData(exp)) %in% pkg.env$colDataExclude
-    toUse <- vapply(colData(exp)[, toUse], function(x) {
-        !("matrix" %in% class(x))
-    }, logical(1))
-
-
-
-    aliquotSummary <- as.data.frame(colData(exp[, toUse]))
     if (!"outlier" %in% colnames(aliquotSummary)) {
         aliquotSummary$outlier <- FALSE
     }
     aliquotSummary$selected <- ifelse(aliquotSummary$outlier, "No", "Yes")
     aliquotSummary <- aliquotSummary[, colnames(aliquotSummary) != "use"]
 
-    toUse <- which(!colnames(rowData(exp)) %in% pkg.env$rowDataExclude)
+    aliquotSummary <- aliquotSummary %>%
+        mutate_if(is.numeric, round, digits = 3)
 
-    toUse <- vapply(rowData(exp)[, toUse], function(x) {
-        !("matrix" %in% class(x))
-    }, logical(1))
+    return(aliquotSummary)
+}
 
+#' @title Generate a summary of compound-level metadata
+#' @description Creates a summary data frame of compound-level metadata from
+#'     the provided experiment object.
+#' @details This function extracts compound-level metadata from the
+#'     `rowData` of the experiment object, excluding columns specified in
+#'     `pkg.env$rowDataExclude`. It calculates a confidence level for each
+#'     compound based on background signal and RSD thresholds, adds a column
+#'     indicating whether each compound is selected, and rounds numeric
+#'     columns to three decimal places.
+#' @param exp A SummarizedExperiment object containing the experimental data.
+#' @param backgroundPercent Numeric, the threshold for background signal
+#'     percentage. Defaults to 40.
+#' @param cautionRSD Numeric, the RSD threshold for cautionary reporting.
+#'     Defaults to 15.
+#' @param nonReportableRSD Numeric, the RSD threshold for non-reportable
+#'     data. Defaults to 30.
+#' @return A data frame summarizing compound-level metadata, including
+#'     confidence levels, selection status, and rounded numeric values.
+getCompoundSummary <- function(
+        exp, backgroundPercent = 40, cautionRSD = 15, nonReportableRSD = 30
+) {
+    df <- rowData(exp)
+    df <- df[!colnames(df) %in% pkg.env$rowDataExclude]
 
+    compoundSummary <- vectorDf(df)
 
-    compoundSummary <- as.data.frame(rowData(exp)[, toUse])
-
-    compoundSummary$confidence <- ifelse(compoundSummary$backgroundSignal <= backgroundPercent & compoundSummary$rsdqcCorrected < cautionRSD, "High", "Caution")
-    compoundSummary$confidence <- ifelse(compoundSummary$rsdqcCorrected > nonReportableRSD, "Non Reportable", compoundSummary$confidence)
-    compoundSummary$confidence <- ifelse(compoundSummary$backgroundSignal > backgroundPercent, "Low SNR", compoundSummary$confidence)
-    compoundSummary$selected <- ifelse(compoundSummary$use, "Yes", "No")
-    compoundSummary <- compoundSummary[, colnames(compoundSummary) != "use"]
+    # Use case_when for cleaner conditional logic
+    compoundSummary$confidence <- dplyr::case_when(
+        compoundSummary$rsdqcCorrected > nonReportableRSD ~ "Non Reportable",
+        compoundSummary$backgroundSignal > backgroundPercent ~ "Low SNR",
+        compoundSummary$backgroundSignal <= backgroundPercent &
+            compoundSummary$rsdqcCorrected < cautionRSD ~ "High",
+        TRUE ~ "Caution"
+    )
 
     compoundSummary <- compoundSummary %>%
-        mutate_if(is.numeric, round, digits = digits)
+        mutate(selected = ifelse(.data$use, "Yes", "No")) %>%
+        select(-use) %>%
+        mutate_if(is.numeric, round, digits = 3)
 
-    aliquotSummary <- aliquotSummary %>%
-        mutate_if(is.numeric, round, digits = digits)
+    return(compoundSummary)
+}
+
+#' @title Write the new export file
+#' @description Exports data from a SummarizedExperiment object to an Excel
+#'     file, including summaries and assay data.
+#' @details This function generates an Excel file containing multiple sheets
+#'     with summaries and assay data from the provided SummarizedExperiment
+#'     object. It includes:
+#'     - A summary of aliquots, compounds, and internal standards.
+#'     - Aliquot-level and compound-level metadata summaries.
+#'     - Assay data, excluding those specified in `pkg.env$assayExclude`.
+#'     - Additional metadata such as batch R-squared values, studentized
+#'       residuals, and linear range fractions, if available.
+#'
+#'     The function handles Excel sheet name length limitations by truncating
+#'     names to 31 characters.
+#' @param folder A string specifying the directory where the Excel file will
+#'     be saved.
+#' @param file A string specifying the name of the Excel file to be created.
+#' @param exp A SummarizedExperiment object containing the experimental data.
+#' @param types A character vector specifying the sample types to include in
+#'     the export. Defaults to all types in `exp$type`.
+#' @param backgroundPercent Numeric, the threshold for background signal
+#'     percentage. Defaults to 40.
+#' @param cautionRSD Numeric, the RSD threshold for cautionary reporting.
+#'     Defaults to 15.
+#' @param nonReportableRSD Numeric, the RSD threshold for non-reportable data.
+#'     Defaults to 30.
+#' @param selectedOnly Logical, whether to include only selected aliquots and
+#'     compounds. Defaults to `FALSE`.
+#' @return None. The function writes an Excel file as a side effect.
+#' @importFrom dplyr mutate_if
+#' @importFrom openxlsx write.xlsx
+#' @importFrom SummarizedExperiment assays
+writeExport <- function(
+        folder, file, exp, types = exp$type,
+        backgroundPercent = 40, cautionRSD = 15,
+        nonReportableRSD = 30, selectedOnly = FALSE
+) {
+
+    IS <- unique(rowData(exp)$compound_is)
+    overallSummary <- data.frame(
+        Info = c(ncol(exp), nrow(exp), length(IS)),
+        row.names = c("Aliquots", "Compounds", "Internal Standards")
+    )
+
+    if (selectedOnly) {
+        exp <- exp[rowData(exp)$use, exp$use]
+    }
 
     exp <- exp[, exp$type %in% types]
 
-
-    assays(exp) <- assays(exp)[!assayNames(exp) %in% pkg.env$assayExclude]
-    assayList <- lapply(assays(exp), function(m) {
-        if (all(is.numeric(m))) {
-            m <- round(m, digits)
-        }
-        return(cbind(Batch = exp$batch, t(m)))
-    })
-
-    names(assayList) <- assayNames(exp)
-
     tabs <- list(
         Summary = overallSummary,
-        Aliquot = aliquotSummary,
-        Compound = compoundSummary
+        Aliquot = getAliquotSummary(exp),
+        Compound = getCompoundSummary(exp)
     )
+
+
+    assayList <- assays(exp)[!assayNames(exp) %in% pkg.env$assayExclude]
+    isNumeric <- vapply(assayList, function(m) all(is.numeric(m)), logical(1))
+    assayList <- assayList[isNumeric]
+
     tabs <- c(tabs, assayList[sort(names(assayList))])
 
     if (!is.null(metadata(exp)$concentration)) {
@@ -491,157 +317,129 @@ writeExport <- function(outFile, exp, types = exp$type,
         ))
     }
 
+    # Excel limitations
     names(tabs) <- substr(names(tabs), 0, 31)
 
-    openxlsx::write.xlsx(
-        x = tabs,
-        file = outFile,
-        rowNames = TRUE,
-        colNames = TRUE,
-        keepNA = TRUE,
-        na.string = "NA"
+    write.xlsx(
+        x = tabs, file = file.path(folder, "Export", file),
+        rowNames = TRUE, colNames = TRUE,
+        keepNA = TRUE, na.string = "NA"
     )
 }
 
-#' @title Create Concentration report
-#' @description
-#' @details
-#' @returns
-#' @export
-reportConcentrationsPerBatch <- function(exp, file) {
-    highConfLinearRange <- rowData(exp)$linearRanges > 0.7
-    highR2 <- rowData(exp)$concentrationR2 > 0.95
-
-    codes <- matrix(nrow = nrow(highR2), ncol = ncol(highR2), dimnames = dimnames(highR2))
-    codes[highConfLinearRange & highR2] <- 1
-    codes[highConfLinearRange & !highR2] <- 2
-    codes[!highConfLinearRange & highR2] <- 3
-    codes[!highConfLinearRange & !highR2] <- 4
-
-
-
-
-    sheets <- lapply(unique(exp$batch), function(batch) {
-        x <- exp[, exp$batch == batch]
-
-        header <- t(data.frame(
-            Sample.Name = rownames(x),
-            RSDQC = rowData(x)$rsdqcCorrected,
-            Background = rowData(x)$backgroundSignal,
-            Concentration = codes[, batch]
-        ))
-        rbind(
-            header,
-            t(assay(x, "concentration"))
-        )
-    })
-
-    names(sheets) <- sprintf("Batch %s", unique(exp$batch))
-
-    openxlsx::write.xlsx(
-        x = sheets,
-        file = file,
-        rowNames = TRUE,
-        keepNA = TRUE,
-        na.string = "NA"
-    )
-}
-
-#' @title Download zip file
-#' @description
-#' @details
-#' @returns
-#' @param exp
-#' @export
-downloadZip <- function(project, exp,
-                        summaryPlots = c("Aliquot", "PCA", "QC"),
-                        summaryReport = TRUE, compoundReport = TRUE,
-                        backgroundPercent = 40, cautionRSD = 15, nonReportableRSD = 30,
-                        copyDataLake = FALSE,
-                        assays = c("ratio", "ratio_corrected"), cores = 1, shinyProgress = NULL) {
-    output_folder <- file.path(getwd(), project)
-
-    reports <- file.path(output_folder, "Exports")
-    plotFolder <- file.path(output_folder, "Plots")
-    compoundFolder <- file.path(plotFolder, "Compounds")
-
-    dir.create(reports, recursive = TRUE, showWarnings = FALSE)
-    dir.create(compoundFolder, recursive = TRUE, showWarnings = FALSE)
-
-    message("Exporting Tables")
-    exportTables(exp, reports)
-    message("Exported Tables")
-
-    timeFormat <- format(lubridate::now(), "%d-%m-%Y %H.%M.%S")
-    file <- sprintf("mzQuality_Original_%s.tsv", timeFormat)
-
-    utils::write.table(
-        x = expToCombined(exp),
-        file = file.path(reports, file),
-        sep = "\t",
-        row.names = TRUE,
-        quote = FALSE
-    )
-    message("Exported Original File")
-
-    file <- "FinalReport_All_v2.xlsx"
-    writeExport(
-        file.path(reports, file),
-        exp = exp,
-        backgroundPercent = backgroundPercent,
-        cautionRSD = cautionRSD,
-        nonReportableRSD = nonReportableRSD
-    )
-
-    file <- "FinalReport_Sample_SelectedComps_v2.xlsx"
-    writeExport(
-        file.path(reports, file),
-        exp = exp[rowData(exp)$use, ],
-        types = "SAMPLE",
-        backgroundPercent = backgroundPercent,
-        cautionRSD = cautionRSD,
-        nonReportableRSD = nonReportableRSD
-    )
-
-    # file <- "NonReported_QC_corrected_all_final_report.xlsx"
-    # exportExcel(x, file.path(reports, file))
-
-    message("Exporting Filter Workbook")
-    file <- "Metabolites_to_keep.xlsx"
-    exportFilterWorkbook(exp, file.path(reports, file))
-
-    message("Exporting QC Corrected Workbook for Samples")
-
-    file <- "QC_corrected_sample_final_report.xlsx"
-    exportExcel(
-        exp[, exp$type == "SAMPLE"],
-        file.path(reports, file),
-        backgroundPercent = backgroundPercent,
-        cautionRSD = cautionRSD,
-        nonReportableRSD = nonReportableRSD
-    )
-
-    message("Exporting QC Corrected Workbook for All")
-
-    file <- "QC_corrected_all_final_report.xlsx"
-    exportExcel(
-        exp,
-        file.path(reports, file),
-        backgroundPercent = backgroundPercent,
-        cautionRSD = cautionRSD,
-        nonReportableRSD = nonReportableRSD
-    )
-
-
-    if (summaryReport) {
-        message("Generating Summary Report")
-        summaryReport(exp = exp, folder = plotFolder, plots = summaryPlots, assays = assays)
-        message("Created Summary Report")
+#' @title Create a project-specific report folder structure
+#' @description Creates a folder structure for storing reports, plots, and
+#'     compound-specific data for a given project.
+#' @details This function generates a folder structure within a specified base
+#'     folder for a given project. The structure includes:
+#'     - A main project folder
+#'     - A subfolder for exports
+#'     - A subfolder for plots
+#'     - A subfolder for compound-specific plots
+#'
+#'     If the folders do not already exist, they are created recursively.
+#' @param baseFolder A string specifying the base directory where the project
+#'     folder will be created.
+#' @param projectName A string specifying the name of the project. This will
+#'     be used as the name of the main project folder.
+#' @return None. The function creates the folder structure as a side effect.
+createReportFolder <- function(baseFolder, projectName){
+    outputFolder <- file.path(baseFolder, projectName)
+    if (!dir.exists(outputFolder)) {
+        dir.create(outputFolder, recursive = TRUE, showWarnings = FALSE)
     }
 
-    if (compoundReport) {
-        message("Creating Compound Reports")
-        compoundReports(exp, folder = compoundFolder, assays = assays, cores = cores, shinyProgress = shinyProgress)
-        message("Created Compound Reports")
+    reports <- file.path(outputFolder, "Exports")
+    plotFolder <- file.path(outputFolder, "Plots")
+    compoundFolder <- file.path(plotFolder, "Compounds")
+
+    for (folder in c(reports, plotFolder, compoundFolder)) {
+        if (!dir.exists(folder)) {
+            dir.create(folder, recursive = TRUE, showWarnings = FALSE)
+        }
+    }
+}
+
+#' @title Generate project reports and export data
+#' @description Creates a folder structure, exports data tables, and generates
+#'     summary and compound-specific reports for a given project.
+#' @details This function automates the process of creating reports for a
+#'     project. It performs the following tasks:
+#'     - Creates a folder structure for storing reports and plots.
+#'     - Exports data tables to the specified folder.
+#'     - Generates a summary report with specified plots.
+#'     - Generates compound-specific reports.
+#'
+#'     The function allows customization of the report content and thresholds
+#'     for background percentage and relative standard deviation (RSD).
+#' @param folder A string specifying the base directory where the reports will
+#'     be saved.
+#' @param project A string specifying the name of the project. This will be
+#'     used to create a project-specific folder.
+#' @param exp A SummarizedExperiment object containing the experimental data.
+#' @param summaryPlots A character vector specifying the types of summary plots
+#'     to include in the summary report. Defaults to
+#'     `c("Aliquot", "PCA", "QC")`.
+#' @param makeSummaryReport Logical, whether to generate a summary report.
+#'     Defaults to `TRUE`.
+#' @param makeCompoundReport Logical, whether to generate compound-specific
+#'     reports. Defaults to `TRUE`.
+#' @param backgroundPercent Numeric, the percentage threshold for background
+#'     correction. Defaults to `40`.
+#' @param cautionRSD Numeric, the RSD threshold for cautionary reporting.
+#'     Defaults to `15`.
+#' @param nonReportableRSD Numeric, the RSD threshold for non-reportable data.
+#'     Defaults to `30`.
+#' @param assays A character vector specifying the assay names to include in
+#'     the reports. Defaults to `c("ratio", "ratio_corrected")`.
+#' @return None. The function creates reports and exports data as a side effect.
+#' @examples
+#' exp <- readRDS(system.file(package = "mzQuality", "data.RDS"))
+#' createReports(
+#'     folder = tempdir(),
+#'     project = "MyProject",
+#'     exp = exp[1:5, ],
+#'     summaryPlots = c("Aliquot", "PCA"),
+#'     makeSummaryReport = TRUE,
+#'     makeCompoundReport = TRUE,
+#'     backgroundPercent = 50,
+#'     cautionRSD = 10,
+#'     nonReportableRSD = 25,
+#'     assays = "ratio"
+#' )
+#' @export
+createReports <- function(
+        folder, project, exp, summaryPlots = c("Aliquot", "PCA", "QC"),
+        makeSummaryReport = TRUE, makeCompoundReport = TRUE,
+        backgroundPercent = 40, cautionRSD = 15, nonReportableRSD = 30,
+        assays = c("ratio", "ratio_corrected")
+) {
+
+    # Create Report folder if it doesn't exist
+    createReportFolder(folder, project)
+    exportTables(exp, folder)
+
+    writeExport(
+        folder = folder, file = "FinalReport_All_v2.xlsx", exp = exp,
+        backgroundPercent = backgroundPercent, cautionRSD = cautionRSD,
+        nonReportableRSD = nonReportableRSD
+    )
+
+    writeExport(
+        folder = folder, file = "FinalReport_Sample_SelectedComps_v2.xlsx",
+        exp = exp[rowData(exp)$use, ], types = "SAMPLE",
+        backgroundPercent = backgroundPercent, cautionRSD = cautionRSD,
+        nonReportableRSD = nonReportableRSD
+    )
+
+    if (makeSummaryReport) {
+        summaryReport(
+            exp = exp, folder = folder,
+            plots = summaryPlots, assays = assays
+        )
+    }
+
+    if (makeCompoundReport) {
+        compoundReports(exp = exp, folder = folder, assays = assays)
     }
 }

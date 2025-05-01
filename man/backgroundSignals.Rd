@@ -10,6 +10,9 @@ backgroundSignals(exp, type = "BLANK", NaAsZero = FALSE)
 \item{exp}{SummarizedExperiment Object}
 
 \item{type}{Name of the sample type representing blank samples.}
+
+\item{NaAsZero}{Logical, if TRUE, all NA values are replaced with 0 before
+calculating the background signal.}
 }
 \value{
 SummarizedExperiment with an added "backgroundSignal" column in

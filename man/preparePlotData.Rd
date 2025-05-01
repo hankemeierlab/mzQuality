@@ -6,19 +6,45 @@
 \usage{
 preparePlotData(
   exp,
-  assay = assayNames(exp)[1],
+  assay,
   batches = exp$batch,
   types = exp$type,
-  doLog = FALSE,
-  doImpute = FALSE
+  doLog = FALSE
 )
 }
+\arguments{
+\item{exp}{A SummarizedExperiment object containing the experimental data.}
+
+\item{assay}{A string specifying the assay to use for plotting. Defaults to
+the first assay in `assayNames(exp)`.}
+
+\item{batches}{A vector specifying the batches to include in the plot.
+Defaults to all batches in `exp$batch`.}
+
+\item{types}{A vector specifying the sample types to include in the plot.
+Defaults to all types in `exp$type`.}
+
+\item{doLog}{Logical, whether to apply a log2 transformation to the assay
+values. Defaults to `FALSE`.}
+}
 \value{
-placeholder
+A data frame in long format with columns for aliquots, compounds,
+    assay values, metadata, and a color column for sample types.
 }
 \description{
-placeholder
+Prepares a data frame for plotting by reshaping assay data
+    from a SummarizedExperiment object into a long format and adding
+    metadata.
 }
 \details{
-placeholder
+This function reshapes assay data into a long format, merges it
+    with metadata, and filters the data based on specified batches and
+    types. It also supports optional log transformation and imputation of
+    missing values. A color column is added to distinguish between sample
+    types (e.g., SQC and LQC).
+}
+\examples{
+# Example usage:
+# exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+# df <- preparePlotData(exp, assay = "ratio", doLog = TRUE)
 }

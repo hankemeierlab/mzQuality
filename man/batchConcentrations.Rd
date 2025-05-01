@@ -2,7 +2,7 @@
 % Please edit documentation in R/Concentrations.R
 \name{batchConcentrations}
 \alias{batchConcentrations}
-\title{Calculate concentrations per batch}
+\title{Calculate absolute concentrations using calibration curves}
 \usage{
 batchConcentrations(
   exp,
@@ -18,22 +18,68 @@ batchConcentrations(
 )
 }
 \arguments{
-\item{exp}{SummarizedExperiment object}
+\item{exp}{SummarizedExperiment object containing the analytical data}
 
-\item{checkForOutliers}{Boolean value, should studentized residuals be
-used to determine outliers? If TRUE, outliers are detected and only removed
+\item{batch}{Character vector specifying which batch(es) to process}
+
+\item{assayX}{String specifying the assay name for the ratio values (e.g.,
+analyte/IS ratio)}
+
+\item{assayY}{String specifying the assay name for the concentration values}
+
+\item{type}{Character vector specifying which sample types to use for
+calibration, defaults to "ACAL"}
+
+\item{subtractCal}{Logical, whether to subtract the first calibrator value
+from all calibrators}
+
+\item{forceOrigin}{Logical, whether to force the regression line through the
+origin (0,0)}
+
+\item{checkForOutliers}{Logical, whether to detect outliers using
+studentized residuals. If TRUE, outliers are detected and only removed
 at the start or end of a calibration line. If FALSE, outlier detection
 is ignored.}
 
-\item{useWeights}{Boolean value, should weighted regression be used? Defaults
-to FALSE, which indicates no weights are used.}
+\item{subtractIntercept}{Logical, whether to subtract the intercept from
+predictions}
+
+\item{useWeights}{Logical, whether to use weighted regression. Defaults to
+FALSE, which indicates no weights are used.}
 }
 \value{
-placeholder
+A list containing:
+    \item{Predicted}{Matrix of predicted concentrations for all samples in
+        the batch}
+    \item{R2}{Vector of R-squared values for each analyte's calibration
+        curve}
+    \item{Residuals}{Matrix of residuals from the calibration models}
+    \item{Outliers}{Matrix indicating outliers in the calibration data
+        (TRUE/FALSE)}
+    \item{linearRanges}{Vector indicating the proportion of samples within
+        the calibration range for each analyte}
+    \item{calRatios}{Matrix of ratios between consecutive calibration
+        levels}
 }
 \description{
-placeholder
+Calculates absolute concentrations of analytes using linear
+    models based on analyte/internal standard ratios from calibration
+    samples.
 }
 \details{
-placeholder
+This function performs calibration and quantification of analytes
+    in a batch-wise manner. It extracts calibration samples from the
+    provided SummarizedExperiment object, builds linear models for each
+    analyte, and applies these models to predict concentrations for all
+    samples in the specified batch.
+
+    The function supports various options for calibration model building,
+    including:
+    - Outlier detection using studentized residuals
+    - Weighted regression for heteroscedastic data
+    - Forcing the model through the origin
+    - Subtracting baseline values from calibrators
+
+    The function also calculates linear ranges for each analyte by checking
+    whether sample ratios fall within the calibration range.
 }

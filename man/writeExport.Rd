@@ -5,16 +5,56 @@
 \title{Write the new export file}
 \usage{
 writeExport(
-  outFile,
+  folder,
+  file,
   exp,
   types = exp$type,
   backgroundPercent = 40,
   cautionRSD = 15,
   nonReportableRSD = 30,
-  digits = 3,
   selectedOnly = FALSE
 )
 }
+\arguments{
+\item{folder}{A string specifying the directory where the Excel file will
+be saved.}
+
+\item{file}{A string specifying the name of the Excel file to be created.}
+
+\item{exp}{A SummarizedExperiment object containing the experimental data.}
+
+\item{types}{A character vector specifying the sample types to include in
+the export. Defaults to all types in `exp$type`.}
+
+\item{backgroundPercent}{Numeric, the threshold for background signal
+percentage. Defaults to 40.}
+
+\item{cautionRSD}{Numeric, the RSD threshold for cautionary reporting.
+Defaults to 15.}
+
+\item{nonReportableRSD}{Numeric, the RSD threshold for non-reportable data.
+Defaults to 30.}
+
+\item{selectedOnly}{Logical, whether to include only selected aliquots and
+compounds. Defaults to `FALSE`.}
+}
+\value{
+None. The function writes an Excel file as a side effect.
+}
 \description{
-Write the new export file
+Exports data from a SummarizedExperiment object to an Excel
+    file, including summaries and assay data.
+}
+\details{
+This function generates an Excel file containing multiple sheets
+    with summaries and assay data from the provided SummarizedExperiment
+    object. It includes:
+    - A summary of aliquots, compounds, and internal standards.
+    - Aliquot-level and compound-level metadata summaries.
+    - Assay data, excluding those specified in `pkg.env$assayExclude`.
+    - Additional metadata such as batch R-squared values, studentized
+      residuals, and linear range fractions, if available.
+
+    The function handles Excel sheet name length limitations by truncating
+    names to 31 characters.
 }

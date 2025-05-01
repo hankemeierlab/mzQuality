@@ -6,18 +6,18 @@
 \usage{
 addWithinBatchCorrectionAssay(
   exp,
-  assay = "ratio",
+  assayName = "ratio",
   saveAssay = "ratio_corrected",
   qcType = metadata(exp)$QC,
-  removeOutliers = TRUE
+  withinBatchNonNA = 3
 )
 }
 \arguments{
 \item{exp}{A `SummarizedExperiment` object containing metabolomics data
 with `colData` columns: `batch`, `order`, `type`, and `injection_time`.}
 
-\item{assay}{Character string specifying the name of the assay to correct
-(default is "ratio").}
+\item{assayName}{Character string specifying the name of the assay to
+correct (default is "ratio").}
 
 \item{saveAssay}{Character string specifying the name of the new assay to
 store corrected values (default is "ratio_corrected").}
@@ -26,8 +26,8 @@ store corrected values (default is "ratio_corrected").}
 (usually "SQC" or "QC"). Defaults to the value stored in
 `metadata(exp)$QC`.}
 
-\item{removeOutliers}{Logical indicating whether to remove extreme QC
-outliers at the batch front and back before correction (default is TRUE).}
+\item{withinBatchNonNA}{Integer specifying the minimum number of
+non-NA values before a correction is applied (default is 3).}
 }
 \value{
 A `SummarizedExperiment` object with a new assay containing

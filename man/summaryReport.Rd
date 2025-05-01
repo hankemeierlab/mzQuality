@@ -2,7 +2,7 @@
 % Please edit documentation in R/Export.R
 \name{summaryReport}
 \alias{summaryReport}
-\title{Create a dynamic mzQuality report}
+\title{Create a dynamic mzQuality summary report}
 \usage{
 summaryReport(
   exp,
@@ -13,37 +13,37 @@ summaryReport(
 )
 }
 \arguments{
-\item{exp}{SummarizedExperiment Object}
+\item{exp}{SummarizedExperiment object containing the experiment data.}
 
-\item{folder}{Directory where to store the report.}
+\item{folder}{Character string specifying the output directory for the
+report.}
 
-\item{output}{Output file}
+\item{output}{File name for the HTML output. Defaults to
+"mzquality-report.html".}
 
-\item{project}{Project name, defaults to "mzQuality"}
+\item{plots}{Character vector of plots to include in the report. Supported:
+"Aliquot", "PCA", "QC".}
 
-\item{vendor}{Vendor name of the files, defaults to "Unknown"}
+\item{assays}{Character vector specifying which assays in `exp` to include.
+Only existing assay names will be used.}
 }
 \value{
-placeholder
-
-Creates a HTML file with dynamic visualizations
+An interactive HTML report is saved to the specified `folder`.
 }
 \description{
-A summary report is a dynamic report containing plots involving
-all compounds. Examples include a heatmap, aliquot plot and violin plot.
-All plots are interactive and can be used for assessing experiments at a
-later stage.
+Generates an interactive HTML report summarizing the full
+    experiment across all compounds. Includes plots such as heatmaps, PCA
+    plots, and quality control (QC) visualizations to help evaluate batch
+    effects, sample distributions, and analytical variation.
 }
 \details{
-placeholder
+This report helps to assess the overall quality of the experiment
+    and offers a visual overview of sample-level patterns across selected
+    assays. The plots are rendered interactively (via Plotly) for easier
+    exploration and interpretation.
 }
 \examples{
-# Read example dataset
-data(mzQualityExp)
-
-# Request a summary report
-# summaryReport(mzQualityExp,
-#    folder = tempdir(), project = "MyProject",
-#    vendor = "Agilent", output = tempfile()
-# )
+# dexp <- readRDS(system.file(package = "mzQuality", "data.RDS"))
+# summaryReport(exp, folder = tempdir(),
+#               project = "MyProject", vendor = "Agilent")
 }

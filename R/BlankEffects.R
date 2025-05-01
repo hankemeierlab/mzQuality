@@ -7,6 +7,8 @@
 #' @param exp A SummarizedExperiment object
 #' @param type Name of the sample type that represents a blank sample,
 #' defaults to 'BLANK'.
+#' @param assay Name of the assay to use for the calculation, defaults to
+#' 'concentration'.
 #' @returns SummarizedExperiment with an added column in the rowData slot
 #' called "CarryOver"
 #' @export
@@ -30,8 +32,7 @@
 #' # Calculate carryOverEffect
 #' exp <- carryOverEffect(exp)
 #' exp
-carryOverEffect <- function(exp, type = "PROC", assay = "concentration",
-                            method = c("previous", "calibration")[1]) {
+carryOverEffect <- function(exp, type = "PROC", assay = "concentration") {
     if (!validateExperiment(exp)) {
         stop("Invalid experiment")
     }
@@ -40,22 +41,21 @@ carryOverEffect <- function(exp, type = "PROC", assay = "concentration",
 
     blanks <- which(exp$type == type)
 
-    if (method == "previous") {
-        other <- which(exp$type != type)
-        blanks <- blanks[which((blanks - 1) %in% other)]
+    other <- which(exp$type != type)
+    blanks <- blanks[which((blanks - 1) %in% other)]
+    canCompare <- length(blanks) > 0 & length(other) > 0
 
-        if (length(blanks) > 0 & length(other) > 0 & assay %in% assayNames(exp)) {
-            df <- do.call(cbind, lapply(blanks, function(blank) {
-                assay1 <- assay(exp[, blank], assay)
-                assay2 <- assay(exp[, blank - 1], assay)
-                return(assay1 / assay2)
-            }))
-            from <- colnames(exp)[blanks - 1]
-            to <- colnames(exp)[blanks]
+    if (canCompare & assay %in% assayNames(exp)) {
+        df <- do.call(cbind, lapply(blanks, function(blank) {
+            assay1 <- assay(exp[, blank], assay)
+            assay2 <- assay(exp[, blank - 1], assay)
+            return(assay1 / assay2)
+        }))
+        from <- colnames(exp)[blanks - 1]
+        to <- colnames(exp)[blanks]
 
-            colnames(df) <- sprintf("%s_%s", from, to)
-            rowData(exp)$carryOver <- df
-        }
+        colnames(df) <- sprintf("%s_%s", from, to)
+        rowData(exp)$carryOver <- df
     }
     return(exp)
 }
@@ -72,6 +72,8 @@ carryOverEffect <- function(exp, type = "PROC", assay = "concentration",
 #' @param exp A SummarizedExperiment object
 #' @param type Name of the sample type representing processed blanks,
 #' defaults to 'PROC'
+#' @param assay Name of the assay to use for the calculation, defaults to
+#' 'concentration'
 #' @returns SummarizedExperiment with 3 added columns in the rowData slot
 #' called "LoB" (Limit of Blank), "LoD" (Limit of Detection), and "LoQ"
 #' (Limit of Quantification)
@@ -125,6 +127,8 @@ blankLimits <- function(exp, type = "PROC", assay = "concentration") {
 #' signal-to-noise (SNR) ratio. Consider removing compounds with a poor SNR.
 #' @param exp SummarizedExperiment Object
 #' @param type Name of the sample type representing blank samples.
+#' @param NaAsZero Logical, if TRUE, all NA values are replaced with 0 before
+#' calculating the background signal.
 #' @returns SummarizedExperiment with an added "backgroundSignal" column in
 #' the rowData slot
 #' @export
@@ -141,7 +145,9 @@ backgroundSignals <- function(exp, type = "BLANK", NaAsZero = FALSE) {
 
     rowData(exp)$backgroundSignal <- NA
     if (type %in% toupper(exp$type)) {
-        rowData(exp)$backgroundSignal <- calculateEffect(exp = exp, type = type, NaAsZero = NaAsZero)
+        rowData(exp)$backgroundSignal <- calculateEffect(
+            exp = exp, type = type, NaAsZero = NaAsZero
+        )
     }
 
 
@@ -164,8 +170,11 @@ backgroundSignals <- function(exp, type = "BLANK", NaAsZero = FALSE) {
 #'
 #' # Calculate the PROC effect
 #' calculateEffect(exp, type = "PROC")
-calculateEffect <- function(exp, assay = metadata(exp)$primary,
-                            type = "BLANK", sampleLabel = "SAMPLE", NaAsZero = FALSE) {
+calculateEffect <- function(
+        exp, assay = metadata(exp)$primary,
+        type = "BLANK", sampleLabel = "SAMPLE",
+        NaAsZero = FALSE
+) {
     if (!validateExperiment(exp)) {
         stop("Invalid experiment")
     }
@@ -195,26 +204,57 @@ calculateEffect <- function(exp, assay = metadata(exp)$primary,
     return(effect)
 }
 
-#' @title Calculate the matrix effect and ion suppression
-#' @param exp SummarizedExperiment
+#' @title Calculate Matrix Effect and Ion Suppression in LC-MS Analysis
+#' @description Quantifies the matrix effect factor by comparing internal
+#'   standard signal intensities between study samples and processed blank
+#'   samples.
+#' @details Matrix effects in LC-MS analysis occur when components of the sample
+#'   matrix enhance or suppress the ionization of target analytes, affecting
+#'   quantification accuracy. This function calculates a matrix effect factor
+#'   using the formula: (proc_blank_IS - sample_IS) / proc_blank_IS, where IS
+#'   refers to internal standard signals.
+#'
+#'   A matrix effect factor near zero indicates minimal matrix effect, while
+#'   negative values indicate ion enhancement and positive values indicate ion
+#'   suppression. Values are stored in the rowData of the experiment.
+#'
+#'   The function only works if internal standards are present in the dataset
+#'   (metadata(exp)$hasIS must be TRUE).
+#'
+#' @param exp A SummarizedExperiment object containing metabolomics data
+#' @param is_assay The assay containing internal standard data, defaults to
+#'   metadata(exp)$secondary
+#' @param sampleLabel Character string indicating the sample type identifier for
+#'   study samples, defaults to "SAMPLE"
+#' @param procBlankLabel Character string indicating the sample type identifier
+#'   for processed blank samples, defaults to "PROC"
+#' @return A SummarizedExperiment object with an added "matrixEffectFactor"
+#'   column in the rowData slot, containing values between -1 and 1
 #' @importFrom matrixStats rowMedians
 #' @export
 #' @examples
-#' #' # Read the example dataset
+#' # Read the example dataset
 #' exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
 #'
-#' matrixEffect(exp)
-matrixEffect <- function(exp, is_assay = metadata(exp)$secondary,
-                         sampleLabel = "SAMPLE", procBlankLabel = "PROC") {
+#' # Calculate matrix effect factors
+#' exp <- matrixEffect(exp)
+#'
+#' # View matrix effect factors
+#' head(rowData(exp)$matrixEffectFactor)
+matrixEffect <- function(
+        exp, is_assay = metadata(exp)$secondary,
+        sampleLabel = "SAMPLE", procBlankLabel = "PROC"
+) {
+
     rowData(exp)$matrixEffectFactor <- NA
     if (metadata(exp)$hasIS) {
         useExp <- exp[, exp$use]
         if (all(c(sampleLabel, procBlankLabel) %in% useExp$type)) {
-            samps <- rowMeans(assay(useExp[, useExp$type == sampleLabel], is_assay), na.rm = TRUE)
-            procs <- rowMeans(assay(useExp[, useExp$type == procBlankLabel], is_assay), na.rm = TRUE)
+            mat <- assay(useExp[, useExp$type == sampleLabel], is_assay)
+            samps <- rowMeans(mat, na.rm = TRUE)
 
-            # rowData(exp)$matrixEffect <- round(rowMedians(samps) / rowMedians(procs), 3)
-            # rowData(exp)$ionSuppresion <- round(100 - rowData(exp)$matrixEffect, 3)
+            mat <- assay(useExp[, useExp$type == procBlankLabel], is_assay)
+            procs <- rowMeans(mat, na.rm = TRUE)
 
             rowData(exp)$matrixEffectFactor <- round((procs - samps) / procs, 3)
         }

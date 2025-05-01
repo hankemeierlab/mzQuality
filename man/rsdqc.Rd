@@ -7,22 +7,37 @@
 rsdqc(exp, assay = "ratio_corrected", type = metadata(exp)$QC)
 }
 \arguments{
-\item{exp}{SummarizedExperiment object}
+\item{exp}{A SummarizedExperiment object containing the experimental data.}
 
-\item{assay}{Assay to use for calculating the RSDQC. Defaults to
-"ratio_corrected"}
+\item{assay}{A string specifying the assay to use for calculating the
+RSDQC. Defaults to `"ratio_corrected"`.}
+
+\item{type}{A string specifying the type of QC samples to use for
+calculating the RSDQC. Defaults to the `QC` metadata of the experiment.}
+}
+\value{
+A numeric vector containing the RSDQC values for all compounds in
+    the specified assay.
 }
 \description{
-The RSDQC is an indicator of variance of compounds in QC
-samples. This function returns the RSDQC of all compounds in the
-SummarizedExperiment
+Computes the Relative Standard Deviation for Quality Control
+    (RSDQC) of compounds in QC samples from a SummarizedExperiment object.
 }
 \details{
-placeholder
+The RSDQC is a measure of the variance of compounds in QC samples,
+    expressed as a percentage. This function calculates the RSDQC for all
+    compounds in the specified assay of the SummarizedExperiment object.
+    It uses the standard deviation and mean of the QC sample values to
+    compute the RSDQC. Missing values are ignored during the calculation.
 }
 \examples{
+# Example usage:
 # Read the example dataset
 exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
 
-rsdqc(exp)
+# Calculate the RSDQC for the default assay and QC type
+rsdqc_values <- rsdqc(exp)
+
+# Calculate the RSDQC for a specific assay and QC type
+rsdqc_values <- rsdqc(exp, assay = "ratio", type = "QC")
 }

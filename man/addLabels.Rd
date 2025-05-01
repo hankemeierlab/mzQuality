@@ -6,6 +6,22 @@
 \usage{
 addLabels(p, textColor = "white", textSize = 3)
 }
+\arguments{
+\item{p}{A ggplot object to which labels will be added.}
+
+\item{textColor}{A character string specifying the color of the text.
+Defaults to "white".}
+
+\item{textSize}{A numeric value specifying the size of the text.
+Defaults to 3.}
+}
+\value{
+A ggplot object with added labels.
+}
 \description{
-Add labels to a plot
+Adds labels to a ggplot object using ggrepel.
+}
+\details{
+This function uses ggrepel to add labels to a ggplot object. It
+    requires the ggrepel package to be installed.
 }

@@ -9,14 +9,6 @@
 #' QualityControl, Metabolomics
 "_PACKAGE"
 
-#' @title Create a timestamped message
-#' @description
-#' This overrides the base message with an added timestamp
-message <- function(message) {
-    string <- sprintf("%s | %s", lubridate::now(), message)
-    base::message(string)
-}
-
 pkg.env <- new.env()
 pkg.env$rowDataExclude <- c(
     "calModel",
@@ -33,5 +25,6 @@ pkg.env$colDataExclude <- c(
 )
 
 pkg.env$assayExclude <- c(
+    "CALRange",
     "ACALRange"
 )

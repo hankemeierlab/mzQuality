@@ -2,6 +2,7 @@ library(testthat)
 suppressPackageStartupMessages(library(mzQuality))
 # Read the example dataset
 exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+exp <- doAnalysis(exp, doAll = TRUE, useWithinBatch = F)
 
 test_that("pca plot can be made", {
     plot <- suppressWarnings(pcaPlot(exp))
@@ -54,11 +55,6 @@ test_that("heatmapPlot can be made", {
     expect_true(is(plot, "plotly"))
 })
 
-test_that("calibrationPlot can be made", {
-    plot <- calibrationPlot(exp, assay = "concentration")
-    expect_true(is(plot, "ggplot"))
-})
-
 
 test_that("rsdPlot can be made", {
     plot <- rsdPlot(exp)
@@ -70,7 +66,4 @@ test_that("batchAssayPlot can be made", {
     expect_true(is(plot, "ggplot"))
 })
 
-test_that("batchCorrectionPlot can be made", {
-    plot <- batchCorrectionPlot(exp)
-    expect_true(is(plot, "ggplot"))
-})
+

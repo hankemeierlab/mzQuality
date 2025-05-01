@@ -35,21 +35,18 @@ See below for the sample data:
 
 ```{r sampleTable, echo = FALSE}
 exp <- params$exp
-exp <- exp[rowData(exp)$use, exp$use]
-cols <- sapply(colData(exp), function(x) !"matrix" %in% class(x))
+exp <- exp[, exp$use]
 
-x <- colData(exp)[, cols]
-DT::datatable(as.data.frame(x))
+DT::datatable(as.data.frame(vectorDf(colData(exp))))
 ```
 
 In total, `r nrow(exp)` compounds were submitted, of which `r if ("use" %in% colnames(rowData(exp))) sum(rowData(exp)$use) else 0` compounds were used. See the table below for compound data.
 
 ```{r compoundTable, echo = FALSE, error=FALSE}
 exp <- params$exp
-exp <- exp[rowData(exp)$use, exp$use]
-cols <- sapply(rowData(exp), function(x) !"matrix" %in% class(x))
+exp <- exp[, exp$use]
 
-x <- rowData(exp)[, cols]
+x <- vectorDf(rowData(exp))
 cols <- sapply(x, function(z) "numeric" %in% class(z))
 
 DT::datatable(as.data.frame(x[, cols]))
@@ -58,7 +55,7 @@ DT::datatable(as.data.frame(x[, cols]))
 
 ```{r plotSettings, echo=FALSE, error=FALSE}
 exp <- params$exp
-exp <- exp[rowData(exp)$use, exp$use]
+exp <- exp[, exp$use]
 N <- length(unique(exp$batch))
 chunk <- 3.5
 height <- chunk * N
@@ -70,22 +67,22 @@ heightType <- chunk * length(unique(exp$type))
 # Compounds Per Batch {.tabset .tabset-fade .tabset-pills}
 ```{r compound2, echo=FALSE, fig.width=24, warning=FALSE, fig.height=height, out.width='100%', results = "asis", dpi = 100, class.source = 'fold-hide', error=FALSE}
 exp <- params$exp
-exp <- exp[rowData(exp)$use, exp$use]
+exp <- exp[, exp$use]
 
 if (nrow(exp) > 0) {
     for (assay in params$assays) {
         cat(sprintf("## %s \n", assay))
     
-        p <- compoundPlotNew(
-                exp = exp,
-                assay = assay
-        )
         
-        p <- mzQuality::facetPlot(
-          plot = p, 
-          by = "batch", 
-          ncol = 2
+        p <-  compoundPlot(
+            exp = exp,
+            assay = assay, 
+        ) %>%
+          facetPlot(
+            by = "batch", 
+            ncol = 2
         )
+
 
         if (!is.null(p)) {
             print(p)
@@ -100,30 +97,26 @@ if (nrow(exp) > 0) {
 # Compounds Per Type {.tabset .tabset-fade .tabset-pills}
 ```{r compoundsPerType, echo=FALSE, fig.width=24, warning=FALSE, fig.height=heightType, out.width='100%', results = "asis", dpi = 100, class.source = 'fold-hide', error=FALSE}
 exp <- params$exp
-exp <- exp[rowData(exp)$use, exp$use]
+exp <- exp[, exp$use]
 
 if (nrow(exp) > 0) {
 
     for (assay in params$assays) {
             cat(sprintf("## %s \n", assay))
         
-            p <- compoundPlotNew(
+            p <- compoundPlot(
                     exp = exp,
                     assay = assay,
                     trendTypes = unique(exp$type), 
                     withinTrend = TRUE
-            )
-            
-            p <- mzQuality::facetPlot(
-              plot = p, 
-              by = "type", 
-              ncol = 1
+            ) %>%
+              facetPlot(
+                by = "type", 
+                ncol = 1
             )
     
-            if (!is.null(p)) {
-                print(p)
-                cat('<hr style="border:1px solid gray">')
-            }
+            print(p)
+            cat('<hr style="border:1px solid gray">')
     }
 }
 ```

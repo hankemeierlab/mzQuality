@@ -2,7 +2,7 @@
 % Please edit documentation in R/BlankEffects.R
 \name{matrixEffect}
 \alias{matrixEffect}
-\title{Calculate the matrix effect and ion suppression}
+\title{Calculate Matrix Effect and Ion Suppression in LC-MS Analysis}
 \usage{
 matrixEffect(
   exp,
@@ -12,14 +12,47 @@ matrixEffect(
 )
 }
 \arguments{
-\item{exp}{SummarizedExperiment}
+\item{exp}{A SummarizedExperiment object containing metabolomics data}
+
+\item{is_assay}{The assay containing internal standard data, defaults to
+metadata(exp)$secondary}
+
+\item{sampleLabel}{Character string indicating the sample type identifier for
+study samples, defaults to "SAMPLE"}
+
+\item{procBlankLabel}{Character string indicating the sample type identifier
+for processed blank samples, defaults to "PROC"}
+}
+\value{
+A SummarizedExperiment object with an added "matrixEffectFactor"
+  column in the rowData slot, containing values between -1 and 1
 }
 \description{
-Calculate the matrix effect and ion suppression
+Quantifies the matrix effect factor by comparing internal
+  standard signal intensities between study samples and processed blank
+  samples.
+}
+\details{
+Matrix effects in LC-MS analysis occur when components of the sample
+  matrix enhance or suppress the ionization of target analytes, affecting
+  quantification accuracy. This function calculates a matrix effect factor
+  using the formula: (proc_blank_IS - sample_IS) / proc_blank_IS, where IS
+  refers to internal standard signals.
+
+  A matrix effect factor near zero indicates minimal matrix effect, while
+  negative values indicate ion enhancement and positive values indicate ion
+  suppression. Values are stored in the rowData of the experiment.
+
+  The function only works if internal standards are present in the dataset
+  (metadata(exp)$hasIS must be TRUE).
 }
 \examples{
-#' # Read the example dataset
+# Read the example dataset
 exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
 
-matrixEffect(exp)
+# Calculate matrix effect factors
+exp <- matrixEffect(exp)
+
+# View matrix effect factors
+head(rowData(exp)$matrixEffectFactor)
 }

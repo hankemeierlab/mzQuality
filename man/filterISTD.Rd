@@ -24,24 +24,28 @@ SummarizedExperiment before doing analysis. It filter by both the `tag`
 argument and by checking if the A/IS ratio equals 1.
 }
 \details{
-placeholder
+This function is useful when internal standards are
+measured as compounds and you want to remove them from the analysis.
+It filters the compounds based on the provided tag and checks if the A/IS
+ratio equals 1. If the `hasIS` metadata is set to TRUE, it will also
+remove compounds that have the same A/IS ratio as the internal standard.
 }
 \examples{
 # Read example dataset
-data <- read.delim(system.file(package = "mzQuality", "dataset.txt"))
+data <- readData(system.file(package = "mzQuality", "example.tsv"))
 
 # Construct experiment
 exp <- buildExperiment(
     data,
-    rowIndex = "Compound",
-    colIndex = "Aliquot",
-    primaryAssay = "Area",
-    secondaryAssay = "Area_is"
+    rowIndex = "compound",
+    colIndex = "aliquot",
+    primaryAssay = "area",
+    secondaryAssay = "area_is"
 )
 
 # Filter internal standards from compounds
 filterISTD(exp, tag = "ISTD")
 
 # Filter all standards from compounds
-filterSTD(exp, tag = "STD")
+filterISTD(exp, tag = "STD")
 }

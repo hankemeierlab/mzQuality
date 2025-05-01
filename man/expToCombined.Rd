@@ -4,7 +4,7 @@
 \alias{expToCombined}
 \title{Convert a SummarizedExperiment to a data frame in the long format}
 \usage{
-expToCombined(exp, rowIndex = "Compound", colIndex = "Aliquot")
+expToCombined(exp, rowIndex = "compound", colIndex = "aliquot")
 }
 \arguments{
 \item{exp}{a SummarizedExperiment object}
@@ -26,15 +26,15 @@ in the long format. Note that metadata won't be exported.
 }
 \examples{
 # Read example dataset
-data <- read.delim(system.file(package = "mzQuality", "dataset.txt"))
+data <- readData(system.file(package = "mzQuality", "example.tsv"))
 
 # Construct experiment
 exp <- buildExperiment(
     data,
-    rowIndex = "Compound",
-    colIndex = "Aliquot",
-    primaryAssay = "Area",
-    secondaryAssay = "Area_is"
+    rowIndex = "compound",
+    colIndex = "aliquot",
+    primaryAssay = "area",
+    secondaryAssay = "area_is"
 )
 
 # Convert to a table format

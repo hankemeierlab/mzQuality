@@ -15,12 +15,39 @@ violinPlot(
   withinTrend = FALSE
 )
 }
+\arguments{
+\item{exp}{An experimental data object containing the data to be plotted.}
+
+\item{assay}{A character string specifying the assay column to be plotted
+on the y-axis. Defaults to "ratio_corrected".}
+
+\item{batches}{A vector specifying the batches to include in the plot.
+Defaults to `exp$batch`.}
+
+\item{types}{A vector specifying the types to include in the plot.
+Defaults to `metadata(exp)$QC`.}
+
+\item{doLog}{A logical value indicating whether to apply log scaling to
+the y-axis. Defaults to FALSE.}
+
+\item{addMedian}{A logical value indicating whether to add median points
+to the plot. Defaults to TRUE.}
+
+\item{addConfidenceInterval}{A logical value indicating whether to add
+confidence intervals to the plot. Defaults to TRUE.}
+
+\item{withinTrend}{A logical value indicating whether to inherit trend
+line aesthetics. Defaults to FALSE.}
+}
 \value{
-placeholder
+A ggplot object representing the violin plot.
 }
 \description{
-A short description...
+Creates a violin plot with optional median points and
+    confidence intervals.
 }
 \details{
-placeholder
+This function generates a violin plot using ggplot2. It allows
+    for optional log scaling, adding median points, and confidence
+    intervals.
 }

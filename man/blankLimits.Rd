@@ -11,6 +11,9 @@ blankLimits(exp, type = "PROC", assay = "concentration")
 
 \item{type}{Name of the sample type representing processed blanks,
 defaults to 'PROC'}
+
+\item{assay}{Name of the assay to use for the calculation, defaults to
+'concentration'}
 }
 \value{
 SummarizedExperiment with 3 added columns in the rowData slot

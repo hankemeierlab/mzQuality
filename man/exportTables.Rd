@@ -2,44 +2,36 @@
 % Please edit documentation in R/Export.R
 \name{exportTables}
 \alias{exportTables}
-\title{Export rowData, colData, and assays}
+\title{Export rowData, colData, and Assays}
 \usage{
 exportTables(exp, folder)
 }
 \arguments{
-\item{exp}{A SummarizedExperiment object}
+\item{exp}{A SummarizedExperiment object.}
 
-\item{folder}{Folder where to store the tables}
+\item{folder}{A folder where the tables will be stored.}
 }
 \value{
-placeholder
-
-Creates files of rowData, colData and assays stored in `exp`
+Creates files of rowData, colData, and assays stored in `exp`.
 }
 \description{
-This function produces human-readable tables of rowData,
-colData and assays of a SummarizedExperiment object. rowData will be stored
-as 'Compounds.tsv', colData will be stored as 'Aliquots.tsv' and assays will
-be stored under their assay name.
+Produces human-readable tables of rowData, colData, and assays
+  from a SummarizedExperiment object. The rowData is stored as
+  'Compounds.tsv', colData as 'Aliquots.tsv', and assays are stored under
+  their respective assay names.
 }
 \details{
-placeholder
+This function creates a folder named "Export" in the specified
+  directory and writes the rowData, colData, and assays of the
+  SummarizedExperiment object into separate tab-separated files.
 }
 \examples{
 # Read example dataset
-data <- read.delim(system.file(package = "mzQuality", "dataset.txt"))
+exp <- readRDS(system.file(package = "mzQuality", "data.RDS"))
 
-# Construct experiment
-exp <- buildExperiment(
-    data,
-    rowIndex = "Compound",
-    colIndex = "Aliquot",
-    primaryAssay = "Area",
-    secondaryAssay = "Area_is"
-)
-# Do Analysis
-exp <- doAnalysis(exp)
+# Perform analysis
+exp <- doAnalysis(exp, doAll = TRUE)
 
-# Export tables in Experiment
-exportTables(exp, folder = tempdir())
+# Export tables in the experiment
+exportTables(exp[1:10, 1:10], folder = tempdir())
 }

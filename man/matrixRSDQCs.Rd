@@ -12,19 +12,34 @@ matrixRSDQCs(
 )
 }
 \arguments{
-\item{exp}{SummarizedExperiment object}
+\item{exp}{A SummarizedExperiment object containing the experimental data.}
+
+\item{primaryAssay}{A string specifying the name of the primary assay to
+use. Defaults to the `primary` metadata of the experiment.}
+
+\item{secondaryAssay}{A string specifying the name of the secondary assay
+to use. Defaults to the `secondary` metadata of the experiment.}
+
+\item{qcType}{A string specifying the type of QC samples. Defaults to the
+`QC` metadata of the experiment.}
+}
+\value{
+A matrix of RSDQC values, with rows corresponding to internal
+    standards and columns corresponding to compounds.
 }
 \description{
-The RSDQC is an indicator of variance of compounds in QC
-samples. This function returns the RSDQC of all compounds in the
-SummarizedExperiment
+Computes the Relative Standard Deviation for Quality Control
+    (RSDQC) of compounds in QC samples from a SummarizedExperiment object.
 }
 \details{
-placeholder
+This function calculates the RSDQC, which is an indicator of the
+    variance of compounds in QC samples. It supports both primary and
+    secondary assays and performs between-batch correction if internal
+    standards (IS) are available. The result is a matrix of RSDQC values
+    for each compound and internal standard.
 }
 \examples{
-# Read the example dataset
-exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
-
-matrixRSDQCs(exp)
+# Example usage:
+# exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+# rsdMatrix <- matrixRSDQCs(exp)
 }

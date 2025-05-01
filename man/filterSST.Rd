@@ -24,19 +24,23 @@ unwanted in analysis of measurements. This function helps to remove these
 SSTs from the SummarizedExperiment object
 }
 \details{
-placeholder
+This function is useful when you want to remove SST aliquots from
+the analysis. It filters the aliquots based on the provided tag.
+The tag is used to search for SST aliquots in the `type` column of the
+SummarizedExperiment object. The function uses regular expressions to
+match the tag, so you can use any pattern that matches the SST aliquots.
 }
 \examples{
 # Read example dataset
-data <- read.delim(system.file(package = "mzQuality", "dataset.txt"))
+data <- readData(system.file(package = "mzQuality", "example.tsv"))
 
 # Construct experiment
 exp <- buildExperiment(
     data,
-    rowIndex = "Compound",
-    colIndex = "Aliquot",
-    primaryAssay = "Area",
-    secondaryAssay = "Area_is"
+    rowIndex = "compound",
+    colIndex = "aliquot",
+    primaryAssay = "area",
+    secondaryAssay = "area_is"
 )
 
 # Filter SST aliquots

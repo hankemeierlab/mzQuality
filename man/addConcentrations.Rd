@@ -4,15 +4,12 @@
 \alias{addConcentrations}
 \title{Add known concentrations of calibration lines}
 \usage{
-addConcentrations(exp, df, filterComps = FALSE)
+addConcentrations(exp, df)
 }
 \arguments{
 \item{exp}{SummarizedExperiment to add the data to}
 
 \item{df}{Dataframe with concentrations of CAL lines}
-
-\item{filterComps}{Boolean value, should compounds without concentration
-be removed?}
 }
 \value{
 SummarizedExperiment with an added assay called "Concentrations".
