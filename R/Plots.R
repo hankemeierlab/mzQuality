@@ -648,7 +648,9 @@ violinPlot <- function(
         p <- p + stat_ellipse(
             data = data, mapping = intervalMapping, inherit.aes = TRUE,
             na.rm = TRUE, level = 0.9
-        )
+        ) +
+            scale_color_manual(values = colors)
+
     }
 
     if (addLabels) {
