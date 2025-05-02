@@ -32,3 +32,21 @@ This function uses ggplot2's facet_wrap to create facets for a
     ggplot object based on a specified column. It allows customization of
     the number of columns and whether axes are shared.
 }
+\examples{
+# Read data
+exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+
+# Do Analysis
+exp <- doAnalysis(exp, doAll = TRUE)
+
+# Create a compound plot for the first compound
+p <- compoundPlot(
+   exp,
+   compound = 1,
+   types = c("SQC", "LQC"),
+   assay = "ratio_corrected",
+   logTransform = TRUE
+)
+
+facetPlot(p, by = "batch", ncol = 2, shareY = TRUE)
+}

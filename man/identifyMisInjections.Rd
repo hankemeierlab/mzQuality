@@ -33,4 +33,7 @@ This function is a wrapper around `identifyOutliers()` to detect
 # Example usage:
 # exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
 # exp <- identifyMisInjections(exp, assay = "Ratio")
+# Example usage:
+exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+exp <- identifyMisInjections(exp, assay = "area_is")
 }

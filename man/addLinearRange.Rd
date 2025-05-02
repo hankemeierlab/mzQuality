@@ -49,7 +49,9 @@ This function checks whether the ratios of compounds in the
 }
 \examples{
 # Example usage:
-# exp <- SummarizedExperiment(...)
-# updatedExp <- addLinearRange(exp, assay = "ratio", minCalNo = 2,
-#     maxCalNo = 6, saveAssay = "CalRange")
+exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+exp <- addLinearRange(
+    exp, assay = "ratio", minCalNo = 2,
+    maxCalNo = 6, saveAssay = "CalRange"
+)
 }

@@ -11,10 +11,10 @@ pcaPlot(
   types = exp$type,
   pc1 = 1,
   pc2 = 2,
-  doLog = TRUE,
+  logTransform = TRUE,
   sampleAsBatch = TRUE,
   addConfidenceInterval = TRUE,
-  typeColors = c(SQC = "black", LQC = "grey")
+  addLabels = FALSE
 )
 }
 \arguments{
@@ -35,8 +35,8 @@ x-axis (default is 1).}
 \item{pc2}{Integer indicating the principal component to plot on the
 y-axis (default is 2).}
 
-\item{doLog}{Logical flag indicating whether to log-transform the assay
-data before PCA (default is TRUE).}
+\item{logTransform}{Logical flag indicating whether to log-transform the
+assay data before PCA (default is TRUE).}
 
 \item{sampleAsBatch}{Logical flag. If TRUE, sample points are labeled
 using batch numbers instead of type (default is TRUE).}
@@ -44,8 +44,8 @@ using batch numbers instead of type (default is TRUE).}
 \item{addConfidenceInterval}{Logical flag. If TRUE, a 95% confidence
 ellipse is drawn around each group (default is TRUE).}
 
-\item{typeColors}{Named vector of colors used for each sample type or
-batch (default includes black for SQC and grey for LQC).}
+\item{addLabels}{Logical, whether to add labels to the points in the plot.
+requires `ggrepel` package. Defaults to `FALSE`.}
 }
 \value{
 A `ggplot` object representing the PCA plot with options to
@@ -63,4 +63,19 @@ This function calculates PCA on selected assay data from a
   to display confidence intervals. Sample types or batches can be
   visualized with custom colors. Optionally, sample names are shown
   using label bubbles for clarity.
+}
+\examples{
+# Read data
+exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+
+# Do Analysis
+exp <- doAnalysis(exp, doAll = TRUE)
+
+# Create a compound plot for the first compound
+pcaPlot(
+   exp,
+   assay = "ratio_corrected",
+   logTransform = TRUE,
+   types = c("SQC", "LQC", "SAMPLE")
+)
 }

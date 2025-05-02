@@ -17,20 +17,17 @@
 #' @param assays Character vector specifying which assays in `exp` to include.
 #'     Only existing assay names will be used.
 #' @returns An interactive HTML report is saved to the specified `folder`.
-#' @examples
-#' # dexp <- readRDS(system.file(package = "mzQuality", "data.RDS"))
-#' # summaryReport(exp, folder = tempdir(),
-#' #               project = "MyProject", vendor = "Agilent")
+#' @noRd
 summaryReport <- function(
         exp, folder, output = "mzquality-report.html",
         plots = c("Aliquot", "PCA", "QC"),
         assays = c("ratio", "ratio_corrected")
 ) {
-    if (!validateExperiment(exp)) stop("Invalid Experiment")
+    if (!isValidExperiment(exp)) stop("Invalid Experiment")
 
     assays <- assays[assays %in% assayNames(exp)]
 
-    create_report(
+    .createReport(
         path = file.path(folder, "Plots"),
         parameters = list(exp = exp, plots = plots, assays = assays),
         template = "mzquality-report-se.Rmd",
@@ -54,16 +51,14 @@ summaryReport <- function(
 #' @param project Character string denoting the project name. Defaults to
 #'     "mzQuality".
 #' @returns One HTML report per compound is saved in the specified folder.
-#' @examples
-#' # exp <- readRDS(system.file(package = "mzQuality", "data.RDS"))
-#' # compoundReports(exp[1:2, ], folder = tempdir())
+#' @noRd
 compoundReports <- function(
         exp, folder, assays = c("ratio", "ratio_corrected"),
         project = "mzQuality"
 ) {
     outputNames <- sprintf("%s.html", make.names(rownames(exp)))
-    for (i in which(rowData(exp)$use)) {
-        create_report(
+    for (i in seq_len(nrow(exp))) {
+        .createReport(
             path = file.path(folder, "Plots", "Compounds"),
             parameters = list(
                 exp = exp[i, ],
@@ -95,7 +90,7 @@ compoundReports <- function(
 #' @importFrom rmarkdown render
 #' @importFrom utils assignInNamespace
 #' @noRd
-create_report <- function(path, parameters, template, output) {
+.createReport <- function(path, parameters, template, output) {
     file <- system.file("rmd", template, package = "mzQuality")
 
     render(
@@ -137,7 +132,7 @@ exportTables <- function(exp, folder) {
     timeFormat <- format(Sys.time(), "%d-%m-%Y %H.%M.%S")
     file <- sprintf("mzQuality_Original_%s.tsv", timeFormat)
 
-    folder <- file.path(folder, "Export")
+    folder <- file.path(folder, "Exports")
     if (!dir.exists(folder)) {
         dir.create(folder, recursive = TRUE, showWarnings = FALSE)
     }
@@ -150,7 +145,7 @@ exportTables <- function(exp, folder) {
         quote = FALSE
     )
 
-    x <- vectorDf(colData(exp))
+    x <- cleanDataframe(colData(exp))
     write.table(
         file = file.path(folder, "Aliquots.tsv"),
         row.names = TRUE,
@@ -158,7 +153,7 @@ exportTables <- function(exp, folder) {
     )
 
 
-    x <- vectorDf(rowData(exp))
+    x <- cleanDataframe(rowData(exp))
 
     write.table(
         file = file.path(folder, "Compounds.tsv"),
@@ -185,11 +180,12 @@ exportTables <- function(exp, folder) {
 #' @param exp A SummarizedExperiment object containing the experimental data.
 #' @return A data frame summarizing aliquot-level metadata, including a
 #'     column for selection status and rounded numeric values.
-getAliquotSummary <- function(exp){
+#' @noRd
+.getAliquotSummary <- function(exp){
     df <- colData(exp)
     df <- df[!colnames(df) %in% pkg.env$colDataExclude]
 
-    aliquotSummary <- vectorDf(df)
+    aliquotSummary <- cleanDataframe(df)
 
     if (!"outlier" %in% colnames(aliquotSummary)) {
         aliquotSummary$outlier <- FALSE
@@ -221,13 +217,14 @@ getAliquotSummary <- function(exp){
 #'     data. Defaults to 30.
 #' @return A data frame summarizing compound-level metadata, including
 #'     confidence levels, selection status, and rounded numeric values.
-getCompoundSummary <- function(
+#' @noRd
+.getCompoundSummary <- function(
         exp, backgroundPercent = 40, cautionRSD = 15, nonReportableRSD = 30
 ) {
     df <- rowData(exp)
     df <- df[!colnames(df) %in% pkg.env$rowDataExclude]
 
-    compoundSummary <- vectorDf(df)
+    compoundSummary <- cleanDataframe(df)
 
     # Use case_when for cleaner conditional logic
     compoundSummary$confidence <- dplyr::case_when(
@@ -278,7 +275,8 @@ getCompoundSummary <- function(
 #' @importFrom dplyr mutate_if
 #' @importFrom openxlsx write.xlsx
 #' @importFrom SummarizedExperiment assays
-writeExport <- function(
+#' @noRd
+.writeExcelExport <- function(
         folder, file, exp, types = exp$type,
         backgroundPercent = 40, cautionRSD = 15,
         nonReportableRSD = 30, selectedOnly = FALSE
@@ -298,8 +296,8 @@ writeExport <- function(
 
     tabs <- list(
         Summary = overallSummary,
-        Aliquot = getAliquotSummary(exp),
-        Compound = getCompoundSummary(exp)
+        Aliquot = .getAliquotSummary(exp),
+        Compound = .getCompoundSummary(exp)
     )
 
 
@@ -320,8 +318,9 @@ writeExport <- function(
     # Excel limitations
     names(tabs) <- substr(names(tabs), 0, 31)
 
+    path <- file.path(folder, "Exports", file, fsep = "/")
     write.xlsx(
-        x = tabs, file = file.path(folder, "Export", file),
+        x = tabs, file = path,
         rowNames = TRUE, colNames = TRUE,
         keepNA = TRUE, na.string = "NA"
     )
@@ -343,8 +342,9 @@ writeExport <- function(
 #' @param projectName A string specifying the name of the project. This will
 #'     be used as the name of the main project folder.
 #' @return None. The function creates the folder structure as a side effect.
-createReportFolder <- function(baseFolder, projectName){
-    outputFolder <- file.path(baseFolder, projectName)
+#' @noRd
+.createReportFolder <- function(outputFolder){
+
     if (!dir.exists(outputFolder)) {
         dir.create(outputFolder, recursive = TRUE, showWarnings = FALSE)
     }
@@ -398,7 +398,7 @@ createReportFolder <- function(baseFolder, projectName){
 #' createReports(
 #'     folder = tempdir(),
 #'     project = "MyProject",
-#'     exp = exp[1:5, ],
+#'     exp = exp[1:2, ],
 #'     summaryPlots = c("Aliquot", "PCA"),
 #'     makeSummaryReport = TRUE,
 #'     makeCompoundReport = TRUE,
@@ -415,17 +415,18 @@ createReports <- function(
         assays = c("ratio", "ratio_corrected")
 ) {
 
+    folder <- file.path(folder, project, fsep = "/")
     # Create Report folder if it doesn't exist
-    createReportFolder(folder, project)
+    .createReportFolder(folder)
     exportTables(exp, folder)
 
-    writeExport(
+    .writeExcelExport(
         folder = folder, file = "FinalReport_All_v2.xlsx", exp = exp,
         backgroundPercent = backgroundPercent, cautionRSD = cautionRSD,
         nonReportableRSD = nonReportableRSD
     )
 
-    writeExport(
+    .writeExcelExport(
         folder = folder, file = "FinalReport_Sample_SelectedComps_v2.xlsx",
         exp = exp[rowData(exp)$use, ], types = "SAMPLE",
         backgroundPercent = backgroundPercent, cautionRSD = cautionRSD,

@@ -15,6 +15,9 @@
 #' @param regex A regular expression for parsing aliquot names.
 #' @importFrom utils read.delim
 #' @export
+#' @examples
+#' # Read example dataset
+#' data <- readData(system.file(package = "mzQuality", "example.tsv"))
 readData <- function(files, vendor = NA, regex = NULL) {
     mandatoryColumns <- c(
         "Acquisition Date & Time", "Acquisition.Date...Time",
@@ -23,12 +26,12 @@ readData <- function(files, vendor = NA, regex = NULL) {
         "Area"
     )
 
-    df <- setBatches(lapply(files, function(file) {
+    df <- .setBatches(lapply(files, function(file) {
         df <- read.delim(file, sep = "\t")
 
         if (sum(colnames(df) %in% mandatoryColumns) > 1) {
             # Sciex routine
-            df <- sciex(df, regex = regex)
+            df <- .processSciex(df, regex = regex)
         }
 
         df$datetime <- as.character(df$datetime)
@@ -54,7 +57,8 @@ readData <- function(files, vendor = NA, regex = NULL) {
 #' @param index A string specifying the column to use as the index.
 #' @return A character vector of column names that contain metadata.
 #' @importFrom dplyr distinct
-getMetaData <- function(df, index) {
+#' @noRd
+.getMetaData <- function(df, index) {
     cols <- c(index)
     for (col in colnames(df)) {
         if (col != index) {
@@ -79,7 +83,9 @@ getMetaData <- function(df, index) {
 #' @param rows A character vector of row names to include in the metadata.
 #' @return A DataFrame containing the updated metadata, ordered by rownames.
 #' @importFrom dplyr distinct
-setMetaDataFrame <- function(rowData, rowIndex, rows) {
+#' @importFrom S4Vectors DataFrame
+#' @noRd
+.setMetaDataFrame <- function(rowData, rowIndex, rows) {
     if (nrow(rowData) == 0) {
         rowData <- DataFrame(row.names = unique(rows))
     } else {
@@ -93,16 +99,18 @@ setMetaDataFrame <- function(rowData, rowIndex, rows) {
 #' @description Constructs a metadata DataFrame from a long-format dataframe
 #'     using the specified index column.
 #' @details This function extracts metadata columns from the input dataframe
-#'     using `getMetaData()`, then formats and orders the metadata using
-#'     `setMetaDataFrame()`.
+#'     using `.getMetaData()`, then formats and orders the metadata using
+#'     `.setMetaDataFrame()`.
 #' @param df A dataframe in long format containing the data.
 #' @param index A string specifying the column to use as the index.
 #' @return A DataFrame containing the metadata, ordered by the unique values
 #'     in the index column.
-buildMetadataWithIndex <- function(df, index) {
+#' @importFrom dplyr distinct
+#' @noRd
+.buildMetadataWithIndex <- function(df, index) {
     rows <- unique(df[, index])
-    rowData <- dplyr::distinct(df[getMetaData(df, index)])
-    rowData <- setMetaDataFrame(rowData, index, rows)
+    rowData <- dplyr::distinct(df[.getMetaData(df, index)])
+    rowData <- .setMetaDataFrame(rowData, index, rows)
     return(rowData)
 }
 
@@ -120,11 +128,17 @@ buildMetadataWithIndex <- function(df, index) {
 #' @param colIndex A string specifying the column to use as the column index.
 #' @return A named list of assay matrices, with rows corresponding to
 #'     `rowData` and columns corresponding to `colData`.
-buildAssayList <- function(df, rowData, colData, rowIndex, colIndex) {
+#' @noRd
+.buildAssayList <- function(df, rowData, colData, rowIndex, colIndex) {
     hasMissing <- nrow(df) != nrow(colData) * nrow(rowData)
-
     reserved <- c(colnames(rowData), colnames(colData), rowIndex, colIndex)
     assayNames <- setdiff(colnames(df), reserved)
+
+    if (hasMissing) {
+        df <- .fillMissingCombinations(
+            df, rowIndex, colIndex, rowData, colData, assayNames
+        )
+    }
 
     assays <- lapply(assayNames, function(assayName) {
         m <- NA
@@ -199,20 +213,19 @@ buildExperiment <- function(
 ) {
     df <- as.data.frame(df)
     colnames(df) <- tolower(colnames(df))
+
+    if (!"type" %in% colnames(df)) df$type <- "SAMPLE"
+
     df$type <- toupper(df$type)
 
-    if (!"type" %in% colnames(df)) {
-        df$type <- "SAMPLE"
-    }
+    if(!isValidDataframe(df)) stop("Invalid dataframe")
 
     if (!qc %in% df$type) {
         message(sprintf("QC '%s' not found, default to type 'SAMPLE'", qc))
         qc <- "SAMPLE"
     }
 
-    if (!secondaryAssay %in% colnames(df)) {
-        secondaryAssay <- primaryAssay
-    }
+    if (!secondaryAssay %in% colnames(df)) secondaryAssay <- primaryAssay
 
     allNa <- colSums(is.na(df)) == nrow(df)
     allSame <- vapply(df, function(col) all(col == col[1]), logical(1))
@@ -221,9 +234,9 @@ buildExperiment <- function(
     df <- df[, keep, drop = FALSE]
 
     idx <- colnames(df) != typeColumn
-    rowData <- buildMetadataWithIndex(df[, idx], rowIndex)
-    colData <- buildMetadataWithIndex(df, colIndex)
-    assays <- buildAssayList(df, rowData, colData, rowIndex, colIndex)
+    rowData <- .buildMetadataWithIndex(df[, idx], rowIndex)
+    colData <- .buildMetadataWithIndex(df, colIndex)
+    assays <- .buildAssayList(df, rowData, colData, rowIndex, colIndex)
 
     hasIS <- secondaryAssay %in% names(assays) & primaryAssay != secondaryAssay
     meta <- list(
@@ -239,7 +252,7 @@ buildExperiment <- function(
         metadata = meta
     )
 
-    return(finishExperiment(exp))
+    return(.addInitialAnalysis(exp))
 }
 
 #' @title Set the Colors of the Samples
@@ -256,25 +269,15 @@ buildExperiment <- function(
 #' @param ... Additional arguments to be passed to the function.
 #' @importFrom viridis viridis
 #' @importFrom stats setNames
-setSampleColors <- function(types, ...) {
+#' @noRd
+.setSampleColors <- function(types, ...) {
     types <- unique(types)
     colorVec <- viridis(length(types), begin = 0.2, end = 0.8, option = "H")
 
     colorVec <- setNames(colorVec, types)
-    colorVec <- colorVec[setdiff(types, names(sampleColors()))]
+    colorVec <- colorVec[setdiff(types, names(.sampleColors()))]
 
-    colorVec <- sampleColors(colorVec, ..., overwrite = length(list(...)) > 0)
-    return(colorVec)
-}
-
-setSampleColors <- function(types, ...) {
-    types <- unique(types)
-    colorVec <- viridis(length(types), begin = 0.2, end = 0.8, option = "H")
-
-    colorVec <- setNames(colorVec, types)
-    colorVec <- colorVec[setdiff(types, names(sampleColors()))]
-
-    colorVec <- sampleColors(colorVec, ..., overwrite = length(list(...)) > 0)
+    colorVec <- .sampleColors(colorVec, ..., overwrite = length(list(...)) > 0)
     return(colorVec)
 }
 
@@ -295,10 +298,10 @@ setSampleColors <- function(types, ...) {
 #' @importFrom lubridate format_ISO8601
 #' @importFrom dplyr group_by n pull arrange mutate
 #' @noRd
-finishExperiment <- function(exp) {
+.addInitialAnalysis <- function(exp) {
     exp <- exp[, order(exp$injection_time, method = "radix")]
     exp$datetime <- lubridate::as_datetime(exp$injection_time)
-    exp$color <- setSampleColors(exp$type)[exp$type]
+    exp$color <- .setSampleColors(exp$type)[exp$type]
 
     batches <- rep(1, ncol(exp))
     if ("batch" %in% colnames(colData(exp))) {
@@ -344,7 +347,7 @@ finishExperiment <- function(exp) {
 #' @param assayNames A character vector of column names in `df` representing
 #'   the area or intensities of measured compounds.
 #' @importFrom dplyr bind_rows
-fillMissingCombinations <- function(df, rowIndex, colIndex, rowData, colData,
+.fillMissingCombinations <- function(df, rowIndex, colIndex, rowData, colData,
                                     assayNames) {
 
     # Identify compounds and aliquots with missing combinations
@@ -457,22 +460,33 @@ expToCombined <- function(exp,  rowIndex = "compound", colIndex = "aliquot") {
         return(df[, cols, drop = FALSE])
 }
 
-#' @title Add known concentrations of calibration lines
-#' @description mzQuality supports the calculation of absolute concentrations
-#' given concentrations of Calibration lines (CAL) are present. Using this
-#' function, a new assay in the experiment is created called 'Concentration',
-#' which is filled with NA and the supplied concentrations.
-#'
-#' The concentrations should be supplied as a data frame with rows as the
-#' names of Calibration lines and columns as compound names.
-#' Optionally, the `filterComps` argument can be set to TRUE, which only keeps
-#' compounds in the experiment with a known concentration in the CAL lines.
-#' @param exp SummarizedExperiment to add the data to
-#' @param df Dataframe with concentrations of CAL lines
-#' @returns SummarizedExperiment with an added assay called "Concentrations".
-#' The values of the assay are filled with the values provided in `df`, other
-#' values will be `NA`.
+#' @title Add Known Concentrations of Calibration Lines
+#' @description Adds known concentrations of calibration lines (CAL) to a
+#'     SummarizedExperiment object. This function creates a new assay called
+#'     "Concentration" in the experiment, which is filled with `NA` values
+#'     and the supplied concentrations.
+#' @details The concentrations should be provided as a data frame where rows
+#'     represent the names of calibration lines and columns represent
+#'     compound names. Optionally, the `filterComps` argument can be set to
+#'     TRUE to retain only compounds in the experiment that have a known
+#'     concentration in the CAL lines.
+#' @param exp A SummarizedExperiment object to which the concentration data
+#'     will be added.
+#' @param df A data frame containing the concentrations of calibration lines.
+#'     Rows should correspond to calibration line names, and columns should
+#'     correspond to compound names.
+#' @returns A SummarizedExperiment object with an added assay called
+#'     "Concentration". The assay is filled with the values provided in `df`,
+#'     and other values are set to `NA`.
 #' @export
+#' @examples
+#' # Read example dataset
+#' exp <- readRDS(system.file(package = "mzQuality", "data.RDS"))
+#' # Add concentrations
+#' file <- system.file(package = "mzQuality", "concentrations.txt")
+#' concentrations <- read.delim(file)
+#'
+#' addConcentrations(exp, df)
 addConcentrations <- function(exp, df) {
     comps <- intersect(rownames(exp), rownames(df))
 

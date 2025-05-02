@@ -55,3 +55,17 @@ This function generates a concentration plot using ggplot2. It
     allows for customization of calibration types, outlier removal, and
     whether to plot on the calibration line.
 }
+\examples{
+# Read data
+exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+
+# Do Analysis
+exp <- doAnalysis(exp, doAll = TRUE)
+
+# Create a compound plot for the first compound
+concentrationPlot(
+   exp,
+   assay = "ratio_corrected",
+   types = c("SQC", "LQC", "SAMPLE")
+)
+}

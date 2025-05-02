@@ -33,7 +33,7 @@
 #' exp <- carryOverEffect(exp)
 #' exp
 carryOverEffect <- function(exp, type = "PROC", assay = "concentration") {
-    if (!validateExperiment(exp)) {
+    if (!isValidExperiment(exp)) {
         stop("Invalid experiment")
     }
 
@@ -99,7 +99,7 @@ carryOverEffect <- function(exp, type = "PROC", assay = "concentration") {
 #' exp <- blankLimits(exp)
 #' exp
 blankLimits <- function(exp, type = "PROC", assay = "concentration") {
-    if (!validateExperiment(exp)) {
+    if (!isValidExperiment(exp)) {
         stop("Invalid experiment")
     }
     rowData(exp)$lob <- NA
@@ -139,13 +139,13 @@ blankLimits <- function(exp, type = "PROC", assay = "concentration") {
 #' # Perform the calculation
 #' backgroundSignals(exp)
 backgroundSignals <- function(exp, type = "BLANK", NaAsZero = FALSE) {
-    if (!validateExperiment(exp)) {
+    if (!isValidExperiment(exp)) {
         stop("Invalid experiment")
     }
 
     rowData(exp)$backgroundSignal <- NA
     if (type %in% toupper(exp$type)) {
-        rowData(exp)$backgroundSignal <- calculateEffect(
+        rowData(exp)$backgroundSignal <- .calculateEffect(
             exp = exp, type = type, NaAsZero = NaAsZero
         )
     }
@@ -161,21 +161,12 @@ backgroundSignals <- function(exp, type = "BLANK", NaAsZero = FALSE) {
 #' @returns A vector of blank effects with equal length to the compounds in
 #' the provided SummarizedExperiment
 #' @noRd
-#' @examples
-#' # Read the example dataset
-#' exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
-#'
-#' # Calculate the Blank effect
-#' calculateEffect(exp, type = "BLANK")
-#'
-#' # Calculate the PROC effect
-#' calculateEffect(exp, type = "PROC")
-calculateEffect <- function(
+.calculateEffect <- function(
         exp, assay = metadata(exp)$primary,
         type = "BLANK", sampleLabel = "SAMPLE",
         NaAsZero = FALSE
 ) {
-    if (!validateExperiment(exp)) {
+    if (!isValidExperiment(exp)) {
         stop("Invalid experiment")
     }
 
@@ -238,9 +229,6 @@ calculateEffect <- function(
 #'
 #' # Calculate matrix effect factors
 #' exp <- matrixEffect(exp)
-#'
-#' # View matrix effect factors
-#' head(rowData(exp)$matrixEffectFactor)
 matrixEffect <- function(
         exp, is_assay = metadata(exp)$secondary,
         sampleLabel = "SAMPLE", procBlankLabel = "PROC"

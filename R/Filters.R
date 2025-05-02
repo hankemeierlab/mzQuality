@@ -34,7 +34,7 @@
 #' # Filter all standards from compounds
 #' filterISTD(exp, tag = "STD")
 filterISTD <- function(exp, tag = "STD") {
-    if (!validateExperiment(exp)) {
+    if (!isValidExperiment(exp)) {
         stop("Invalid experiment")
     }
 
@@ -81,7 +81,7 @@ filterISTD <- function(exp, tag = "STD") {
 #' # Filter SST aliquots
 #' filterSST(exp, tag = "SST")
 filterSST <- function(exp, tag = "SST") {
-    if (!validateExperiment(exp)) {
+    if (!isValidExperiment(exp)) {
         stop("Invalid experiment")
     }
     exp[, grep(tag, exp$type, invert = TRUE, ignore.case = TRUE)]
@@ -98,7 +98,7 @@ filterSST <- function(exp, tag = "SST") {
 #' @param max The maximum value for filtering.
 #' @param include.na Logical. Should NA values be included?
 #' @noRd
-filterVec <- function(vec, min, max, include.na = FALSE) {
+.filterVec <- function(vec, min, max, include.na = FALSE) {
     which(as.vector(vec >= min & vec < max) | is.infinite(vec) * include.na |
         is.na(vec) * include.na | is.nan(vec) * include.na)
 }
@@ -142,7 +142,7 @@ filterVec <- function(vec, min, max, include.na = FALSE) {
 #' filterRSDQC(exp, min = 5, max = 15)
 filterRSDQC <- function(exp, min = 0, max = 30, include.na = FALSE) {
     rsd <- rowData(exp)$rsdqcCorrected
-    exp[filterVec(rsd, min, max, include.na), ]
+    exp[.filterVec(rsd, min, max, include.na), ]
 }
 
 #' @title Filter the Background Signal
@@ -176,7 +176,7 @@ filterRSDQC <- function(exp, min = 0, max = 30, include.na = FALSE) {
 filterBackground <- function(exp, min = 0, max = 0.4, include.na = FALSE) {
     be <- rowData(exp)$backgroundSignal
     be[is.nan(be)] <- NA
-    exp[filterVec(be, min, max, include.na), ]
+    exp[.filterVec(be, min, max, include.na), ]
 }
 
 #' @title Filter aliquot QC outliers from the dataset

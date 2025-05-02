@@ -1,12 +1,15 @@
-#' @title Parse Sciex vendor files
-#' @param file Vector of file names
-#' @param regex regular expression for parsing aliquot identifiers
+#' @title Parse Sciex Vendor Files
+#' @description Processes Sciex vendor files to extract and standardize
+#'     aliquot and compound data.
+#' @param df A dataframe containing Sciex vendor data.
+#' @param regex A regular expression for parsing aliquot identifiers.
+#' @returns A standardized dataframe with parsed aliquot and compound data.
 #' @noRd
-sciex <- function(df, regex = NULL) {
+.processSciex <- function(df, regex = NULL) {
     samples <- as.vector(unlist(df[, 1]))
-    df <- whitespaceFix(df)
+    df <- .whitespaceFix(df)
 
-    aliquot_df <- parseAliquots(samples, regex)
+    aliquot_df <- .parseAliquots(samples, regex)
 
     IScolumns <- c(
         "IS Name", "IS Retention Time", "IS Area",
@@ -47,11 +50,14 @@ sciex <- function(df, regex = NULL) {
     as.data.frame(res)
 }
 
-#' @title Fix whitespaces issues in Sciex files.
-#' @param f1 Dataframe with whitespaces and/or duplicate lines.
+#' @title Fix Whitespace Issues in Sciex Files
+#' @description Resolves whitespace and duplicate line issues in Sciex
+#'     vendor files.
+#' @param f1 A dataframe with potential whitespace or duplicate issues.
+#' @returns A cleaned dataframe with resolved whitespace issues.
 #' @importFrom dplyr coalesce
 #' @noRd
-whitespaceFix <- function(f1) {
+.whitespaceFix <- function(f1) {
 
     indexes <- which(trimws(f1[, 1], which = "right") == "")
     if (length(indexes) == 0) {
@@ -70,11 +76,14 @@ whitespaceFix <- function(f1) {
     f1
 }
 
-#' @title Parse aliquot names with regex to obtain aliquot data
-#' @param aliquots Vector of aliquot names
-#' @param regex Regular expression to parse the names
+#' @title Parse Aliquot Names
+#' @description Parses aliquot names using a regular expression to extract
+#'     metadata such as sample type, calibration number, and replicate.
+#' @param aliquots A vector of aliquot names.
+#' @param regex A regular expression to parse the aliquot names.
+#' @returns A dataframe with parsed aliquot metadata.
 #' @noRd
-parseAliquots <- function(aliquots, regex = NULL) {
+.parseAliquots <- function(aliquots, regex = NULL) {
     if (is.null(regex)) {
         regex <- paste0(
             "([0-9]{4}[A-Z]{3}_",
@@ -84,12 +93,10 @@ parseAliquots <- function(aliquots, regex = NULL) {
 
     aliquots <- aliquots[nchar(aliquots) > 0]
     aliquots <- toupper(aliquots)
-    matches <- regmatches(aliquots, gregexec(regex, aliquots))
-    conv <- lapply(matches, t)
-    df <- as.data.frame(do.call(rbind, conv))
+    matches <- lapply(regmatches(aliquots, gregexec(regex, aliquots)), t)
+    df <- as.data.frame(do.call(rbind, matches))
     colnames(df) <- c(
-        "aliquot", "sample", "type", "calno", "replicate",
-        "injection"
+        "aliquot", "sample", "type", "calno", "replicate", "injection"
     )
 
     df$type[df$type == ""] <- "SAMPLE"
@@ -97,16 +104,17 @@ parseAliquots <- function(aliquots, regex = NULL) {
     df$calno[df$calno == ""] <- NA
     df$calno[!is.na(df$calno)] <- as.integer(df$calno[!is.na(df$calno)])
 
-
-    df
+    return(df)
 }
 
-#' @title Correct batch order by datetime
-#' @param list_of_files List of dataframes of the files
-#' @param batch_order Optional given order of batches
+#' @title Correct Batch Order by Datetime
+#' @description Orders batches by datetime and assigns batch numbers.
+#' @param list_of_files A list of dataframes representing batches.
+#' @param batch_order An optional vector specifying the batch order.
+#' @returns A dataframe with corrected batch order and assigned batch numbers.
 #' @noRd
-setBatches <- function(list_of_files, batch_order = NULL) {
-    list_of_files <- fixDates(list_of_files)
+.setBatches <- function(list_of_files, batch_order = NULL) {
+    list_of_files <- .fixDates(list_of_files)
     if (is.null(batch_order)) {
         batch_order <- vapply(list_of_files, function(file_df) {
             min(file_df$datetime)
@@ -124,11 +132,13 @@ setBatches <- function(list_of_files, batch_order = NULL) {
 
 
 
-#' @title Guess the date format
-#' @param datetimes Character vector of datetimes
+#' @title Guess the Date Format
+#' @description Determines the date format of a vector of datetime strings.
+#' @param datetimes A character vector of datetime strings.
+#' @returns A string representing the guessed date format.
 #' @importFrom lubridate parse_date_time
 #' @noRd
-guessDates <- function(datetimes) {
+.interpretDates <- function(datetimes) {
     dates <- do.call(rbind, strsplit(datetimes, " "))[, 1]
     possible <- c("dmy", "mdy", "ymd")
 
@@ -162,19 +172,30 @@ guessDates <- function(datetimes) {
     return("dmyHMS")
 }
 
-#' @title Fix the dates to actual date type
-#' @param list_of_batches List object with all batches
+#' @title Fix Dates in Batch Data
+#' @description Converts datetime strings in batch data to proper date
+#'     objects.
+#' @param list_of_batches A list of dataframes containing batch data.
+#' @returns A list of dataframes with corrected datetime formats.
 #' @importFrom lubridate parse_date_time as_datetime
 #' @noRd
-fixDates <- function(list_of_batches) {
+.fixDates <- function(list_of_batches) {
     date_vec <- unlist(lapply(list_of_batches, function(df) {
         as.character(unique(df$datetime))
     }))
-    date_format <- guessDates(date_vec)
-    lapply(list_of_batches, function(x) fixHMS(x, date_format))
+    date_format <- .interpretDates(date_vec)
+    lapply(list_of_batches, function(x) .fixHMS(x, date_format))
 }
 
-fixHMS <- function(df, date_format) {
+#' @title Fix Datetime Format
+#' @description Converts datetime strings in a dataframe to proper date
+#'     objects, handling both H:M and H:M:S formats.
+#' @param df A dataframe containing datetime strings.
+#' @param date_format The date format to use for parsing.
+#' @returns A dataframe with corrected datetime and injection time columns.
+#' @importFrom lubridate parse_date_time as_datetime
+#' @noRd
+.fixHMS <- function(df, date_format) {
     # Check if the time is hours:minutes or hours:minutes:seconds
     time <- gregexpr(":", df$datetime)
     counts <- vapply(time, function(x) sum(x > 0), double(1))

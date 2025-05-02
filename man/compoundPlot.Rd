@@ -10,12 +10,12 @@ compoundPlot(
   batches = exp$batch,
   types = exp$type,
   assay = "ratio_corrected",
-  doLog = TRUE,
+  logTransform = TRUE,
   withinTrend = FALSE,
   shortName = FALSE,
   trendTypes = metadata(exp)$QC,
   addInternalStandards = FALSE,
-  smooth = TRUE
+  addText = FALSE
 )
 }
 \arguments{
@@ -34,7 +34,7 @@ the compound to be plotted.}
 \item{assay}{Character string specifying the assay to use
 (default is "ratio_corrected").}
 
-\item{doLog}{Logical. Whether to log-transform the y-axis
+\item{logTransform}{Logical. Whether to log-transform the y-axis
 values (default is TRUE).}
 
 \item{withinTrend}{Logical. If TRUE, trendlines are drawn per
@@ -50,8 +50,8 @@ for trendline fitting (default is `metadata(exp)$QC`).}
 corresponding internal standards (if available)
 (default is FALSE).}
 
-\item{smooth}{Logical. Whether to apply smoothing with trend
-lines (default is TRUE).}
+\item{addText}{Logical. Whether to add text bubbles to the
+plot, only visible when using plotly (default is FALSE).}
 }
 \value{
 A `ggplot` object showing compound signal
@@ -69,4 +69,20 @@ This function generates a time-series-like plot for
   includes support for multiple batches, sample types,
   internal standards, trend smoothing, and optional use of
   short sample names or log transformation.
+}
+\examples{
+# Read data
+exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+
+# Do Analysis
+exp <- doAnalysis(exp, doAll = TRUE)
+
+# Create a compound plot for the first compound
+compoundPlot(
+   exp,
+   compound = 1,
+   types = c("SQC", "LQC"),
+   assay = "ratio_corrected",
+   logTransform = TRUE
+)
 }

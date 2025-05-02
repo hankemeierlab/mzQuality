@@ -13,7 +13,7 @@ test_that("Outliers are detected correctly", {
 
         # Check if still is a SummarizedExperiment
         expect_true(is(x, "SummarizedExperiment"))
-        expect_true(validateExperiment(x))
+        expect_true(isValidExperiment(x))
         expect_true("outlier" %in% colnames(colData(x)))
     }
 })
@@ -22,7 +22,7 @@ test_that("identifyMisInjections", {
     typeName <- "SAMPLE"
     x <- identifyMisInjections(exp, assay = "area", type = typeName)
     expect_true(is(x, "SummarizedExperiment"))
-    expect_true(validateExperiment(x))
+    expect_true(isValidExperiment(x))
 
     # No misinjections are expected
     expect_true(all(x[, x$type == typeName]$use))
@@ -37,18 +37,18 @@ test_that("identifyMisInjections", {
 test_that("ratioQcSample", {
     exp <- ratioQcSample(exp)
     expect_true(is(exp, "SummarizedExperiment"))
-    expect_true(validateExperiment(exp))
+    expect_true(isValidExperiment(exp))
     expect_true("ratioQcSample" %in% colnames(rowData(exp)))
 })
 
 test_that("doAnalysis is exectued properly", {
     x <- doAnalysis(exp, doAll = TRUE, useWithinBatch = TRUE, removeOutliers = TRUE)
     expect_true(is(x, "SummarizedExperiment"))
-    expect_true(validateExperiment(x))
+    expect_true(isValidExperiment(x))
 })
 
 test_that("CarryOver effect can be calculated", {
     x <- carryOverEffect(exp)
     expect_true(is(x, "SummarizedExperiment"))
-    expect_true(validateExperiment(x))
+    expect_true(isValidExperiment(x))
 })

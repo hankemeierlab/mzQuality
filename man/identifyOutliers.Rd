@@ -33,6 +33,6 @@ This function detects outliers in QC samples based on the
 }
 \examples{
 # Example usage:
-# exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
-# exp <- identifyOutliers(exp, assay = "ratio")
+exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+exp <- identifyOutliers(exp, assay = "ratio")
 }

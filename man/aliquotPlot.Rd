@@ -4,7 +4,13 @@
 \alias{aliquotPlot}
 \title{Aliquot Plot}
 \usage{
-aliquotPlot(exp, assay, batches = exp$batch, types = exp$type, doLog = FALSE)
+aliquotPlot(
+  exp,
+  assay,
+  batches = exp$batch,
+  types = exp$type,
+  logTransform = FALSE
+)
 }
 \arguments{
 \item{exp}{A data frame containing experimental data. Must include columns
@@ -19,8 +25,8 @@ Defaults to `exp$batch`.}
 \item{types}{A vector specifying the types to include in the plot.
 Defaults to `exp$type`.}
 
-\item{doLog}{A logical value indicating whether to apply log scaling to
-the y-axis. Defaults to FALSE.}
+\item{logTransform}{A logical value indicating whether to apply log scaling
+to the y-axis. Defaults to FALSE.}
 }
 \value{
 A ggplot object representing the aliquot plot.
@@ -32,4 +38,19 @@ Creates a boxplot for aliquots with optional log scaling.
 This function generates a boxplot for aliquots using ggplot2. It
     allows for optional log scaling of the y-axis and customizes the plot
     based on the provided experimental data.
+}
+\examples{
+# Read data
+exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+
+# Do Analysis
+exp <- doAnalysis(exp, doAll = TRUE)
+
+# Create an aliquot plot
+aliquotPlot(
+   exp,
+   assay = "ratio_corrected",
+   types = c("SQC", "LQC"),
+   logTransform = TRUE
+)
 }

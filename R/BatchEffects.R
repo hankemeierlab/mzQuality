@@ -22,12 +22,13 @@
 #'   the batch-corrected values
 #'
 #' @importFrom matrixStats rowMedians
-#' @keywords internal
-betweenBatchCorrection <- function(
+#' @noRd
+.betweenBatchCorrection <- function(
         ratio, qcAliquots, qcBatches, aliquots, batches
 ) {
 
-    compound_qc_ratio_median <- rowMedians(ratio[, qcAliquots], na.rm = TRUE)
+    qcRatio <- ratio[, qcAliquots, drop = FALSE]
+    compound_qc_ratio_median <- rowMedians(qcRatio, na.rm = TRUE)
 
     # For each batch, calculate the correction factor and multiply the
     # Ratio to obtain the Ratio Corrected factors
@@ -53,6 +54,72 @@ betweenBatchCorrection <- function(
     }
 
     return(ratio)
+}
+
+#' @title Perform batch-wise rotation of assay values
+#' @description Adjusts assay values within a batch using a linear model
+#'     constructed from quality control (QC) samples.
+#' @details This function performs a batch-wise rotation of assay values to
+#'     account for systematic variations within a batch. It uses QC samples to
+#'     construct a linear model (slope and intercept) and applies this model to
+#'     adjust the assay values for all samples in the batch. Values with too
+#'     many missing data points are excluded from rotation.
+#' @param exp A SummarizedExperiment object containing the experimental data.
+#' @param orders A numeric vector specifying the injection order of the samples.
+#' @param assay A numeric matrix or data frame containing the assay values to
+#'     be adjusted.
+#' @param qcColumns A logical vector indicating which columns correspond to QC
+#'     samples.
+#' @param batch A character or numeric value specifying the batch to process.
+#' @param withinBatchNonNA An integer specifying the minimum number of non-NA
+#'     values required within a batch for reliable rotation. Defaults to 3.
+#' @return A numeric matrix with the rotated assay values, adjusted for
+#'     systematic batch effects.
+#' @importFrom stats median
+#' @noRd
+.performRotation <- function(
+        exp, orders, assay, qcColumns,
+        batch, withinBatchNonNA = 3
+){
+
+    N <- nrow(exp)
+    # retrieve the data from the current batch
+    batchColumns <- exp$batch == batch
+    qcBatchColumns <- batchColumns & qcColumns
+
+    # construct order matrix using qc samples
+    qcBatchOrders <- orders[qcBatchColumns]
+
+
+    orderMatrix <- matrix(
+        data = rep(qcBatchOrders, N),
+        ncol = sum(qcBatchColumns),
+        byrow = TRUE
+    )
+
+    # Calculate the slope and intercept for the linear model
+    qcVals <- assay[, qcBatchColumns, drop = FALSE]
+    slope <- .rowWiseSlope(orderMatrix, qcVals)
+    int <- .rowWiseIntercept(orderMatrix, y = qcVals, slope = slope)
+
+    orderMatrix <- matrix(
+        data = rep(orders[batchColumns], N),
+        ncol = sum(batchColumns),
+        byrow = TRUE
+    )
+
+    # Calculate the rotation matrix
+    vals <- assay[, batchColumns, drop = FALSE]
+    rotation <- orderMatrix * slope + int
+    batchMedians <- apply(vals, 1, median, na.rm = TRUE)
+
+    # Fix values with too many NAs (unreliable model, should not rotate)
+    tooManyNAs <- rowSums(!is.na(vals)) < withinBatchNonNA
+
+    rotation[tooManyNAs, ] <- 1
+    batchMedians[tooManyNAs] <- 1
+
+    return((vals / rotation) * batchMedians)
 }
 
 #' @title Batch Effect Correction
@@ -91,7 +158,7 @@ addBatchCorrectionAssay <- function(
         qc = metadata(exp)$QC, removeOutliers = TRUE
 ) {
     # check if the experiment is valid
-    if (!validateExperiment(exp)) {
+    if (!isValidExperiment(exp)) {
         stop("Invalid experiment")
     }
 
@@ -101,7 +168,7 @@ addBatchCorrectionAssay <- function(
     }
 
     qcs <- exp$type == qc
-    ratios <- betweenBatchCorrection(
+    ratios <- .betweenBatchCorrection(
         ratio = ratios,
         qcAliquots = colnames(exp)[qcs],
         qcBatches = exp$batch[qcs],
@@ -116,80 +183,6 @@ addBatchCorrectionAssay <- function(
     # Return the experiment
     return(exp)
 }
-
-#' @title Perform batch-wise rotation of assay values
-#' @description Adjusts assay values within a batch using a linear model
-#'     constructed from quality control (QC) samples.
-#' @details This function performs a batch-wise rotation of assay values to
-#'     account for systematic variations within a batch. It uses QC samples to
-#'     construct a linear model (slope and intercept) and applies this model to
-#'     adjust the assay values for all samples in the batch. Values with too
-#'     many missing data points are excluded from rotation.
-#' @param exp A SummarizedExperiment object containing the experimental data.
-#' @param orders A numeric vector specifying the injection order of the samples.
-#' @param assay A numeric matrix or data frame containing the assay values to
-#'     be adjusted.
-#' @param qcColumns A logical vector indicating which columns correspond to QC
-#'     samples.
-#' @param batch A character or numeric value specifying the batch to process.
-#' @param withinBatchNonNA An integer specifying the minimum number of non-NA
-#'     values required within a batch for reliable rotation. Defaults to 3.
-#' @return A numeric matrix with the rotated assay values, adjusted for
-#'     systematic batch effects.
-#' @importFrom stats median
-#' @examples
-#' # Example usage:
-#' # exp <- SummarizedExperiment(...)
-#' # orders <- c(1, 2, 3, 4, 5)
-#' # assay <- matrix(rnorm(50), nrow = 10)
-#' # qcColumns <- c(TRUE, TRUE, FALSE, FALSE, TRUE)
-#' # batch <- "Batch1"
-#' # rotatedAssay <- performRotation(exp, orders, assay, qcColumns, batch)
-performRotation <- function(
-        exp, orders, assay, qcColumns,
-        batch, withinBatchNonNA = 3
-){
-
-    N <- nrow(exp)
-    # retrieve the data from the current batch
-    batchColumns <- exp$batch == batch
-    qcBatchColumns <- batchColumns & qcColumns
-
-    # construct order matrix using qc samples
-    qcBatchOrders <- orders[qcBatchColumns]
-
-
-    orderMatrix <- matrix(
-        data = rep(qcBatchOrders, N),
-        ncol = sum(qcBatchColumns),
-        byrow = TRUE
-    )
-
-    # Calculate the slope and intercept for the linear model
-    qcVals <- assay[, qcBatchColumns, drop = FALSE]
-    slope <- rowWiseSlope(orderMatrix, qcVals)
-    int <- rowWiseIntercept(orderMatrix, y = qcVals, slope = slope)
-
-    orderMatrix <- matrix(
-        data = rep(orders[batchColumns], N),
-        ncol = sum(batchColumns),
-        byrow = TRUE
-    )
-
-    # Calculate the rotation matrix
-    vals <- assay[, batchColumns, drop = FALSE]
-    rotation <- orderMatrix * slope + int
-    batchMedians <- apply(vals, 1, median, na.rm = TRUE)
-
-    # Fix values with too many NAs (unreliable model, should not rotate)
-    tooManyNAs <- rowSums(!is.na(vals)) < withinBatchNonNA
-
-    rotation[tooManyNAs, ] <- 1
-    batchMedians[tooManyNAs] <- 1
-
-    return((vals / rotation) * batchMedians)
-}
-
 
 #' @title Within-Batch Signal Drift Correction
 #' @description Applies within-batch signal correction to assay data based
@@ -246,7 +239,7 @@ addWithinBatchCorrectionAssay <- function(
     qcColumns <- exp$type == qcType
 
     for (batch in batches) {
-        rotated <- performRotation(
+        rotated <- .performRotation(
             exp = exp,
             orders = orders,
             assay = assay * factor,
@@ -297,7 +290,7 @@ addBatchCorrection <- function(
         calculateRSDQC = FALSE
 ) {
     # Validate if the experiment is correct
-    if (!validateExperiment(exp)) {
+    if (!isValidExperiment(exp)) {
         stop("Invalid experiment")
     }
 

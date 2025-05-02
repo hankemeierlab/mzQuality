@@ -30,3 +30,7 @@ The function handles vendor-specific formats by applying
   routine to process the data. Missing values are replaced with `NA`,
   and column names are converted to lowercase for consistency.
 }
+\examples{
+# Read example dataset
+data <- readData(system.file(package = "mzQuality", "example.tsv"))
+}

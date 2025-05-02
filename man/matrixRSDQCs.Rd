@@ -42,4 +42,9 @@ This function calculates the RSDQC, which is an indicator of the
 # Example usage:
 # exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
 # rsdMatrix <- matrixRSDQCs(exp)
+# Example usage:
+exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+
+# Calculate the RSDQC matrix for the default primary and secondary assays
+rsd_matrix <- matrixRSDQCs(exp)
 }

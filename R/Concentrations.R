@@ -120,7 +120,7 @@ calculateConcentrations <- function(
 
 
     # Check if the input is a SummarizedExperiment object
-    if (!validateExperiment(exp)) {
+    if (!isValidExperiment(exp)) {
         stop("Input must be a SummarizedExperiment object.")
     }
 
@@ -187,8 +187,8 @@ modelWithOutliers <- function(
         checkForOutliers = TRUE, useWeights = FALSE
 ) {
 
-    slope <- rowWiseSlope(xValues, yValues)
-    int <- rowWiseIntercept(xValues, yValues, slope)
+    slope <- .rowWiseSlope(xValues, yValues)
+    int <- .rowWiseIntercept(xValues, yValues, slope)
 
     if (subtractIntercept) xValues <- xValues - int
 
@@ -203,6 +203,7 @@ modelWithOutliers <- function(
         ))
     }
 
+
     N <- ncol(outliers)
     yValues[, 1][outliers[, 1]] <- NA
     yValues[, N][outliers[, N]] <- NA
@@ -215,6 +216,7 @@ modelWithOutliers <- function(
         xValues, yValues, weights, forceOrigin,
         subtractIntercept, FALSE, useWeights
     )
+    model$outliers <- outliers
 
     return(model)
 }
@@ -355,7 +357,7 @@ getConcentrationAssays <- function(
 #' @param y A numeric matrix of Y-values.
 #'
 #' @returns A numeric vector containing the row-wise covariance values.
-rowWiseCov <- function(x, y){
+.rowWiseCov <- function(x, y){
 
     valid <- !is.na(x) & !is.na(y)  # Only consider non-NA pairs
     n <- rowSums(valid) - 1  # Degrees of freedom
@@ -382,8 +384,8 @@ rowWiseCov <- function(x, y){
 #' @param y A numeric matrix of Y-values.
 #'
 #' @returns A numeric vector containing the row-wise slope values.
-rowWiseSlope <- function(x, y) {
-    slope <- rowWiseCov(x, y) / rowWiseCov(x, x)
+.rowWiseSlope <- function(x, y) {
+    slope <- .rowWiseCov(x, y) / .rowWiseCov(x, x)
     return(slope)
 }
 
@@ -397,15 +399,15 @@ rowWiseSlope <- function(x, y) {
 #' @details
 #' The function calculates the intercept using the standard formula:
 #' `intercept = mean(y) - slope * mean(x)`, applied row-wise. The slope
-#' values should be computed using [rowWiseSlope].
+#' values should be computed using [.rowWiseSlope].
 #'
 #' @param x A numeric matrix of X-values.
 #' @param y A numeric matrix of Y-values.
 #' @param slope A numeric vector of slopes, typically obtained from
-#' [rowWiseSlope].
+#' [.rowWiseSlope].
 #'
 #' @returns A numeric vector containing the row-wise intercept values.
-rowWiseIntercept <- function(x, y, slope) {
+.rowWiseIntercept <- function(x, y, slope) {
     int <- rowMeans(y, na.rm = TRUE) - slope * rowMeans(x, na.rm = TRUE)
     return(int)
 }
@@ -465,9 +467,11 @@ rowCorrelation <- function(x, y) {
 #' @importFrom dplyr bind_cols
 #' @examples
 #' # Example usage:
-#' # exp <- SummarizedExperiment(...)
-#' # updatedExp <- addLinearRange(exp, assay = "ratio", minCalNo = 2,
-#' #     maxCalNo = 6, saveAssay = "CalRange")
+#' exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+#' exp <- addLinearRange(
+#'     exp, assay = "ratio", minCalNo = 2,
+#'     maxCalNo = 6, saveAssay = "CalRange"
+#' )
 #' @export
 addLinearRange <- function(
         exp, assay = "ratio", calType = metadata(exp)$concentration,

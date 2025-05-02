@@ -12,9 +12,9 @@
 #' # Read example dataset
 #' data <- readData(system.file(package = "mzQuality", "example.tsv"))
 #'
-#' # Validate if the dataframe is correct
-#' validateDataframe(data)
-validateDataframe <- function(dataframe = NULL) {
+#' # Validate the dataframe
+#' isValid <- isValidDataframe(data)
+isValidDataframe <- function(dataframe = NULL) {
     columns <- c("aliquot", "compound", "type", "batch", "datetime")
     check <- all(
         !is.null(dataframe),
@@ -27,11 +27,6 @@ validateDataframe <- function(dataframe = NULL) {
         return(FALSE)
     }
 
-    uts <- unique(dataframe$type)
-    if (sum(grepl("QC", uts)) == 0) {
-        return(FALSE)
-    }
-
     x <- data.frame(
         c = make.names(dataframe$compound),
         a = make.names(dataframe$aliquot),
@@ -40,7 +35,8 @@ validateDataframe <- function(dataframe = NULL) {
 
     if (any(duplicated(x))) {
         x <- x[which(duplicated(x)), ]
-        stop("Duplicated aliquot-batch-compound!")
+        message("Duplicated aliquot-batch-compound combination!")
+        return(FALSE)
     }
 
     return(TRUE)
@@ -55,31 +51,25 @@ validateDataframe <- function(dataframe = NULL) {
 #' @returns A boolean value indicating whether the SummarizedExperiment
 #'   object is valid.
 #' @param exp A SummarizedExperiment object.
-#' @export
 #' @importFrom methods is
+#' @export
 #' @examples
 #' # Read example dataset
-#' data <- readData(system.file(package = "mzQuality", "example.tsv"))
+#' exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
 #'
-#' # Construct experiment
-#' exp <- buildExperiment(
-#'     data,
-#'     rowIndex = "compound",
-#'     colIndex = "aliquot",
-#'     primaryAssay = "area",
-#'     secondaryAssay = "area_is"
-#' )
-#'
-#' # Validate if the experiment is formatted correctly
-#' validateExperiment(exp)
-validateExperiment <- function(exp) {
-    all(
-        methods::is(exp, "SummarizedExperiment"),
+#' # Validate the experiment
+#' isValid <- isValidExperiment(exp)
+isValidExperiment <- function(exp) {
+    if (!is(exp, "SummarizedExperiment")) return(FALSE)
+
+    valid <- all(
         nrow(exp) > 0,
         ncol(exp) > 0,
         all(c("type", "datetime", "batch") %in% colnames(colData(exp))),
         "ratio" %in% assayNames(exp)
     )
+
+    return(valid)
 }
 
 #' @title Convert an experiment to one capable with mzQuality
@@ -156,5 +146,5 @@ convertExperiment <- function(
         metadata(exp)[toAdd] <- mandatory[toAdd]
     }
 
-    finishExperiment(exp)
+    .addInitialAnalysis(exp)
 }

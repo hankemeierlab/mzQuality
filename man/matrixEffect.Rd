@@ -52,7 +52,4 @@ exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
 
 # Calculate matrix effect factors
 exp <- matrixEffect(exp)
-
-# View matrix effect factors
-head(rowData(exp)$matrixEffectFactor)
 }

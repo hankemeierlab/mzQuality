@@ -39,9 +39,7 @@ test_that("Concentration Plot can be made", {
 })
 
 test_that("Labels can be added to a PCA plot", {
-    plot <- suppressWarnings(pcaPlot(exp)) %>%
-        addLabels()
-
+    plot <- suppressWarnings(pcaPlot(exp, addLabels = TRUE))
     expect_true(is(plot, "ggplot"))
 })
 

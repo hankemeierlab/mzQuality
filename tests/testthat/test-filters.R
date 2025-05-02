@@ -8,7 +8,7 @@ test_that("filterISTD works", {
 
     # Check if the experiment is still valid
     expect_true(is(exp, "SummarizedExperiment"))
-    expect_true(validateExperiment(exp))
+    expect_true(isValidExperiment(exp))
 })
 
 test_that("filterSST works", {
@@ -17,7 +17,7 @@ test_that("filterSST works", {
 
     # Check if the experiment is still valid
     expect_true(is(exp, "SummarizedExperiment"))
-    expect_true(validateExperiment(exp))
+    expect_true(isValidExperiment(exp))
 })
 
 test_that("filterRSDQC works", {
@@ -26,19 +26,19 @@ test_that("filterRSDQC works", {
     x <- filterRSDQC(exp, min = 0, max = 15)
     expect_equal(nrow(x), highConf)
     expect_true(is(x, "SummarizedExperiment"))
-    expect_true(validateExperiment(x))
+    expect_true(isValidExperiment(x))
 
     lowConf <- sum(rsdqc > 15 & rsdqc <= 30)
     x <- filterRSDQC(exp, min = 15, max = 30)
     expect_equal(nrow(x), lowConf)
     expect_true(is(x, "SummarizedExperiment"))
-    expect_true(validateExperiment(x))
+    expect_true(isValidExperiment(x))
 
     noConf <- sum(rsdqc > 30)
     x <- filterRSDQC(exp, min = 30, max = Inf)
     expect_equal(nrow(x), noConf)
     expect_true(is(x, "SummarizedExperiment"))
-    expect_true(validateExperiment(x))
+    expect_true(isValidExperiment(x))
 })
 
 test_that("filterBackground works", {
@@ -47,11 +47,11 @@ test_that("filterBackground works", {
     x <- filterBackground(exp, min = 0, max = 0.4)
     expect_equal(nrow(x), highConf)
     expect_true(is(x, "SummarizedExperiment"))
-    expect_true(validateExperiment(x))
+    expect_true(isValidExperiment(x))
 })
 
 test_that("filterOutliers works", {
     x <- filterOutliers(exp)
     expect_true(is(x, "SummarizedExperiment"))
-    expect_true(validateExperiment(x))
+    expect_true(isValidExperiment(x))
 })

@@ -69,7 +69,9 @@ This function validates the input SummarizedExperiment object and
     bad compounds and outliers.
 }
 \examples{
-# Example usage:
-# exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
-# exp <- doAnalysis(exp)
+# Read data
+exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+
+# Do Analysis
+exp <- doAnalysis(exp, doAll = TRUE)
 }

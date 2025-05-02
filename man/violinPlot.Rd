@@ -9,7 +9,7 @@ violinPlot(
   assay = "ratio_corrected",
   batches = exp$batch,
   types = metadata(exp)$QC,
-  doLog = FALSE,
+  logTransform = FALSE,
   addMedian = TRUE,
   addConfidenceInterval = TRUE,
   withinTrend = FALSE
@@ -27,8 +27,8 @@ Defaults to `exp$batch`.}
 \item{types}{A vector specifying the types to include in the plot.
 Defaults to `metadata(exp)$QC`.}
 
-\item{doLog}{A logical value indicating whether to apply log scaling to
-the y-axis. Defaults to FALSE.}
+\item{logTransform}{A logical value indicating whether to apply log scaling
+to the y-axis. Defaults to FALSE.}
 
 \item{addMedian}{A logical value indicating whether to add median points
 to the plot. Defaults to TRUE.}
@@ -50,4 +50,20 @@ Creates a violin plot with optional median points and
 This function generates a violin plot using ggplot2. It allows
     for optional log scaling, adding median points, and confidence
     intervals.
+}
+\examples{
+# Read data
+exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+
+# Do Analysis
+exp <- doAnalysis(exp, doAll = TRUE)
+
+# Create a compound plot for the first compound
+violinPlot(
+   exp,
+   assay = "ratio_corrected",
+   logTransform = TRUE,
+   addMedian = TRUE,
+   addConfidenceInterval = TRUE
+)
 }

@@ -105,6 +105,12 @@ rsdqc <- function(exp, assay = "ratio_corrected", type = metadata(exp)$QC) {
 #' # exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
 #' # rsdMatrix <- matrixRSDQCs(exp)
 #' @export
+#' @examples
+#' # Example usage:
+#' exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+#'
+#' # Calculate the RSDQC matrix for the default primary and secondary assays
+#' rsd_matrix <- matrixRSDQCs(exp)
 matrixRSDQCs <- function(
         exp, primaryAssay = metadata(exp)$primary,
         secondaryAssay = metadata(exp)$secondary,
@@ -129,7 +135,7 @@ matrixRSDQCs <- function(
     }
 
     qcs <- exp$type == qcType
-    ratios <- betweenBatchCorrection(
+    ratios <- .betweenBatchCorrection(
         ratio = ratios,
         qcAliquots = colnames(exp)[qcs],
         qcBatches = exp$batch[qcs],

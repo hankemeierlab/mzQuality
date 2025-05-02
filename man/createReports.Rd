@@ -71,7 +71,7 @@ exp <- readRDS(system.file(package = "mzQuality", "data.RDS"))
 createReports(
     folder = tempdir(),
     project = "MyProject",
-    exp = exp[1:5, ],
+    exp = exp[1:2, ],
     summaryPlots = c("Aliquot", "PCA"),
     makeSummaryReport = TRUE,
     makeCompoundReport = TRUE,

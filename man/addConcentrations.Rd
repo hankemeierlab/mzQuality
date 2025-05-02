@@ -2,28 +2,42 @@
 % Please edit documentation in R/Convert.R
 \name{addConcentrations}
 \alias{addConcentrations}
-\title{Add known concentrations of calibration lines}
+\title{Add Known Concentrations of Calibration Lines}
 \usage{
 addConcentrations(exp, df)
 }
 \arguments{
-\item{exp}{SummarizedExperiment to add the data to}
+\item{exp}{A SummarizedExperiment object to which the concentration data
+will be added.}
 
-\item{df}{Dataframe with concentrations of CAL lines}
+\item{df}{A data frame containing the concentrations of calibration lines.
+Rows should correspond to calibration line names, and columns should
+correspond to compound names.}
 }
 \value{
-SummarizedExperiment with an added assay called "Concentrations".
-The values of the assay are filled with the values provided in `df`, other
-values will be `NA`.
+A SummarizedExperiment object with an added assay called
+    "Concentration". The assay is filled with the values provided in `df`,
+    and other values are set to `NA`.
 }
 \description{
-mzQuality supports the calculation of absolute concentrations
-given concentrations of Calibration lines (CAL) are present. Using this
-function, a new assay in the experiment is created called 'Concentration',
-which is filled with NA and the supplied concentrations.
+Adds known concentrations of calibration lines (CAL) to a
+    SummarizedExperiment object. This function creates a new assay called
+    "Concentration" in the experiment, which is filled with `NA` values
+    and the supplied concentrations.
+}
+\details{
+The concentrations should be provided as a data frame where rows
+    represent the names of calibration lines and columns represent
+    compound names. Optionally, the `filterComps` argument can be set to
+    TRUE to retain only compounds in the experiment that have a known
+    concentration in the CAL lines.
+}
+\examples{
+# Read example dataset
+exp <- readRDS(system.file(package = "mzQuality", "data.RDS"))
+# Add concentrations
+file <- system.file(package = "mzQuality", "concentrations.txt")
+concentrations <- read.delim(file)
 
-The concentrations should be supplied as a data frame with rows as the
-names of Calibration lines and columns as compound names.
-Optionally, the `filterComps` argument can be set to TRUE, which only keeps
-compounds in the experiment with a known concentration in the CAL lines.
+addConcentrations(exp, df)
 }

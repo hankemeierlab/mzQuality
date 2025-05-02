@@ -17,12 +17,12 @@ test_that("A tab-delimited file can be converted into a SummarizedExperiment", {
 
     exp <- buildExperiment(combined)
     expect_true(is(exp, "SummarizedExperiment"))
-    expect_true(validateExperiment(exp))
+    expect_true(isValidExperiment(exp))
 })
 
 test_that("Is a valid experiment", {
     expect_true(is(exp, "SummarizedExperiment"))
-    expect_true(validateExperiment(exp))
+    expect_true(isValidExperiment(exp))
     expect_true("area" %in% assayNames(exp))
     expect_true("ratio" %in% assayNames(exp))
     expect_true("ratio_corrected" %in% assayNames(exp))
@@ -39,14 +39,14 @@ test_that("experiment can be converted to combined", {
 test_that("Concentrations can be added", {
     x <- addConcentrations(exp, concentrations)
     expect_true(is(x, "SummarizedExperiment"))
-    expect_true(validateExperiment(x))
+    expect_true(isValidExperiment(x))
     expect_true("hasKnownConcentrations" %in% colnames(rowData(exp)))
 
     expect_true(sum(rowData(exp)$hasKnownConcentrations) == nrow(concentrations))
 
     addConcentrations(exp, concentrations)
     expect_true(is(x, "SummarizedExperiment"))
-    expect_true(validateExperiment(x))
+    expect_true(isValidExperiment(x))
     expect_true("hasKnownConcentrations" %in% colnames(rowData(exp)))
 
     expect_true(sum(rowData(exp)$hasKnownConcentrations) == nrow(concentrations))
@@ -57,7 +57,7 @@ test_that("Concentrations can be added", {
 test_that("An experiment can be converted", {
     x <- convertExperiment(exp)
     expect_true(is(x, "SummarizedExperiment"))
-    expect_true(validateExperiment(x))
+    expect_true(isValidExperiment(x))
 })
 
 
@@ -66,7 +66,7 @@ test_that("A message can be sent ", {
 })
 
 test_that("an experiment can be converted", {
-    expect_true(validateExperiment(convertExperiment(exp)))
+    expect_true(isValidExperiment(convertExperiment(exp)))
 })
 
 test_that("expToCombined", {
@@ -77,5 +77,5 @@ test_that("expToCombined", {
 test_that("Concentrations can be added", {
     exp <- addConcentrations(exp, read.delim(concentrationsFile))
     expect_true(is(exp, "SummarizedExperiment"))
-    expect_true(validateExperiment(exp))
+    expect_true(isValidExperiment(exp))
 })
