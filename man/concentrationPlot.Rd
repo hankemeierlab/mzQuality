@@ -8,7 +8,7 @@ concentrationPlot(
   exp,
   assay = "ratio_corrected",
   compound = 1,
-  batch = 1,
+  batch = exp$batch[1],
   types = c("SAMPLE", "SQC"),
   calType = metadata(exp)$concentration,
   removeOutliers = TRUE,

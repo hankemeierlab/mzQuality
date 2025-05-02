@@ -4,7 +4,8 @@ MzQuality is a user-friendly R package for quality control of metabolomics
 studies. It features outlier detection, batch-correction using pooled study 
 quality control samples (SQC), filters for removing unreliable compounds, 
 various plots for inspecting and generating reports for further processing. 
-See our preprint for more information.
+See our [preprint](https://www.biorxiv.org/content/10.1101/2025.01.22.633547v1) 
+for more information.
 
 This R package forms the backbone of our shiny dashboard application 
 [mzQualityDashboard](https://github.com/hankemeierlab/mzQualityDashboard), 
