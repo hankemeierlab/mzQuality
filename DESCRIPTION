@@ -16,7 +16,6 @@ Description: mzQuality is an R package for monitoring technical variation in mas
 License: MIT + file LICENSE
 biocViews: Software, MassSpectrometry, BatchEffect, QualityControl, Metabolomics 
 Depends:
-    R (>= 4.5),
     dplyr,
     SummarizedExperiment
 Imports:
