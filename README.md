@@ -1,8 +1,8 @@
 # mzQuality
 
-[![R-CMD-check](https://github.com/hankemeierlab/mzQuality/actions/workflows/R-CMD-check.yml/badge.svg)](https://github.com/hankemeierlab/mzQuality/actions/workflows/R-CMD-check.yml)
+[![R-CMD-check](https://github.com/hankemeierlab/mzQuality/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/hankemeierlab/mzQuality/actions/workflows/R-CMD-check.yaml)
 [![BiocCheck](https://github.com/hankemeierlab/mzQuality/workflows/R-CMD-check-bioc/badge.svg)](https://github.com/hankemeierlab/mzQuality/actions/workflows/bioc-check.yml)
-[![codecov](https://codecov.io/gh/hankemeierlab/mzQuality/branch/main/graph/badge.svg)](https://codecov.io/gh/hankemeierlab/mzQuality)
+[![Codecov test coverage](https://codecov.io/gh/hankemeierlab/mzQuality/graph/badge.svg)](https://app.codecov.io/gh/hankemeierlab/mzQuality)
 
 
 MzQuality is a user-friendly R package for quality control of metabolomics 
