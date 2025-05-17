@@ -26,11 +26,11 @@ jobs:
 
       - name: Install dependencies
         run: |
-          install.packages("BiocManager")
-          BiocManager::install()
-          BiocManager::install("devtools")
-          devtools::install_deps(dependencies = TRUE)
+          Rscript -e 'install.packages("BiocManager")'
+          Rscript -e 'BiocManager::install()'
+          Rscript -e 'BiocManager::install("devtools")'
+          Rscript -e 'devtools::install_deps(dependencies = TRUE)'
 
-      - name: Check
+      - name: Run devtools::check()
         run: |
-          devtools::check()
+          Rscript -e 'devtools::check()'
