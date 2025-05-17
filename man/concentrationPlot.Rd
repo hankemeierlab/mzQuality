@@ -12,7 +12,6 @@ concentrationPlot(
   types = c("SAMPLE", "SQC"),
   calType = metadata(exp)$concentration,
   removeOutliers = TRUE,
-  withinTrend = TRUE,
   plotOnCalibrationLine = TRUE
 )
 }
@@ -36,9 +35,6 @@ Defaults to the concentration metadata in `exp`.}
 
 \item{removeOutliers}{A logical value indicating whether to remove
 outliers from the data. Defaults to TRUE.}
-
-\item{withinTrend}{A logical value indicating whether to inherit trend
-line aesthetics. Defaults to TRUE.}
 
 \item{plotOnCalibrationLine}{A logical value indicating whether to plot
 data on the calibration line. Defaults to TRUE.}

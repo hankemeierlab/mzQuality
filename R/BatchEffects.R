@@ -28,7 +28,7 @@
 ) {
 
     qcRatio <- ratio[, qcAliquots, drop = FALSE]
-    compound_qc_ratio_median <- rowMedians(qcRatio, na.rm = TRUE)
+    compoundMedianRatioQc <- rowMedians(qcRatio, na.rm = TRUE)
 
     # For each batch, calculate the correction factor and multiply the
     # Ratio to obtain the Ratio Corrected factors
@@ -41,15 +41,16 @@
             qcAliqs <- qcAliquots[qcBatches == batch]
 
             # Calculate the median Ratio for this batch
-            med_ratio_qc <- rowMedians(ratio[, qcAliqs], na.rm = TRUE)
+            ratioQc <- ratio[, qcAliqs, drop = FALSE]
+            medianRatioQc <- rowMedians(ratioQc, na.rm = TRUE)
 
             # Calculate the QC correction factor by dividing the overall median
             # by this batch median
-            correction_factor <- compound_qc_ratio_median / med_ratio_qc
+            correctionFactor <- compoundMedianRatioQc / medianRatioQc
 
             # Multiply the entire batch with the calculated correction factors
             aliqs <- aliquots[batches == batch]
-            ratio[, aliqs] <- ratio[, aliqs] * correction_factor
+            ratio[, aliqs] <- ratio[, aliqs, drop = FALSE] * correctionFactor
         }
     }
 
@@ -78,49 +79,53 @@
 #' @importFrom stats median
 #' @noRd
 .performRotation <- function(
-        exp, orders, assay, qcColumns,
+        exp, assay, qcColumns,
         batch, withinBatchNonNA = 3
-){
-
+) {
     N <- nrow(exp)
-    # retrieve the data from the current batch
+
+    # Identify batch-specific columns
     batchColumns <- exp$batch == batch
     qcBatchColumns <- batchColumns & qcColumns
 
-    # construct order matrix using qc samples
+    # Injection order
+    orders <- colData(exp)$order
     qcBatchOrders <- orders[qcBatchColumns]
 
-
-    orderMatrix <- matrix(
+    # Construct order matrix for QC samples
+    orderMatrixQC <- matrix(
         data = rep(qcBatchOrders, N),
         ncol = sum(qcBatchColumns),
         byrow = TRUE
     )
 
-    # Calculate the slope and intercept for the linear model
     qcVals <- assay[, qcBatchColumns, drop = FALSE]
-    slope <- .rowWiseSlope(orderMatrix, qcVals)
-    int <- .rowWiseIntercept(orderMatrix, y = qcVals, slope = slope)
+    log_qcVals <- log(qcVals)
 
+    # Calculate slope and intercept in log space
+    slope <- .rowWiseSlope(orderMatrixQC, log_qcVals)
+    int <- .rowWiseIntercept(orderMatrixQC, log_qcVals, slope)
+
+    # Construct order matrix for all batch samples
     orderMatrix <- matrix(
         data = rep(orders[batchColumns], N),
         ncol = sum(batchColumns),
         byrow = TRUE
     )
 
-    # Calculate the rotation matrix
-    vals <- assay[, batchColumns, drop = FALSE]
-    rotation <- orderMatrix * slope + int
+    trend <- orderMatrix * slope + int
+
+    vals <- log(assay[, batchColumns, drop = FALSE])
     batchMedians <- apply(vals, 1, median, na.rm = TRUE)
 
-    # Fix values with too many NAs (unreliable model, should not rotate)
     tooManyNAs <- rowSums(!is.na(vals)) < withinBatchNonNA
+    trend[tooManyNAs, ] <- 0
+    batchMedians[tooManyNAs] <- 0
 
-    rotation[tooManyNAs, ] <- 1
-    batchMedians[tooManyNAs] <- 1
-
-    return((vals / rotation) * batchMedians)
+    vals <- vals - trend + batchMedians
+    return(exp(vals))
 }
+
 
 #' @title Batch Effect Correction
 #' @description Applies batch-wise correction to normalize ratios across
@@ -206,49 +211,40 @@ addBatchCorrectionAssay <- function(
 #' @param qcType Character string specifying the sample type used for QC
 #'   (usually "SQC" or "QC"). Defaults to the value stored in
 #'   `metadata(exp)$QC`.
+#' @param removeOutliers Logical, whether to remove outliers during batch
+#'     correction. Defaults to `FALSE`
 #' @param withinBatchNonNA Integer specifying the minimum number of
 #' non-NA values before a correction is applied (default is 3).
 #'
 #' @importFrom dplyr group_by row_number pull n mutate arrange filter
 addWithinBatchCorrectionAssay <- function(
         exp, assayName = "ratio", saveAssay = "ratio_corrected",
-        qcType = metadata(exp)$QC, withinBatchNonNA = 3
+        qcType = metadata(exp)$QC, removeOutliers = TRUE, withinBatchNonNA = 3
 ) {
-
-    # Multiplying factor which prevents negative values when the slope
-    # goes through zero
-    factor <- 1e4
 
     N <- nrow(exp)
     assay <- assay(exp, assayName)
 
+    if (removeOutliers) {
+        assay[, !exp$use] <- NA
+    }
+
     # set all batches
     batches <- unique(exp$batch)
-
-    orders <- do.call(c, lapply(batches, function(batch) {
-        batchColumns <- exp$batch == batch
-        if ("injection_time" %in% colnames(colData(exp))) {
-            orders <- order(exp$injection_time[batchColumns])
-        } else {
-            orders <- seq_along(which(batchColumns))
-        }
-        orders
-    }))
-
-
     qcColumns <- exp$type == qcType
 
     for (batch in batches) {
+
         rotated <- .performRotation(
             exp = exp,
-            orders = orders,
-            assay = assay * factor,
+            assay = assay,
             qcColumns = qcColumns,
             batch = batch,
             withinBatchNonNA = withinBatchNonNA
         )
+
         rotated[!is.finite(rotated)] <- NA
-        assay[, exp$batch == batch] <- rotated / factor
+        assay[, exp$batch == batch] <- rotated
     }
 
     assay(exp, saveAssay) <- assay
@@ -299,7 +295,8 @@ addBatchCorrection <- function(
         exp <- addWithinBatchCorrectionAssay(
             exp = exp,
             assayName = assay,
-            saveAssay = correctedAssay
+            saveAssay = correctedAssay,
+            removeOutliers = removeOutliers
         )
         assay <- correctedAssay
     }
@@ -317,7 +314,6 @@ addBatchCorrection <- function(
             exp = exp, assay = correctedAssay, type = qcType
         )
     }
-
 
     # Return the updated experiment
     return(exp)

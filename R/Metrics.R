@@ -365,6 +365,7 @@ doAnalysis <- function(
 #' @examples
 #' # Example usage:
 #' exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+#' exp <- doAnalysis(exp, doAll = TRUE, removeOutliers = TRUE)
 #' exp <- getSuggestedInternalStandards(exp, removeOutliers = TRUE)
 getSuggestedInternalStandards <- function(
         exp, secondaryAssay = metadata(exp)$secondary,
@@ -389,12 +390,13 @@ getSuggestedInternalStandards <- function(
     m <- assay(testExp, secondaryAssay)[comp_is_row, , drop = FALSE]
     assay(testExp, secondaryAssay, withDimnames = FALSE) <- m
 
-    rowData(testExp)$compound_is <- df$compound_is
+    rowData(testExp)$compound_is <- as.character(df$compound_is)
 
     testExp <- calculateRatio(testExp) %>%
         addBatchCorrection(
             removeOutliers = removeOutliers,
-            useWithinBatch = useWithinBatch
+            useWithinBatch = useWithinBatch,
+            calculateRSDQC = TRUE
         )
 
     metrics <- rowData(testExp) %>%

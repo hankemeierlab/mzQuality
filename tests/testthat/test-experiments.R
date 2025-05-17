@@ -10,6 +10,9 @@ concentrations <- read.delim(concentrationsFile)
 file <- system.file("example.tsv", package = "mzQuality")
 concentrationsFile <- system.file("concentrations.txt", package = "mzQuality")
 
+exp <- doAnalysis(exp, doAll = TRUE, removeOutliers = TRUE)
+
+
 
 test_that("A tab-delimited file can be converted into a SummarizedExperiment", {
     combined <- readData(file)

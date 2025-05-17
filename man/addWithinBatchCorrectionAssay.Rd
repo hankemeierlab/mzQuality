@@ -9,6 +9,7 @@ addWithinBatchCorrectionAssay(
   assayName = "ratio",
   saveAssay = "ratio_corrected",
   qcType = metadata(exp)$QC,
+  removeOutliers = TRUE,
   withinBatchNonNA = 3
 )
 }
@@ -25,6 +26,9 @@ store corrected values (default is "ratio_corrected").}
 \item{qcType}{Character string specifying the sample type used for QC
 (usually "SQC" or "QC"). Defaults to the value stored in
 `metadata(exp)$QC`.}
+
+\item{removeOutliers}{Logical, whether to remove outliers during batch
+correction. Defaults to `FALSE`}
 
 \item{withinBatchNonNA}{Integer specifying the minimum number of
 non-NA values before a correction is applied (default is 3).}

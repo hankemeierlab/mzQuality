@@ -109,6 +109,8 @@ calculateConcentrationsPerType <- function(exp, type, ...){
 #' # Load example dataset
 #' exp <- readRDS(system.file(package = "mzQuality", "data.RDS"))
 #'
+#' exp <- doAnalysis(exp, doAll = TRUE, removeOutliers = TRUE)
+#'
 #' # Calculate concentrations
 #' exp <- calculateConcentrations(exp)
 #'

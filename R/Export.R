@@ -395,6 +395,9 @@ exportTables <- function(exp, folder) {
 #' @return None. The function creates reports and exports data as a side effect.
 #' @examples
 #' exp <- readRDS(system.file(package = "mzQuality", "data.RDS"))
+#'
+#' exp <- doAnalysis(exp, doAll = TRUE, removeOutliers = TRUE)
+#'
 #' createReports(
 #'     folder = tempdir(),
 #'     project = "MyProject",

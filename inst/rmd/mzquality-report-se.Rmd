@@ -146,7 +146,7 @@ if ("PCA" %in% plots) {
 
 # Violin QC Plot {.tabset .tabset-fade .tabset-pills}
 
-```{r violinPlot, echo = FALSE, fig.width=24, warning=FALSE, fig.height=height, out.width='100%', results = "asis", dpi = 100}
+```{r violinPlot, echo = FALSE, fig.width=24, warning=FALSE, fig.height=8, out.width='100%', results = "asis", dpi = 100}
 if ("QC" %in% plots) {
     for (assay in assays) {
         cat(sprintf("## %s \n", assay))
@@ -180,7 +180,7 @@ if ("Heatmap" %in% plots) {
 ```
 
 # RSDQC Plot {.tabset .tabset-fade .tabset-pills}
-```{r compoundSummary, echo = FALSE}
+```{r compoundSummary, echo = FALSE, fig.width=18, warning=FALSE, fig.height=8, out.width='100%', results = "asis", dpi = 100}
 if ("RSDQC" %in% plots) {
    for (assay in assays) {
     cat(sprintf("## %s \n", assay))

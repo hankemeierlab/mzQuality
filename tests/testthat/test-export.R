@@ -9,6 +9,8 @@ concentrationsFile <- system.file("concentrations.txt", package = "mzQuality")
 exp <- readRDS(dataFile)
 concentrations <- read.delim(concentrationsFile)
 
+exp <- doAnalysis(exp, doAll = TRUE, removeOutliers = TRUE)
+
 test_that("A combined file can be converted", {
     combined <- readData(combinedFile)
     x <- buildExperiment(combined)

@@ -25,7 +25,7 @@ cleanDataframe <- function(df, onlyNumeric = FALSE) {
     df <- as.data.frame(df[, columns, drop = FALSE])
     if (onlyNumeric) {
         columns <- vapply(df, function(x) ("numeric" %in% is(x)), logical(1))
-        as.data.frame(df[, columns, drop = FALSE])
+        df <- df[, columns, drop = FALSE]
     }
 
     return(df)

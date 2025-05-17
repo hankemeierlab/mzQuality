@@ -42,5 +42,6 @@ This function evaluates all available internal standards and
 \examples{
 # Example usage:
 exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+exp <- doAnalysis(exp, doAll = TRUE, removeOutliers = TRUE)
 exp <- getSuggestedInternalStandards(exp, removeOutliers = TRUE)
 }

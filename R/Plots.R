@@ -25,9 +25,13 @@
         types = exp$type, logTransform = FALSE
 ) {
 
-    # Convert assay data to long format using base R
-    assayData <- assay(exp, assay)
+    # Add metadata and filter
+    metadata <- as.data.frame(colData(exp)) %>%
+        filter(.data$type %in% types) %>%
+        filter(.data$batch %in% batches)
 
+    # Convert assay data to long format using base R
+    assayData <- assay(exp[, rownames(metadata)], assay)
 
     df <- data.frame(
         aliquot = rep(colnames(assayData), times = nrow(assayData)),
@@ -36,18 +40,13 @@
     )
     colnames(df)[3] <- assay
 
-    # Add metadata and filter
-    metadata <- as.data.frame(colData(exp))
-    df <- merge(df, metadata, by.x = "aliquot", by.y = "row.names")
-    df <- df[df$batch %in% batches & df$type %in% types, ]
+    df <- cbind(df, metadata[df$aliquot, ])
     df <- df[order(df$datetime), ]
 
     # Apply log transformation if requested
     if (logTransform) {
         df[, assay] <- log2(df[, assay])
     }
-
-    df$batch <- as.factor(df$batch)
 
     return(df)
 }
@@ -242,7 +241,6 @@ compoundPlot <- function(
         trendTypes = metadata(exp)$QC,
         addInternalStandards = FALSE, addText = FALSE
 ) {
-
     df <- .preparePlotData(
         exp = exp[compound, ],
         assay = assay,
@@ -250,7 +248,6 @@ compoundPlot <- function(
         types = types,
         logTransform = FALSE
     )
-
 
     if (addInternalStandards & metadata(exp)$hasIS) {
         df_is <- as.data.frame(.preparePlotData(exp[compound, ],
@@ -319,6 +316,7 @@ scatterPlot <- function(
             text = .data$text, fill = .data$type
         )
     }
+
 
     idx <- !duplicated(df$type)
     colors <- setNames(df$color[idx], df$type[idx])
@@ -519,13 +517,20 @@ violinPlot <- function(
 
     df <- .addTextHover(exp, df, type = "compound")
 
-    mapping <- aes(x = .data$aliquot, y = .data[[assay]], fill = .data$batch)
+    mapping <- aes(
+        x = reorder(.data$aliquot, .data$injection_time),
+        y = .data[[assay]], fill = .data$batch, group = .data$aliquot
+    )
 
-    p <- ggplot(df, mapping = mapping) +
-        geom_violin(na.rm = TRUE) +
+    textMapping <- aes(
+        x = reorder(.data$aliquot, .data$injection_time),
+        y = .data[[assay]], text = .data$text, group = .data$aliquot
+    )
+
+    p <- ggplot(df, textMapping) +
+        geom_violin(mapping = mapping, inherit.aes = FALSE) +
         geom_point(
-            aes(text = .data$text), size = .2,
-            position = position_jitter(0.2), show.legend = FALSE
+            size = .2, position = position_jitter(0.2), show.legend = FALSE
         ) +
         theme_minimal() +
         theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
@@ -577,10 +582,9 @@ violinPlot <- function(
         types = types, logTransform = logTransform
     )
 
-    df <- df[is.finite(df[[assay]]), ]
-
     pc <- df %>%
         group_by(.data$aliquot) %>%
+        filter(sum(is.finite(.data[[assay]])) > 0) %>%
         # Impute infinite values
         mutate(value = if_else(
             condition = is.infinite(.data[[assay]]) | is.na(.data[[assay]]),
@@ -629,11 +633,6 @@ violinPlot <- function(
         group = .data$type, text = .data$text
     )
 
-    intervalMapping <- aes(
-        x = .data$PC1, y = .data$PC2,
-        group = .data$type, color = .data$type
-    )
-
     colors <- setNames(data$color, data$type)
 
     p <- ggplot(data = data, mapping = pointMapping) +
@@ -645,8 +644,13 @@ violinPlot <- function(
         guides(color = "legend")
 
     if (addConfidenceInterval) {
+        intervalMapping <- aes(
+            x = .data$PC1, y = .data$PC2,
+            group = .data$type, color = .data$type
+        )
+
         p <- p + stat_ellipse(
-            data = data, mapping = intervalMapping, inherit.aes = TRUE,
+            data = data, mapping = intervalMapping, inherit.aes = FALSE,
             na.rm = TRUE, level = 0.9
         ) +
             scale_color_manual(values = colors)
@@ -723,7 +727,7 @@ pcaPlot <- function(
     xAxis <- sprintf("PC%s (%s%%)", pc1, format(expvar[pc1] * 100, digits = 4))
     yAxis <- sprintf("PC%s (%s%%)", pc2, format(expvar[pc2] * 100, digits = 4))
 
-    exp <- exp[, exp$type %in% types & exp$batch %in% batches][, rownames(pc$x)]
+    exp <- exp[, rownames(pc$x)]
 
     data <- pc$x %>%
         as.data.frame() %>%
@@ -770,18 +774,26 @@ pcaPlot <- function(
 #' @importFrom dplyr %>% filter .data
 #' @noRd
 .getConcentrationModelData <- function(df, exp, calType, removeOutliers) {
+
+    calType <- toupper(calType)
+
     modelData <- df %>%
         filter(.data$type == calType)
 
     if (removeOutliers) {
 
-        if (modelData$outliers[1] == 1) {
-            modelData <- modelData[-1, ]
-        }
+        modelData <- lapply(split(modelData, modelData$batch), function(x) {
+            if (x$outliers[1] == 1) {
+                x <- x[-1, , drop = FALSE]
+            }
+            N <- nrow(x)
+            if (x$outliers[N] == 1) {
+                x <- x[-N, , drop = FALSE]
+            }
+            return(x)
+        }) %>%
+            dplyr::bind_rows()
 
-        if (modelData$outliers[nrow(modelData)] == 1) {
-            modelData <- modelData[-nrow(modelData), ]
-        }
     }
 
     return(modelData)
@@ -814,7 +826,8 @@ pcaPlot <- function(
 .getConcentrationPlotData <- function(
         exp, assay, batch, calType, types, plotOnCalibrationLine = TRUE
 ){
-
+    types <- toupper(types)
+    calType <- toupper(calType)
     df <- .preparePlotData(
         exp = exp,
         assay = sprintf("%s_concentration", calType),
@@ -863,12 +876,11 @@ pcaPlot <- function(
 #'     Defaults to the concentration metadata in `exp`.
 #' @param removeOutliers A logical value indicating whether to remove
 #'     outliers from the data. Defaults to TRUE.
-#' @param withinTrend A logical value indicating whether to inherit trend
-#'     line aesthetics. Defaults to TRUE.
 #' @param plotOnCalibrationLine A logical value indicating whether to plot
 #'     data on the calibration line. Defaults to TRUE.
 #' @importFrom ggplot2 ggplot aes geom_point geom_hline geom_smooth
 #'     theme_minimal
+#' @importFrom utils modifyList
 #' @export
 #' @examples
 #' # Read data
@@ -887,12 +899,9 @@ concentrationPlot <- function(
         exp, assay = "ratio_corrected", compound = 1,
         batch = exp$batch[1], types = c("SAMPLE", "SQC"),
         calType = metadata(exp)$concentration,
-        removeOutliers = TRUE, withinTrend = TRUE,
-        plotOnCalibrationLine = TRUE
+        removeOutliers = TRUE, plotOnCalibrationLine = TRUE
 ) {
-    calType <- toupper(calType)
-    types <- toupper(types)
-    exp <- exp[rowData(exp)$hasKnownConcentrations, ]
+    if (!rowData(exp[compound, ])$hasKnownConcentrations) return(NULL)
 
     df <- .getConcentrationPlotData(
         exp = exp[compound, ],
@@ -910,22 +919,21 @@ concentrationPlot <- function(
         removeOutliers = removeOutliers
     )
 
-    ggplot(df, aes(
+    mapping <- aes(
         x = .data$concentration, y = .data$assay, fill = .data$type,
-        color = .data$type, group = .data$batch, text = .data$text
-        )) +
-        geom_point(pch = 21, stroke = 0.1, size = 3, color = "black") +
-        geom_hline(
-            mapping = aes(yintercept = max(.data$assay)),
-            linetype = "dashed", data = modelData
+        color = .data$type
+    )
+
+    ggplot(df, modifyList(mapping, aes(text = .data$text))) +
+        geom_point(pch = 21,
+            stroke = 0.1, size = 3, color = "black"
         ) +
-        geom_hline(
-            mapping = aes(yintercept = min(.data$assay)),
-            linetype = "dashed", data = modelData
+        geom_hline(yintercept = c(min(modelData$assay), max(modelData$assay)),
+            linetype = "dashed"
         ) +
         geom_smooth(
-            formula = "y ~ x", method = lm, inherit.aes = withinTrend,
-            aes(x = .data$concentration, y = .data$assay),
+            formula = "y ~ x", method = lm, inherit.aes = FALSE,
+            mapping = mapping,
             na.rm = TRUE, show.legend = FALSE,
             data = modelData, level = .95
         ) +
