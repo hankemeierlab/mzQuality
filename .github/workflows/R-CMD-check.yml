@@ -25,7 +25,7 @@ jobs:
 
       - name: Install system dependencies
         run: |
-          apt install -y --no-install-recommends \
+          sudo apt install -y --no-install-recommends \
           libsodium-dev \
           libnetcdf-dev \
           libglpk-dev \
