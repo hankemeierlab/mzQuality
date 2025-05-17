@@ -24,6 +24,17 @@ jobs:
         with:
           r-version: ${{ matrix.config.r }}
 
+
+      - name: Install system dependencies
+        run: |
+          apt update && apt install -y --no-install-recommends \
+          libsodium-dev \
+          libnetcdf-dev \
+          libglpk-dev \
+          curl \
+          libcurl4-openssl-dev \
+          ssh
+
       - name: Install dependencies
         run: |
           Rscript -e 'install.packages("BiocManager")'
