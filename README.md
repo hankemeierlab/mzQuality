@@ -1,9 +1,3 @@
----
-editor_options: 
-  markdown: 
-    wrap: 72
----
-
 # mzQuality
 
 [![R-CMD-check](https://github.com/hankemeierlab/mzQuality/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/hankemeierlab/mzQuality/actions/workflows/R-CMD-check.yaml)
