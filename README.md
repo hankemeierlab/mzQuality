@@ -37,7 +37,10 @@ if (!"mzQuality" %in% pkgs) {
 
 ## Reading Data
 
-To get an idea of the capabilities of mzQuality, an example dataset containing x compounds and y samples has been added. These can be loaded by running the following code. The result is a SummarizedExperiment, which is the core object that mzQuality uses. See [here](https://bioconductor.org/packages/release/bioc/vignettes/SummarizedExperiment/inst/doc/SummarizedExperiment.html) for an overview on a SummarizedExperiment.
+To get an idea of the capabilities of mzQuality, an example dataset containing 
+105 compounds and 584 samples has been added. These can be loaded by running 
+the following code. The result is a SummarizedExperiment, which is the core 
+object that mzQuality uses. See [here](https://bioconductor.org/packages/release/bioc/vignettes/SummarizedExperiment/inst/doc/SummarizedExperiment.html) for an overview on a SummarizedExperiment.
 
 ``` r
 exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
