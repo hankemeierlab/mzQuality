@@ -21,7 +21,14 @@ test_that("A tab-delimited file can be converted into a SummarizedExperiment", {
     exp <- buildExperiment(combined)
     expect_true(is(exp, "SummarizedExperiment"))
     expect_true(isValidExperiment(exp))
+
+    # Check that the last row is not included in the experiment
+    # This should trigger fix missing
+    exp <- buildExperiment(combined[-nrow(combined), ])
+    expect_true(is(exp, "SummarizedExperiment"))
+    expect_true(isValidExperiment(exp))
 })
+
 
 test_that("Is a valid experiment", {
     expect_true(is(exp, "SummarizedExperiment"))
