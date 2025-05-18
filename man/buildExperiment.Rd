@@ -59,11 +59,31 @@ data <- readData(system.file(package = "mzQuality", "example.tsv"))
 
 # Construct experiment
 exp <- buildExperiment(
-    data,
+    df = data,
     rowIndex = "compound",
     colIndex = "aliquot",
     primaryAssay = "area",
     secondaryAssay = "area_is"
 )
-exp
+
+# Construct experiment without concentrations
+data <- data[-which(colnames(data) == "concentration")]
+exp <- buildExperiment(
+    df = data,
+    rowIndex = "compound",
+    colIndex = "aliquot",
+    primaryAssay = "area",
+    secondaryAssay = "area_is"
+)
+isValidExperiment(exp)
+
+# Construct experiment without internal standards
+data <- data[-grep("_is", colnames(data))]
+exp <- buildExperiment(
+    df = data,
+    rowIndex = "compound",
+    colIndex = "aliquot",
+    primaryAssay = "area",
+    secondaryAssay = "area"
+)
 }
