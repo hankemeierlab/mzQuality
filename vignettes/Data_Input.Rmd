@@ -4,10 +4,7 @@ author:
 - name: Pascal Maas
   affiliation: Metabolomics Analytical Centre, Leiden, The Netherlands
 date: "`r Sys.Date()`"
-output:
-  BiocStyle::html_document:
-    toc_float: true
-  BiocStyle::pdf_document: default
+output: html_document
 package: mzQuality
 vignette: >
     %\VignetteIndexEntry{Data Input}
@@ -17,7 +14,6 @@ vignette: >
 
 ```{r setup, include=FALSE, message=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-BiocStyle::markdown()
 library(mzQuality)
 ```
 
