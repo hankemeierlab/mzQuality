@@ -753,7 +753,8 @@ pcaPlot <- function(
 
     .createPcaPlot(
         data = data, xAxis = xAxis, yAxis = yAxis,
-        addConfidenceInterval = addConfidenceInterval
+        addConfidenceInterval = addConfidenceInterval,
+        addLabels = addLabels
     )
 }
 

@@ -5,7 +5,7 @@ exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
 exp <- doAnalysis(exp, doAll = TRUE, useWithinBatch = F)
 
 test_that("pca plot can be made", {
-    plot <- suppressWarnings(pcaPlot(exp))
+    plot <- pcaPlot(exp)
     expect_true(is(plot, "ggplot"))
 })
 
@@ -20,12 +20,27 @@ test_that("Compound plot can be made", {
 
     plot <- compoundPlot(exp, assay = "area")
     expect_true(is(plot, "ggplot"))
+
+    plot <- compoundPlot(exp, assay = "area", addInternalStandards = TRUE)
+    expect_true(is(plot, "ggplot"))
+
 })
 
 test_that("Plots can be facetted", {
-    plot <- compoundPlot(exp) %>%
-        facetPlot()
-    expect_true(is(plot, "ggplot"))
+    plot <- compoundPlot(exp, addText = TRUE)
+
+    p <- facetPlot(plot, shareX = TRUE, shareY = TRUE)
+    expect_true(is(p, "ggplot"))
+
+    p <- facetPlot(plot, shareX = FALSE, shareY = FALSE)
+    expect_true(is(p, "ggplot"))
+
+    p <- facetPlot(plot, shareX = FALSE, shareY = TRUE)
+    expect_true(is(p, "ggplot"))
+
+    p <- facetPlot(plot, shareX = TRUE, shareY = FALSE)
+    expect_true(is(p, "ggplot"))
+
 })
 
 test_that("Aliquot Plot can be made", {
@@ -34,12 +49,12 @@ test_that("Aliquot Plot can be made", {
 })
 
 test_that("Concentration Plot can be made", {
-    plot <- suppressWarnings(concentrationPlot(exp))
+    plot <- concentrationPlot(exp)
     expect_true(is(plot, "ggplot"))
 })
 
 test_that("Labels can be added to a PCA plot", {
-    plot <- suppressWarnings(pcaPlot(exp, addLabels = TRUE))
+    plot <- pcaPlot(exp, addLabels = TRUE)
     expect_true(is(plot, "ggplot"))
 })
 
