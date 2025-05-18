@@ -5,7 +5,7 @@
 [![Codecov test
 coverage](https://codecov.io/gh/hankemeierlab/mzQuality/graph/badge.svg)](https://app.codecov.io/gh/hankemeierlab/mzQuality)
 
-MzQuality is a user-friendly R package for quality control of
+mzQuality is a user-friendly R package for quality control of
 metabolomics studies. It features outlier detection, batch-correction
 using pooled study quality control samples (SQC), filters for removing
 unreliable compounds, various plots for inspecting and generating
