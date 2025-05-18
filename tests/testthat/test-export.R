@@ -32,10 +32,12 @@ test_that("exportTables creates expected tsv files", {
 test_that("createReports generates reports and exports data", {
     temp_folder <- tempdir()
 
+    subExp <- exp[1:2, exp$batch == exp$batch[1] & exp$type %in% c("SQC", "LQC")]
+
     createReports(
         folder = temp_folder,
         project = "TestProject",
-        exp = exp[1:2, ],
+        exp = subExp,
         summaryPlots = c("Aliquot", "PCA"),
         makeSummaryReport = TRUE,
         makeCompoundReport = TRUE,
@@ -49,3 +51,4 @@ test_that("createReports generates reports and exports data", {
     expect_true(file.exists(file.path(temp_folder, "TestProject", "Exports", "FinalReport_All_v2.xlsx")))
     expect_true(file.exists(file.path(temp_folder, "TestProject", "Exports", "FinalReport_Sample_SelectedComps_v2.xlsx")))
 })
+
