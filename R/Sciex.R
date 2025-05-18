@@ -7,7 +7,6 @@
 #' @noRd
 .processSciex <- function(df, regex = NULL) {
     samples <- as.vector(unlist(df[, 1]))
-    df <- .whitespaceFix(df)
 
     aliquot_df <- .parseAliquots(samples, regex)
 
@@ -48,32 +47,6 @@
     }
 
     as.data.frame(res)
-}
-
-#' @title Fix Whitespace Issues in Sciex Files
-#' @description Resolves whitespace and duplicate line issues in Sciex
-#'     vendor files.
-#' @param f1 A dataframe with potential whitespace or duplicate issues.
-#' @returns A cleaned dataframe with resolved whitespace issues.
-#' @importFrom dplyr coalesce
-#' @noRd
-.whitespaceFix <- function(f1) {
-
-    indexes <- which(trimws(f1[, 1], which = "right") == "")
-    if (length(indexes) == 0) {
-        return(f1)
-    }
-
-    all <- sort(c(indexes, indexes - 1))
-    f1[f1 == ""] <- NA
-    df <- do.call(rbind, lapply(indexes - 1, function(i) {
-        dplyr::coalesce(f1[i, ], f1[i + 1, ])
-    }))
-    to_remove <- unique(f1[, 1][indexes - 1])
-    f1 <- f1[-all, ]
-    f1 <- f1[which(f1[, 1] != to_remove), ]
-    f1 <- rbind(f1, df)
-    f1
 }
 
 #' @title Parse Aliquot Names
