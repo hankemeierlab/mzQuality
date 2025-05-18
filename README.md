@@ -5,17 +5,19 @@
 mzQuality is a user-friendly R package for quality control of metabolomics 
 studies. It features outlier detection, batch-correction using pooled study 
 quality control samples (SQC), filters for removing unreliable compounds, 
-various plots for inspecting and generating reports for further processing. 
+various plots for inspecting, and generating reports for further processing. 
 See our [preprint](https://www.biorxiv.org/content/10.1101/2025.01.22.633547v1) 
 for more information.
 
-This R package forms the backbone of our shiny dashboard application [mzQualityDashboard](https://github.com/hankemeierlab/mzQualityDashboard), 
+This R package forms the backbone of our Shiny dashboard application _mzQualityDashboard_,
 which is recommended for interactive use. To install and use the dashboard, see 
 the [mzQualityDashboard repository](https://github.com/hankemeierlab/mzQualityDashboard).
 
 # Installing mzQuality
 
-To install mzQuality, you can run the following script:
+To install mzQuality and all needed dependencies, you can run the following script.
+Installation should be fully automatic, but it might be necessary to provide
+permission to install some dependencies. 
 
 ``` r
 pkgs <- installed.packages()
@@ -53,15 +55,16 @@ object that mzQuality uses. See [here](https://bioconductor.org/packages/release
 exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
 ```
 
-To use your own data, either a SummarizedExperiment with can be used, or a 
+To use your own data, either a SummarizedExperiment can be used, or a 
 tab-delimited text file. See the vignette [Data input](https://hankemeierlab.github.io/mzQuality/Data_Input.html) 
 for an explanation for the format and mandatory columns to be present. An 
+
 example tab-delimited file can be seen [here](https://github.com/hankemeierlab/mzQuality/blob/9ca02857d88eefdb1ea4ef904655fc2f5b7b8526/inst/example.tsv)
 
 Once your files are ready, you can use the `readData` function to read in your 
 data. It will check if all mandatory columns are present and if the data is in 
 the correct format. Finally, the function `buildExperiment` will convert the 
-data into a SummarizedExperiment object. This is the core object that mzQuality 
+data into a SummarizedExperiment object. This is the object that mzQuality 
 uses to perform all calculations and analyses and is used throughout the package.
 
 ``` r
@@ -96,8 +99,9 @@ The `doAnalysis` function will perform the following steps:
 7.  Suggest Internal Standards based on the calculated values.
 
 If known concentrations for calibration lines have been supplied, the 
-`doAnalysis` function will also calculate the calibration line and the
-corresponding R2 value. See the vignette [Data input](https://hankemeierlab.github.io/mzQuality/Data_Input.html) 
+`doAnalysis` function will also calculate the concentrations and the
+corresponding R2 value given the provided calibration lines. See the vignette 
+[Data input](https://github.com/hankemeierlab/mzQuality/vignettes/Data_Input.html) 
 for more information on how to supply concentrations.
 
 All calculations will be added to the `assay`, `rowData` and `colData` slots of 
