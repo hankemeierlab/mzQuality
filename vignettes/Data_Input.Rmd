@@ -1,0 +1,87 @@
+---
+title: "Data Input"
+author: "Pascal Maas"
+date: "`r Sys.Date()`"
+output: html_document
+vignette: >
+    %\VignetteIndexEntry{Data Input}
+    %\VignetteEngine{knitr::rmarkdown}
+    %\VignetteEncoding{UTF-8}
+---
+
+```{=html}
+<style type="text/css">
+div.main-container {
+    max-width: 70vw !important;
+}
+</style>
+```
+
+```{r setup, include=FALSE, message=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(mzQuality)
+```
+
+## Reading data
+
+mzQuality requires a specific format for the input data. This section will
+explain how to prepare your data for analysis. The data should be in a
+tab-delimited format containing at least the following columns:
+
+-   `aliquot`: The unique identifier for each sample.
+-   `compound`: The name of the compound being measured.
+-   `area`: The area under the curve for the compound.
+-   `type`: The type of sample (e.g., control, test).
+-   `injection_time`: The time at which the sample was injected.
+-   `batch`: The batch number for the sample.
+
+Other columns are optional and will be matched to either aliquot, compound,
+or both. There are two functions that help you import your data into
+mzQuality. To read your data, you can use the `readData` function. This
+function will read in your data and check for any missing or incorrect
+columns. The `buildExperiment` function will then take the data and create an
+experiment object that can be used for analysis.
+
+### Adding Concentrations
+When calibration lines are present in the experiment, and the concentrations
+of spiked compounds is known, mzQuality can calculate the concentration of
+these compounds in other samples using (weighted) linear regression. This
+is automatically done when the `doAnalysis` function is called. Note that in 
+the current version of mzQuality, only one sample type can be used for 
+calculating concentrations. For instance, either an Academic Calibration (ACAL)
+or Plasma Calibration (CAL) can be used. This will be addressed in a future 
+version.
+
+To use and calculate concentrations in mzQuality, ensure that your data file
+has the column `concentration` added. This column should contain the known 
+concentrations for the compounds in the samples where they were spiked. 
+For all other samples, i.e. study samples, the value `NA` should be used.
+
+```{r, echo=FALSE, message=FALSE}
+# Example data
+file <- system.file("example.tsv", package = "mzQuality")
+df <- read.delim(file, sep = "\t")
+knitr::kable(df[8:20, ])
+```
+
+Then, run the following code to read your data and build an experiment
+
+```{r, echo=TRUE, message=FALSE, eval = FALSE}
+# Path to your file
+file <- "path/to/file"
+
+# Read the data, performing basic checks
+df <- readData(file)
+
+# Build experiment used throughout mzQuality
+exp <- buildExperiment(df)
+
+# Continue analysis, plotting and reporting here.
+```
+
+
+## SessionInfo
+
+```{r}
+sessionInfo()
+```

@@ -697,6 +697,7 @@ violinPlot <- function(
 #'     requires `ggrepel` package. Defaults to `FALSE`.
 #' @importFrom ggplot2 guides stat_ellipse .data
 #' @importFrom dplyr select bind_cols arrange all_of mutate filter .data
+#' coalesce
 #' @importFrom viridis viridis
 #' @export
 #' @examples

@@ -117,16 +117,7 @@ filterSST <- function(exp, tag = "SST") {
 #' @export
 #' @examples
 #' # Read example dataset
-#' data <- readData(system.file(package = "mzQuality", "example.tsv"))
-#'
-#' # Construct experiment
-#' exp <- buildExperiment(
-#'     data,
-#'     rowIndex = "compound",
-#'     colIndex = "aliquot",
-#'     primaryAssay = "area",
-#'     secondaryAssay = "area_is"
-#' )
+#' exp <- readRDS(system.file(package = "mzQuality", "data.RDS"))
 #'
 #' # Perform analysis
 #' exp <- doAnalysis(exp)
@@ -186,16 +177,7 @@ filterBackground <- function(exp, min = 0, max = 0.4, include.na = FALSE) {
 #' @export
 #' @examples
 #' # Read example dataset
-#' data <- readData(system.file(package = "mzQuality", "example.tsv"))
-#'
-#' # Construct experiment
-#' exp <- buildExperiment(
-#'     data,
-#'     rowIndex = "compound",
-#'     colIndex = "aliquot",
-#'     primaryAssay = "area",
-#'     secondaryAssay = "area_is"
-#' )
+#' exp <- readRDS(system.file(package = "mzQuality", "data.RDS"))
 #'
 #' # Remove QC outliers
 #' filterOutliers(exp)

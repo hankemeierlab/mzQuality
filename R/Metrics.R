@@ -319,9 +319,10 @@ doAnalysis <- function(
     }
 
     if ("concentration" %in% assayNames(exp)) {
+        assayName <- sprintf("%s_concentration", metadata(exp)$concentration)
         exp <- exp %>%
             calculateConcentrations() %>%
-            addBatchCorrection(assay = "concentration") %>%
+            addBatchCorrection(assay = assayName) %>%
             carryOverEffect() %>%
             blankLimits()
     }

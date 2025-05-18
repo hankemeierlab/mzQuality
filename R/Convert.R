@@ -249,9 +249,11 @@ buildExperiment <- function(
     exp <- SummarizedExperiment(
         assays = assays, rowData = rowData, colData = colData,
         metadata = meta
-    )
+    ) %>%
+        .addConcentrationMetadata() %>%
+        .addInitialAnalysis()
 
-    return(.addInitialAnalysis(exp))
+    return(exp)
 }
 
 #' @title Set the Colors of the Samples
@@ -497,8 +499,6 @@ addConcentrations <- function(exp, df) {
 
     if (length(comps) == 0 || length(aliqs) == 0) return(exp)
 
-    metadata(exp)$concentration <- unique(exp[, aliqs]$type)
-
     m <- assay(exp)
     m[TRUE] <- NA
 
@@ -521,10 +521,41 @@ addConcentrations <- function(exp, df) {
         m[, columns] <- concs
     }
 
-    rowData(exp)$hasKnownConcentrations <- FALSE
-    rowData(exp)$hasCalculatedConcentrations <- FALSE
-    rowData(exp[comps, ])$hasKnownConcentrations <- TRUE
     assay(exp, "concentration") <- m
+    exp <- .addConcentrationMetadata(exp)
+    return(exp)
+}
+
+#' @title Add metadata when concentrations are supplied
+#' @description Adds metadata to a SummarizedExperiment object when
+#' concentrations are supplied. This function checks if the concentrations are
+#' present in the assay names and adds metadata accordingly.
+#' @details The function checks if the "concentration" assay is present in the
+#' experiment. If it is, it retrieves the concentration type and updates the
+#' metadata and rowData of the experiment. It also sets flags for known and
+#' calculated concentrations.
+#' @param exp A SummarizedExperiment object to which the concentration
+#' metadata will be added.
+#' @returns A SummarizedExperiment object with updated metadata and rowData.
+#' @importFrom SummarizedExperiment assayNames assay rowData rowData<-
+#' @noRd
+.addConcentrationMetadata <- function(exp) {
+    if (!"concentration" %in% assayNames(exp)) {
+        return(exp)
+    }
+
+    m <- assay(exp, "concentration")
+    concType <- unique(exp$type[colSums(is.na(m)) != nrow(m)])
+    if (length(concType) > 1) {
+        message("> 1 calibration line is not supported, selecting first type")
+        concType <- concType[1]
+    }
+
+    metadata(exp)$concentration <- concType
+    rowData(exp)$hasKnownConcentrations <- FALSE
+    hasConcentrations <- rowSums(m, na.rm = TRUE) > 0
+    rowData(exp[hasConcentrations, ])$hasKnownConcentrations <- TRUE
+
     return(exp)
 }
 
