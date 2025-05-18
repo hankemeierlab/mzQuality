@@ -56,7 +56,7 @@ exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
 To use your own data, either a SummarizedExperiment with can be used, or a 
 tab-delimited text file. See the vignette [Data input](https://github.com/hankemeierlab/mzQuality/vignettes/Data_Input.html) 
 for an explanation for the format and mandatory columns to be present. An 
-example tab-delimited file can be seen [here](https://github.com/hankemeierlab/mzQuality/blob/ff68e734f11d2735d39647e9d14acbafb499134a/inst/example.tsv)
+example tab-delimited file can be seen [here](https://github.com/hankemeierlab/mzQuality/blob/9ca02857d88eefdb1ea4ef904655fc2f5b7b8526/inst/example.tsv)
 
 Once your files are ready, you can use the `readData` function to read in your 
 data. It will check if all mandatory columns are present and if the data is in 

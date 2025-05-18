@@ -1,24 +1,23 @@
 ---
 title: "Data Input"
-author: "Pascal Maas"
+author:
+- name: Pascal Maas
+  affiliation: Metabolomics Analytical Centre, Leiden, The Netherlands
 date: "`r Sys.Date()`"
-output: html_document
+output:
+  BiocStyle::html_document:
+    toc_float: true
+  BiocStyle::pdf_document: default
+package: mzQuality
 vignette: >
     %\VignetteIndexEntry{Data Input}
     %\VignetteEngine{knitr::rmarkdown}
     %\VignetteEncoding{UTF-8}
 ---
 
-```{=html}
-<style type="text/css">
-div.main-container {
-    max-width: 70vw !important;
-}
-</style>
-```
-
 ```{r setup, include=FALSE, message=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+BiocStyle::markdown()
 library(mzQuality)
 ```
 
@@ -42,7 +41,7 @@ function will read in your data and check for any missing or incorrect
 columns. The `buildExperiment` function will then take the data and create an
 experiment object that can be used for analysis.
 
-### Adding Concentrations
+### (Optional) Adding Concentrations
 When calibration lines are present in the experiment, and the concentrations
 of spiked compounds is known, mzQuality can calculate the concentration of
 these compounds in other samples using (weighted) linear regression. This
@@ -57,11 +56,21 @@ has the column `concentration` added. This column should contain the known
 concentrations for the compounds in the samples where they were spiked. 
 For all other samples, i.e. study samples, the value `NA` should be used.
 
-```{r, echo=FALSE, message=FALSE}
+```{r, echo=FALSE, message=FALSE,  results='asis'}
 # Example data
 file <- system.file("example.tsv", package = "mzQuality")
 df <- read.delim(file, sep = "\t")
-knitr::kable(df[8:20, ])
+columns <- c(
+    "aliquot", "compound", "area", "compound_is", "area_is", 
+    "type", "injection_time", "batch", "concentration"
+)
+caption <- "Example data file with required columns (except concentration)"
+cat('<div style="overflow-x: auto;">')
+knitr::kable(
+    df[8:20, columns],
+    caption = caption
+)
+cat('</div>')
 ```
 
 Then, run the following code to read your data and build an experiment
@@ -82,6 +91,6 @@ exp <- buildExperiment(df)
 
 ## SessionInfo
 
-```{r}
+```{r, echo=FALSE, message=FALSE}
 sessionInfo()
 ```
