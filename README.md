@@ -54,7 +54,7 @@ exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
 ```
 
 To use your own data, either a SummarizedExperiment with can be used, or a 
-tab-delimited text file. See the vignette [Data input](https://github.com/hankemeierlab/mzQuality/vignettes/Data_Input.html) 
+tab-delimited text file. See the vignette [Data input](https://hankemeierlab.github.io/mzQuality/Data_Input.html) 
 for an explanation for the format and mandatory columns to be present. An 
 example tab-delimited file can be seen [here](https://github.com/hankemeierlab/mzQuality/blob/9ca02857d88eefdb1ea4ef904655fc2f5b7b8526/inst/example.tsv)
 
@@ -97,7 +97,7 @@ The `doAnalysis` function will perform the following steps:
 
 If known concentrations for calibration lines have been supplied, the 
 `doAnalysis` function will also calculate the calibration line and the
-corresponding R2 value. See the vignette [Data input](https://github.com/hankemeierlab/mzQuality/vignettes/Data_Input.html) 
+corresponding R2 value. See the vignette [Data input](https://hankemeierlab.github.io/mzQuality/Data_Input.html) 
 for more information on how to supply concentrations.
 
 All calculations will be added to the `assay`, `rowData` and `colData` slots of 
