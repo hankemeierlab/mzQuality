@@ -33,9 +33,7 @@
 #' exp <- carryOverEffect(exp)
 #' exp
 carryOverEffect <- function(exp, type = "PROC", assay = "concentration") {
-    if (!isValidExperiment(exp)) {
-        stop("Invalid experiment")
-    }
+    stopifnot(isValidExperiment(exp))
 
     rowData(exp)$carryOver <- NA
 
@@ -99,9 +97,7 @@ carryOverEffect <- function(exp, type = "PROC", assay = "concentration") {
 #' exp <- blankLimits(exp)
 #' exp
 blankLimits <- function(exp, type = "PROC", assay = "concentration") {
-    if (!isValidExperiment(exp)) {
-        stop("Invalid experiment")
-    }
+    stopifnot(isValidExperiment(exp))
     rowData(exp)$lob <- NA
     rowData(exp)$lod <- NA
     rowData(exp)$loq <- NA
@@ -139,9 +135,7 @@ blankLimits <- function(exp, type = "PROC", assay = "concentration") {
 #' # Perform the calculation
 #' backgroundSignals(exp)
 backgroundSignals <- function(exp, type = "BLANK", NaAsZero = FALSE) {
-    if (!isValidExperiment(exp)) {
-        stop("Invalid experiment")
-    }
+    stopifnot(isValidExperiment(exp))
 
     rowData(exp)$backgroundSignal <- NA
     if (type %in% toupper(exp$type)) {
@@ -166,9 +160,7 @@ backgroundSignals <- function(exp, type = "BLANK", NaAsZero = FALSE) {
         type = "BLANK", sampleLabel = "SAMPLE",
         NaAsZero = FALSE
 ) {
-    if (!isValidExperiment(exp)) {
-        stop("Invalid experiment")
-    }
+    stopifnot(isValidExperiment(exp))
 
     exp <- exp[, exp$use]
 

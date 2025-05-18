@@ -163,9 +163,7 @@ addBatchCorrectionAssay <- function(
         qc = metadata(exp)$QC, removeOutliers = TRUE
 ) {
     # check if the experiment is valid
-    if (!isValidExperiment(exp)) {
-        stop("Invalid experiment")
-    }
+    stopifnot(isValidExperiment(exp))
 
     ratios <- assay(exp, assayName)
     if (removeOutliers) {
@@ -286,9 +284,7 @@ addBatchCorrection <- function(
         calculateRSDQC = FALSE
 ) {
     # Validate if the experiment is correct
-    if (!isValidExperiment(exp)) {
-        stop("Invalid experiment")
-    }
+    stopifnot(isValidExperiment(exp))
 
     correctedAssay <- sprintf("%s_corrected", assay)
     if (useWithinBatch) {

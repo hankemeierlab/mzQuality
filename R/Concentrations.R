@@ -119,12 +119,8 @@ calculateConcentrationsPerType <- function(exp, type, ...){
 calculateConcentrations <- function(
         exp, calibrationLineTypes = metadata(exp)$concentration, ...
 ) {
-
-
     # Check if the input is a SummarizedExperiment object
-    if (!isValidExperiment(exp)) {
-        stop("Input must be a SummarizedExperiment object.")
-    }
+    stopifnot(isValidExperiment(exp))
 
     # Check if the assay is present in the experiment
     if (!"concentration" %in% assayNames(exp)) {

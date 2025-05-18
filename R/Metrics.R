@@ -25,9 +25,7 @@ ratioQcSample <- function(
         qcLabel = metadata(exp)$QC, sampleLabel = "SAMPLE"
 ) {
     # Check if the experiment is valid
-    if (!isValidExperiment(exp)) {
-        stop("Invalid experiment")
-    }
+    stopifnot(isValidExperiment(exp))
 
     useExp <- exp[, exp$use]
 
@@ -75,9 +73,7 @@ ratioQcSample <- function(
 #' exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
 #' exp <- identifyOutliers(exp, assay = "ratio")
 identifyOutliers <- function(exp, assay = "ratio", qcType = metadata(exp)$QC) {
-    if (!isValidExperiment(exp)) {
-        stop("Invalid experiment")
-    }
+    stopifnot(isValidExperiment(exp))
 
     if ("use" %in% colnames(colData(exp))) {
         exp$use <- colData(exp)$use
@@ -300,9 +296,7 @@ doAnalysis <- function(
         concentrationType = "ACAL", backgroundPercentage = 40,
         qcPercentage = 80, nonReportableRSD = 30
 ) {
-    if (!isValidExperiment(exp)) {
-        stop("Invalid experiment")
-    }
+    stopifnot(isValidExperiment(exp))
     doAliquots <- length(aliquots) != ncol(exp)
     exp <- exp[, aliquots]
 

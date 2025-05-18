@@ -23,8 +23,7 @@ summaryReport <- function(
         plots = c("Aliquot", "PCA", "QC"),
         assays = c("ratio", "ratio_corrected")
 ) {
-    if (!isValidExperiment(exp)) stop("Invalid Experiment")
-
+    stopifnot(isValidExperiment(exp))
     assays <- assays[assays %in% assayNames(exp)]
 
     .createReport(

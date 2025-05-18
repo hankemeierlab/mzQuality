@@ -34,9 +34,7 @@
 #' # Filter all standards from compounds
 #' filterISTD(exp, tag = "STD")
 filterISTD <- function(exp, tag = "STD") {
-    if (!isValidExperiment(exp)) {
-        stop("Invalid experiment")
-    }
+    stopifnot(isValidExperiment(exp))
 
     exp <- exp[grep(tag, rownames(exp), invert = TRUE, ignore.case = TRUE), ]
     if (metadata(exp)$hasIS) {
@@ -81,9 +79,7 @@ filterISTD <- function(exp, tag = "STD") {
 #' # Filter SST aliquots
 #' filterSST(exp, tag = "SST")
 filterSST <- function(exp, tag = "SST") {
-    if (!isValidExperiment(exp)) {
-        stop("Invalid experiment")
-    }
+    stopifnot(isValidExperiment(exp))
     exp[, grep(tag, exp$type, invert = TRUE, ignore.case = TRUE)]
 }
 

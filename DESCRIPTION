@@ -1,6 +1,6 @@
 Package: mzQuality
 Title: A tool for quality monitoring and reporting of targeted mass spectrometry measurements
-Version: 2.4.0
+Version: 0.99.0
 Date: 2025-01-24
 Authors@R: c(
         person("Pascal", "Maas", email = "p.maas@lacdr.leidenuniv.nl", role = c("aut", "cre"), comment = c(ORCID = "0000-0001-9379-6041")),

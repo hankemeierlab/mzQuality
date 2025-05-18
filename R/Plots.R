@@ -957,9 +957,7 @@ concentrationPlot <- function(
 #' # Plot RSDQCs
 #' rsdqcPlot(exp)
 rsdqcPlot <- function(exp) {
-    if (!isValidExperiment(exp)) {
-        stop("Invalid experiment")
-    }
+    stopifnot(isValidExperiment(exp))
 
     if (!metadata(exp)$hasIS) {
         return(NULL)
@@ -997,9 +995,7 @@ rsdqcPlot <- function(exp) {
 #' # Plot values in heatmap
 #' heatmapPlot(exp)
 heatmapPlot <- function(exp, assay = "ratio") {
-    if (!isValidExperiment(exp)) {
-        stop("Invalid experiment")
-    }
+    stopifnot(isValidExperiment(exp))
     df <- assay(exp, assay)
     df[is.infinite(df)] <- NA
     if (all(is.na(df))) {
@@ -1043,9 +1039,7 @@ rsdPlot <- function(
         exp, assay = "ratio_corrected",
         qc = "SQC", number = nrow(exp)
 ) {
-    if (!isValidExperiment(exp)) {
-        stop("Invalid experiment")
-    }
+    stopifnot(isValidExperiment(exp))
     exp <- exp[!is.na(rowData(exp)$rsdqcCorrected), ]
 
     exp <- exp[utils::tail(
@@ -1124,9 +1118,7 @@ rsdPlot <- function(
 #' # Create Batch Assay Plot
 #' batchAssayPlot(exp)
 batchAssayPlot <- function(exp, assay = 1, compound = 1) {
-    if (!isValidExperiment(exp)) {
-        stop("Invalid experiment")
-    }
+    stopifnot(isValidExperiment(exp))
     exp <- exp[compound, ]
 
     m <- assay(exp, assay)

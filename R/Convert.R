@@ -215,10 +215,9 @@ buildExperiment <- function(
     colnames(df) <- tolower(colnames(df))
 
     if (!"type" %in% colnames(df)) df$type <- "SAMPLE"
+    stopifnot(isValidDataframe(df))
 
     df$type <- toupper(df$type)
-
-    if(!isValidDataframe(df)) stop("Invalid dataframe")
 
     if (!qc %in% df$type) {
         message(sprintf("QC '%s' not found, default to type 'SAMPLE'", qc))
