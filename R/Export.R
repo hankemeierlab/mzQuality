@@ -182,7 +182,7 @@ exportTables <- function(exp, folder) {
 #' @noRd
 .getAliquotSummary <- function(exp){
     df <- colData(exp)
-    df <- df[!colnames(df) %in% pkg.env$colDataExclude]
+    df <- df[, colnames(df) != "color", drop = FALSE]
 
     aliquotSummary <- cleanDataframe(df)
 

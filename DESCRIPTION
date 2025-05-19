@@ -1,18 +1,20 @@
 Package: mzQuality
-Title: A tool for quality monitoring and reporting of targeted mass spectrometry measurements
+Title: Tool For Quality Monitoring And Reporting Of Mass Spectrometry Measurements
 Version: 0.99.1
 Date: 2025-01-24
 Authors@R: c(
         person("Pascal", "Maas", email = "p.maas@lacdr.leidenuniv.nl", role = c("aut", "cre"), comment = c(ORCID = "0000-0001-9379-6041")),
         person("Alida", "Kindt", email = "a.s.d.kindt@lacdr.leidenuniv.nl", role = "aut", comment = c(ORCID = "0000-0001-6551-6030")),
-        person("Agnieszka", "Wegrzyn", email = "", role = "aut", comment = c(ORCID = "0000-0003-4872-8626")),
+        person("Agnieszka", "Wegrzyn", email = "a.b.wegrzyn@gmail.com", role = "aut", comment = c(ORCID = "0000-0003-4872-8626")),
         person("Marielle", "van der Peet", email = "m.p.van.der.peet@lacdr.leidenuniv.nl", role = "ctb", comment = c(ORCID = "0000-0001-8155-1485")),
         person("Lieke", "Lamont", email = "l.lamont@lacdr.leidenuniv.nl", role = "ctb", comment = c(ORCID = "0000-0002-2779-124X")),
-        person("Recon4IMD", role = "fnd"),
-        person("NGID", role = "fnd"),
-        person("EXPOSOME-NL", role = "fnd")
+        person("Recon4IMD, Horizon Europe", role = "fnd", comment = c(GRANT = "101080997")),
+        person("SKINERGY, NWO", role = "fnd", comment = c(GRANT = "1389.20.182")),
+        person("X-Omics, NWO", role = "fnd", comment = c(GRANT = "184.034.019")),
+        person("EXPOSOME-SCAN, NWO", role = "fnd", comment = c(GRANT = "175.2019.032")),
+        person("EXPOSOME-NL, NWO", role = "fnd", comment = c(GRANT = "024.004.017"))
     )
-Description: mzQuality is an R package for monitoring technical variation in mass spectrometry measurements. It provides various metrics by utilizing pooled quality control samples, blank samples and calibration lines. mzQuality uses Bioconductors' SummarizedExperiment to facilitate implementation with existing workflows. It is fledged with an Rshiny application to support interactive assessment of measurements.
+Description: mzQuality is an R package for monitoring variation in mass spectrometry measurements. It provides various metrics by utilizing pooled quality control samples, blank samples and calibration lines. mzQuality uses Bioconductors' SummarizedExperiment to facilitate implementation with existing workflows.
 biocViews: Software, MassSpectrometry, BatchEffect, QualityControl, Metabolomics 
 Depends:
     dplyr,
@@ -43,5 +45,5 @@ VignetteBuilder:
 RoxygenNote: 7.3.2
 LazyData: false
 BugReports: https://github.com/hankemeierlab/mzQuality/issues
-URL: https://github.com/hankemeierlab/mzQuality
+URL: https://github.com/hankemeierlab/mzQuality, https://hankemeierlab.github.io/mzQuality/Data_Input.html
 License: GPL (>= 3)

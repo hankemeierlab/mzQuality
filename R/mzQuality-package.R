@@ -1,10 +1,9 @@
 #' @title mzQuality Package
-#' @description This is an R package for monitoring technical variation in mass
+#' @description This is an R package for monitoring variation in mass
 #' spectrometry measurements. It provides various metrics by utilizing pooled
 #' quality control samples, blank samples and calibration lines. mzQuality uses
 #' Bioconductors' SummarizedExperiment to facilitate implementation with
-#' existing workflows. It is fledged with an Rshiny application to support
-#' interactive assessment of measurements.
+#' existing workflows.
 #' @keywords iternal, Software, MassSpectrometry, BatchEffect,
 #' QualityControl, Metabolomics
 "_PACKAGE"
@@ -18,10 +17,6 @@ pkg.env$rowDataExclude <- c(
     "linearRanges",
     "calRatios",
     "compound"
-)
-
-pkg.env$colDataExclude <- c(
-    "color"
 )
 
 pkg.env$assayExclude <- c(

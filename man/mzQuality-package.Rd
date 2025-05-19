@@ -6,17 +6,17 @@
 \alias{mzQuality-package}
 \title{mzQuality Package}
 \description{
-This is an R package for monitoring technical variation in mass
+This is an R package for monitoring variation in mass
 spectrometry measurements. It provides various metrics by utilizing pooled
 quality control samples, blank samples and calibration lines. mzQuality uses
 Bioconductors' SummarizedExperiment to facilitate implementation with
-existing workflows. It is fledged with an Rshiny application to support
-interactive assessment of measurements.
+existing workflows.
 }
 \seealso{
 Useful links:
 \itemize{
   \item \url{https://github.com/hankemeierlab/mzQuality}
+  \item \url{https://hankemeierlab.github.io/mzQuality/Data_Input.html}
   \item Report bugs at \url{https://github.com/hankemeierlab/mzQuality/issues}
 }
 
@@ -27,16 +27,18 @@ Useful links:
 Authors:
 \itemize{
   \item Alida Kindt \email{a.s.d.kindt@lacdr.leidenuniv.nl} (\href{https://orcid.org/0000-0001-6551-6030}{ORCID})
-  \item Agnieszka Wegrzyn (\href{https://orcid.org/0000-0003-4872-8626}{ORCID})
+  \item Agnieszka Wegrzyn \email{a.b.wegrzyn@gmail.com} (\href{https://orcid.org/0000-0003-4872-8626}{ORCID})
 }
 
 Other contributors:
 \itemize{
   \item Marielle van der Peet \email{m.p.van.der.peet@lacdr.leidenuniv.nl} (\href{https://orcid.org/0000-0001-8155-1485}{ORCID}) [contributor]
   \item Lieke Lamont \email{l.lamont@lacdr.leidenuniv.nl} (\href{https://orcid.org/0000-0002-2779-124X}{ORCID}) [contributor]
-  \item Recon4IMD [funder]
-  \item NGID [funder]
-  \item EXPOSOME-NL [funder]
+  \item Recon4IMD, Horizon Europe (101080997) [funder]
+  \item SKINERGY, NWO (1389.20.182) [funder]
+  \item X-Omics, NWO (184.034.019) [funder]
+  \item EXPOSOME-SCAN, NWO (175.2019.032) [funder]
+  \item EXPOSOME-NL, NWO (024.004.017) [funder]
 }
 
 }
