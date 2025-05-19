@@ -9,9 +9,11 @@ various plots for inspecting, and generating reports for further processing.
 See our [preprint](https://www.biorxiv.org/content/10.1101/2025.01.22.633547v1) 
 for more information.
 
-This R package forms the backbone of our Shiny dashboard application _mzQualityDashboard_,
-which is recommended for interactive use. To install and use the dashboard, see 
-the [mzQualityDashboard repository](https://github.com/hankemeierlab/mzQualityDashboard).
+This R package forms the backbone of our interactive Shiny dashboard application 
+_mzQualityDashboard_, which is recommended for interactive use. The dashboard
+is also (strongly) recommended if you are a new R user. To install and use 
+the dashboard, see the [mzQualityDashboard repository](https://github.com/hankemeierlab/mzQualityDashboard)
+for instructions on how to proceed.
 
 # Installing mzQuality
 
