@@ -10,10 +10,8 @@
 
 pkg.env <- new.env()
 pkg.env$rowDataExclude <- c(
-    "calModel",
     "concentrationR2",
     "studentizedResiduals",
-    "concentrationOutliers",
     "linearRanges",
     "calRatios",
     "compound"
