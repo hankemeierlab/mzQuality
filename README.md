@@ -58,7 +58,7 @@ exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
 To use your own data, either a SummarizedExperiment or a 
 tab-delimited text file can be used. See the vignette [Data input](https://hankemeierlab.github.io/mzQuality/Data_Input.html) 
 for an explanation for the format and mandatory columns to be present. An 
-example tab-delimited file can be seen [here](https://github.com/hankemeierlab/mzQuality/blob/9ca02857d88eefdb1ea4ef904655fc2f5b7b8526/inst/example.tsv)
+example tab-delimited file can be seen [here](https://github.com/hankemeierlab/mzQuality/blob/9ca02857d88eefdb1ea4ef904655fc2f5b7b8526/inst/example.tsv).
 
 Once your files are ready, you can use the `readData` function to read in your 
 data. It will check if all mandatory columns are present and if the data is in 
@@ -89,13 +89,14 @@ exp <- doAnalysis(exp = exp, doAll = TRUE)
 
 The `doAnalysis` function will perform the following steps:
 
-1.  Calculate the ratio between the compounds and assigned internal standards
+1.  Calculate the ratio between the compounds and assigned internal standards,
 2.  Perform batch correction using the pooled study quality control samples (SQC),
 3.  Calculate the percentage of background signal compared to the study samples,
-4.  Calculate the matrix effect, calculate the ratio of the QC sample,
-5.  Calculate the presence of the compounds in the samples,
-6.  Calculate the median area of the compounds in the samples,
-7.  Suggest Internal Standards based on the calculated values.
+4.  Calculate the matrix effect, 
+5.  Calculate the ratio of the QC sample,
+6.  Calculate the presence of the compounds in the samples,
+7.  Calculate the median area of the compounds in the samples,
+8.  Suggest Internal Standards based on the calculated values.
 
 If known concentrations for calibration lines have been supplied, the 
 `doAnalysis` function will also calculate the concentrations and the
