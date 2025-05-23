@@ -10,7 +10,7 @@ concentrations <- read.delim(concentrationsFile)
 file <- system.file("extdata/example.tsv", package = "mzQuality")
 concentrationsFile <- system.file("extdata/concentrations.tsv", package = "mzQuality")
 
-exp <- doAnalysis(exp, doAll = TRUE, removeOutliers = TRUE)
+exp <- doAnalysis(exp, removeOutliers = TRUE)
 
 
 

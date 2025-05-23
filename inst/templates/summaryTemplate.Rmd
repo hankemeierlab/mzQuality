@@ -32,7 +32,7 @@ library(mzQuality)
 if (!isValidExperiment(params$exp)) {
   # use a default example instead
   exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
-  exp <- doAnalysis(exp, doAll = TRUE)
+  exp <- doAnalysis(exp)
   
   assays <- c("ratio", "ratio_corrected")
   plots <- c("Aliquot", "PCA", "QC", "Heatmap", "RSDQC")

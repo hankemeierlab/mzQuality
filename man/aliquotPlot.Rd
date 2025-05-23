@@ -44,7 +44,7 @@ This function generates a boxplot for aliquots using ggplot2. It
 exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 
 # Do Analysis
-exp <- doAnalysis(exp, doAll = TRUE)
+exp <- doAnalysis(exp)
 
 # Create an aliquot plot
 aliquotPlot(

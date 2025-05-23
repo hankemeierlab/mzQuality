@@ -30,7 +30,7 @@ This function creates a folder named "Export" in the specified
 exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 
 # Perform analysis
-exp <- doAnalysis(exp, doAll = TRUE)
+exp <- doAnalysis(exp)
 
 # Export tables in the experiment
 exportTables(exp[1:10, 1:10], folder = tempdir())

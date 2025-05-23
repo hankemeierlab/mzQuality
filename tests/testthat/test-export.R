@@ -9,7 +9,7 @@ concentrationsFile <- system.file("extdata/concentrations.tsv", package = "mzQua
 exp <- readRDS(dataFile)
 concentrations <- read.delim(concentrationsFile)
 
-exp <- doAnalysis(exp, doAll = TRUE, removeOutliers = TRUE)
+exp <- doAnalysis(exp, removeOutliers = TRUE)
 
 test_that("A combined file can be converted", {
     combined <- readData(combinedFile)

@@ -56,7 +56,7 @@ This function generates a violin plot using ggplot2. It allows
 exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 
 # Do Analysis
-exp <- doAnalysis(exp, doAll = TRUE)
+exp <- doAnalysis(exp)
 
 # Create a compound plot for the first compound
 violinPlot(

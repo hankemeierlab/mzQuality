@@ -1,7 +1,7 @@
 library(testthat)
 # Read the example dataset
 exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
-exp <- doAnalysis(exp, doAll = TRUE, removeOutliers = TRUE)
+exp <- doAnalysis(exp, removeOutliers = TRUE)
 
 test_that("filterISTD works", {
     # Should be no internal standards left in the compounds

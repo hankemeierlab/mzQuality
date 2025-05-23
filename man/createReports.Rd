@@ -69,7 +69,7 @@ This function automates the process of creating reports for a
 \examples{
 exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 
-exp <- doAnalysis(exp, doAll = TRUE, removeOutliers = TRUE)
+exp <- doAnalysis(exp, removeOutliers = TRUE)
 
 createReports(
     folder = tempdir(),

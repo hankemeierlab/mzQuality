@@ -24,7 +24,7 @@
 #' exp <- addConcentrations(exp, concentrations)
 #'
 #' # Perform analysis
-#' exp <- doAnalysis(exp, doAll = TRUE)
+#' exp <- doAnalysis(exp)
 #'
 #' # Model concentrations
 #' exp <- calculateConcentrations(exp)
@@ -88,7 +88,7 @@ carryOverEffect <- function(exp, type = "PROC", assay = "concentration") {
 #' exp <- addConcentrations(exp, concentrations)
 #'
 #' # Perform analysis
-#' exp <- doAnalysis(exp, doAll = TRUE)
+#' exp <- doAnalysis(exp)
 #'
 #' # Model concentrations
 #' exp <- calculateConcentrations(exp)

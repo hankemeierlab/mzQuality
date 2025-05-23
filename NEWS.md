@@ -4,6 +4,9 @@
 - Changed extensions of .txt files to .tsv to reflect the tab-separated format.
 - Moved the files in inst/rmd/* to inst/templates/* and renamed them to
   reflect their purpose.
+- Added `mzQuality` vignette, showcasing a typical mzQuality workflow.
+- Removed `doAll` and `aliquots` arguments from `doAnalysis` as they were
+  no longer used
 
 # mzQuality 0.99.1
 

@@ -6,8 +6,6 @@
 \usage{
 doAnalysis(
   exp,
-  aliquots = colnames(exp),
-  doAll = FALSE,
   removeBadCompounds = FALSE,
   removeOutliers = FALSE,
   useWithinBatch = FALSE,
@@ -20,12 +18,6 @@ doAnalysis(
 }
 \arguments{
 \item{exp}{A SummarizedExperiment object containing the experimental data.}
-
-\item{aliquots}{A character vector specifying the aliquots to include in
-the analysis. Defaults to all aliquots.}
-
-\item{doAll}{Logical, whether to force recalculation of all metrics.
-Defaults to `FALSE`.}
 
 \item{removeBadCompounds}{Logical, whether to remove compounds that do not
 meet usability thresholds. Defaults to `FALSE`.}
@@ -73,5 +65,5 @@ This function validates the input SummarizedExperiment object and
 exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 
 # Do Analysis
-exp <- doAnalysis(exp, doAll = TRUE)
+exp <- doAnalysis(exp)
 }

@@ -22,7 +22,7 @@ correctly and thus can be used as an alternative input format for mzQuality.
 ## example.tsv
 This file contains a small subset of the data set and is meant for 
 instructing the user on how to use the recommended format as input 
-for mzQuality. The format is explained in the `Data-Input`
+for mzQuality. The format is explained in the `Data_Input`
 vignette. 
 
 ## data.RDS
@@ -39,5 +39,5 @@ capabilities of mzQuality for a multi-batch data set.
 The concentrations.tsv file is a tab-delimited file containing a 
 template for an alternative method for supplying known concentrations
 of spiked compounds. This can be useful when the supplied data file
-is in sciex-os text format. The format is explained in the `Data-Input`
+is in sciex-os text format. The format is explained in the `Data_Input`
 vignette. 

@@ -2,7 +2,7 @@ library(testthat)
 suppressPackageStartupMessages(library(mzQuality))
 # Read the example dataset
 exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
-exp <- doAnalysis(exp, doAll = TRUE, removeOutliers = TRUE)
+exp <- doAnalysis(exp, removeOutliers = TRUE)
 
 test_that("Outliers are detected correctly", {
     # For each assay, there should be two outliers
@@ -43,7 +43,7 @@ test_that("ratioQcSample", {
 })
 
 test_that("doAnalysis is exectued properly", {
-    x <- doAnalysis(exp, doAll = TRUE, useWithinBatch = TRUE, removeOutliers = TRUE)
+    x <- doAnalysis(exp, useWithinBatch = TRUE, removeOutliers = TRUE)
     expect_true(is(x, "SummarizedExperiment"))
     expect_true(isValidExperiment(x))
 })

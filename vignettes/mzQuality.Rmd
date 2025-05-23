@@ -1,0 +1,234 @@
+---
+title: "mzQuality"
+author:
+- name: Pascal Maas
+  affiliation: Metabolomics Analytical Centre, Leiden, The Netherlands
+date: "`r Sys.Date()`"
+output: html_document
+package: mzQuality
+vignette: >
+    %\VignetteIndexEntry{mzQuality}
+    %\VignetteEncoding{UTF-8}
+    %\VignetteEngine{knitr::rmarkdown}
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+    collapse = TRUE,
+    comment = "#>"
+)
+library(mzQuality)
+```
+
+# Introduction
+
+mzQuality is a R package designed to facilitate the analysis of targeted
+mass spectrometry data after peak integration. It provides a
+comprehensive set of tools for data import, quality control, and
+statistical analysis.
+
+## Why mzQuality
+
+Quality Control is an important step in the analysis of mass
+spectrometry data. Existing tools like `phenomis` and `qmtools` are
+designed with access to a phenotype in mind. However, lab technicians
+and researchers often do not have access to this information. mzQuality
+was developed to perform outlier detection, batch correction and other
+quality control steps without the need for defined phenotypes.
+
+With lab technicians and researchers in mind, mzQuality is designed to
+be a user-friendly R package that can be used by anyone with basic
+knowledge of R. As such, it features import of data from a variety of
+formats, including a generalized tab-delimited format and a Sciex OS
+export.
+
+# Using mzQuality
+
+We'll start by loading mzQuality and its functions
+
+```{r library, message = FALSE}
+library(mzQuality)
+```
+
+## Reading Data
+To showcase the capabilities of mzQuality, various example files have been 
+added to the package. Here, we will use a tab-delimited file as an example. The
+file contains the following columns:
+
+```{r reading}
+# Example data
+
+file <- system.file("extdata/example.tsv", package = "mzQuality")
+df <- readData(file)
+
+# Show the first 10 lines
+knitr::kable(head(df, 10))
+```
+
+Internally, mzQuality uses Bioconductors' _SummarizedExperiment_ object to
+store the data. The function `buildExperiment` allows you to create a
+_SummarizedExperiment_ object from a data frame by specifying the following
+columns:
+
+- `rowIndex`: The column containing the compound names
+- `colIndex`: The column containing the sample names
+- `primaryAssay`: The column containing the primary assay data
+- `secondaryAssay`: The column containing the secondary assay data
+- `typeColumn`: The column containing the sample types
+- `qc`: The column containing the QC sample types
+- `secondaryIndex`: The column containing the secondary index 
+(e.g. Internal Standard)
+
+Using the provided `rowIndex` and `colIndex`, the `buildExperiment` function
+is able to deduce which values should belong to the `rowData` and `colData`
+slots of the _SummarizedExperiment_ object. The `primaryAssay` and 
+`secondaryAssay`
+columns are used as the compound area and Internal Standard area, respectively.
+Note that if the `secondaryAssay` column is not provided, its value will be
+set to `1`, effectively negating the Internal Standard. This is useful for
+when you data set does not contain Internal Standards.
+
+The `typeColumn` is used to determine the sample types, which are used to 
+calculate metrics and determine outliers. The `qc` column is used to determine 
+which samples are Quality Control samples. The `secondaryIndex` column is used
+to determine the Internal Standard for each compound. The `buildExperiment` 
+function will automatically calculate the compound / Internal Standard ratio 
+for each sample and store it in the `ratio` assay.
+
+```{r experiment}
+exp <- buildExperiment(
+    df = df, 
+    rowIndex = "compound", 
+    colIndex = "aliquot", 
+    primaryAssay = "area",
+    secondaryAssay = "area_is",
+    typeColumn = "type",
+    qc = "SQC",
+    secondaryIndex = "compound_is"
+)
+```
+
+## Performing analyses
+
+The package tests samples for outliers, specifically for (Pooled)
+Quality Control (QC) samples using their Compound / Internal Standard
+ratio. Furthermore, Study Samples are tested for mis-injections using
+their Internal Standard areas. Doing so, mzQuality recommends which
+samples are suitable for reporting & further analysis.
+
+```{r analysis, echo = FALSE, message = FALSE}
+exp <- doAnalysis(
+    exp = exp, 
+    removeOutliers = TRUE, 
+    useWithinBatch = TRUE, 
+    qcPercentage = 80,
+    backgroundPercentage = 40,
+    nonReportableRSD = 30
+)
+```
+
+## Inspecting Results
+Once an initial analysis has been performed, mzQuality provides various 
+functions for inspecting the results. Here, the following plots are provided:
+
+- `aliquotPlot`: A plot showing the Compound / Internal Standard ratio
+    for each sample, colored by batch and type.
+- `compoundPlot`: A plot showing the Compound / Internal Standard ratio
+    for each compound, colored by batch and type.
+- `pcaPlot`: A PCA plot showing the Compound / Internal Standard ratio
+    for each sample, colored by batch and type.
+- `qcPlot`: A violin plot showing the distribution of the Compound /
+    Internal Standard ratio for each sample, colored by batch and type.
+
+### Aliquot Plot
+
+```{r aliquotplot, echo = FALSE, message = FALSE}
+aliquotPlot(
+    exp = exp,
+    assay = "ratio",
+    batches = exp$batch,
+    types = c("SQC", "SAMPLE"),
+    logTransform = FALSE
+)
+```
+
+### Compound Plot
+
+```{r compoundplot, echo = FALSE, message = FALSE}
+compoundPlot(
+    exp = exp,
+    assay = "ratio",
+    batches = exp$batch,
+    types = c("SQC", "SAMPLE"),
+    logTransform = FALSE
+)
+```
+
+### PCA Plot
+The Principal Component Analysis (PCA) plot can be used to inspect the
+variation within- and between batches. By default only the first and second
+Principal Component are shown, but this can be changed by providing the
+`pc1` and `pc2` arguments. 
+
+In the plot, the samples are colored by their batch and type. The Study Samples
+(SAMPLE) are colored by their batch, while the other samples are colored by
+their type. This enables inspection of batch effects before and after 
+correction. Ideally, the Quality Control samples used for batch correction
+should be centered as much as possible, and forming a tight cluster. 
+
+The batches of the Study Samples should ideally overlap en encompass the 
+aformentioned Quality Control samples. To aid in inspection, a 95% confidence
+interval can be 
+
+
+```{r pcaplot, echo = FALSE, message = FALSE}
+pcaPlot(
+    exp = exp,
+    assay = "area",
+    batches = exp$batch,
+    types = c("SQC", "SAMPLE"),
+    logTransform = FALSE
+)
+```
+
+### QC Distribution Plot
+
+```{r qcplot, echo = FALSE, message = FALSE}
+violinPlot(
+    exp = exp,
+    assay = "area",
+    batches = exp$batch,
+    types = c("SQC", "SAMPLE"),
+    logTransform = FALSE
+)
+```
+
+## Generating exports
+
+```{r export, echo = FALSE, message = FALSE}
+# create a temporary folder
+output <- tempdir()
+
+createReports(
+    folder = output,
+    project = "myProject",
+    exp = exp, 
+    makeSummaryReport = TRUE, 
+    makeCompoundReport = TRUE, 
+    backgroundPercent = 40, 
+    cautionRSD = 15, 
+    nonReportableRSD = 30, 
+    assays = c("area")
+)
+
+
+```
+
+# Session info
+
+```{r session-info, echo = FALSE}
+sessionInfo()
+```

@@ -38,7 +38,7 @@ concentrations <- read.delim(system.file(
 exp <- addConcentrations(exp, concentrations)
 
 # Perform analysis
-exp <- doAnalysis(exp, doAll = TRUE)
+exp <- doAnalysis(exp)
 
 # Model concentrations
 exp <- calculateConcentrations(exp)

@@ -96,7 +96,7 @@
 #' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 #'
 #' # Do Analysis
-#' exp <- doAnalysis(exp, doAll = TRUE)
+#' exp <- doAnalysis(exp)
 #'
 #' # Create a compound plot for the first compound
 #' p <- compoundPlot(
@@ -224,7 +224,7 @@ facetPlot <- function(
 #' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 #'
 #' # Do Analysis
-#' exp <- doAnalysis(exp, doAll = TRUE)
+#' exp <- doAnalysis(exp)
 #'
 #' # Create a compound plot for the first compound
 #' compoundPlot(
@@ -241,6 +241,7 @@ compoundPlot <- function(
         trendTypes = metadata(exp)$QC,
         addInternalStandards = FALSE, addText = FALSE
 ) {
+
     df <- .preparePlotData(
         exp = exp[compound, ],
         assay = assay,
@@ -264,13 +265,10 @@ compoundPlot <- function(
         df <- rbind(df, df_is)
     }
 
+    trendMethod <- ifelse(withinTrend, "batch", "type")
+    df$group <- paste0(df$type, df[[trendMethod]], sep = "_")
+
     df <- df %>%
-        mutate(group = paste(
-            .data$type,
-            .data[[ifelse(withinTrend, "batch", "type")]],
-            ifelse(grepl("CAL", .data$type), .data$injection, 1),
-            sep = "_"
-        ))  %>%
         arrange(.data$datetime) %>%
         mutate(aliquot = reorder(.data$aliquot, .data$injection_time))
 
@@ -317,7 +315,6 @@ scatterPlot <- function(
         )
     }
 
-
     idx <- !duplicated(df$type)
     colors <- setNames(df$color[idx], df$type[idx])
 
@@ -334,12 +331,13 @@ scatterPlot <- function(
         theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7))
 
     trendData <- filter(df, .data$type %in% trendTypes)
-    if (nrow(trendData) > 0) {
+    if (nrow(trendData) > 1) {
         p <- p +
             geom_smooth(
-                formula = "y ~ x", inherit.aes = TRUE, method = lm,
+                formula = "y ~ x", inherit.aes = FALSE, method = lm,
                 show.legend = FALSE, na.rm = TRUE,
-                aes(group = .data$group, color = .data$type), level = .95,
+                aes(x = .data$aliquot, y = .data[[assay]], group = .data$group,
+                    color = .data$type, fill = .data$type), level = .95,
                 data = trendData
             ) +
             scale_color_manual(values = colors)
@@ -377,7 +375,7 @@ scatterPlot <- function(
 #' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 #'
 #' # Do Analysis
-#' exp <- doAnalysis(exp, doAll = TRUE)
+#' exp <- doAnalysis(exp)
 #'
 #' # Create an aliquot plot
 #' aliquotPlot(
@@ -401,7 +399,7 @@ aliquotPlot <- function(
     mapping <- aes(
         x = reorder(.data$aliquot, .data$injection_time),
         y = .data[[assay]],
-        text = .data$sample,
+        text = .data$aliquot,
         fill = .data$type
     )
 
@@ -440,8 +438,15 @@ aliquotPlot <- function(
 .addPlotConfidenceInterval <- function(plot, df, assay){
     medians <- df %>%
         group_by(.data$aliquot) %>%
+        filter(n() < 2)
+
+    if (nrow(medians) < 2) return(plot)
+
+    medians <- medians %>%
         summarise(median = median(.data[[assay]], na.rm = TRUE)) %>%
         pull(.data$median)
+
+    if (length(medians) < 2) return(plot)
 
     m <- mean(medians, na.rm = TRUE)
     sd <- sd(medians, na.rm = TRUE)
@@ -495,7 +500,7 @@ aliquotPlot <- function(
 #' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 #'
 #' # Do Analysis
-#' exp <- doAnalysis(exp, doAll = TRUE)
+#' exp <- doAnalysis(exp)
 #'
 #' # Create a compound plot for the first compound
 #' violinPlot(
@@ -511,6 +516,7 @@ violinPlot <- function(
         logTransform = FALSE, addMedian = TRUE,
         addConfidenceInterval = TRUE, withinTrend = FALSE
 ) {
+
     df <- .preparePlotData(
         exp, assay, batches, types = types, logTransform = logTransform
     )
@@ -535,6 +541,7 @@ violinPlot <- function(
         theme_minimal() +
         theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
         xlab("Aliquot")
+
 
     if (!logTransform) {
         p <- p + scale_y_log10()
@@ -705,7 +712,7 @@ violinPlot <- function(
 #' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 #'
 #' # Do Analysis
-#' exp <- doAnalysis(exp, doAll = TRUE)
+#' exp <- doAnalysis(exp)
 #'
 #' # Create a compound plot for the first compound
 #' pcaPlot(
@@ -889,7 +896,7 @@ pcaPlot <- function(
 #' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 #'
 #' # Do Analysis
-#' exp <- doAnalysis(exp, doAll = TRUE)
+#' exp <- doAnalysis(exp)
 #'
 #' # Create a compound plot for the first compound
 #' concentrationPlot(

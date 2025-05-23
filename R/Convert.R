@@ -134,6 +134,7 @@ readData <- function(files, vendor = NA, regex = NULL) {
     reserved <- c(colnames(rowData), colnames(colData), rowIndex, colIndex)
     assayNames <- setdiff(colnames(df), reserved)
 
+
     if (hasMissing) {
         df <- .fillMissingCombinations(
             df, rowIndex, colIndex, rowData, colData, assayNames
@@ -257,7 +258,12 @@ buildExperiment <- function(
     colData <- .buildMetadataWithIndex(df, colIndex)
     assays <- .buildAssayList(df, rowData, colData, rowIndex, colIndex)
 
-    hasIS <- secondaryAssay %in% names(assays) & primaryAssay != secondaryAssay
+    assayNames <- names(assays)
+    id <- which(assayNames == primaryAssay)
+    assays <- c(assays[id], assays[-id])
+    names(assays) <- c(primaryAssay, assayNames[-id])
+
+    hasIS <- secondaryAssay %in% assayNames & primaryAssay != secondaryAssay
     meta <- list(
         QC = qc,
         primary = primaryAssay,
@@ -269,7 +275,16 @@ buildExperiment <- function(
     exp <- SummarizedExperiment(
         assays = assays, rowData = rowData, colData = colData,
         metadata = meta
-    ) %>%
+    )
+
+
+
+
+
+
+
+
+    exp <- exp %>%
         .addConcentrationMetadata() %>%
         .addInitialAnalysis()
 

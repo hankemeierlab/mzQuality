@@ -44,7 +44,7 @@ The function computes concentrations for each batch in the
 # Load example dataset
 exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 
-exp <- doAnalysis(exp, doAll = TRUE, removeOutliers = TRUE)
+exp <- doAnalysis(exp, removeOutliers = TRUE)
 
 # Calculate concentrations
 exp <- calculateConcentrations(exp)

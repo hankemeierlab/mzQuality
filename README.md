@@ -86,7 +86,7 @@ can be applied. For convenience, a wrapper function has been designed that
 performs all analyses included in this package:
 
 ``` r
-exp <- doAnalysis(exp = exp, doAll = TRUE)
+exp <- doAnalysis(exp = exp)
 ```
 
 The `doAnalysis` function will perform the following steps:

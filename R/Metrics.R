@@ -260,10 +260,6 @@ medianSampleArea <- function(
 #'     applies additional corrections. The function can optionally filter out
 #'     bad compounds and outliers.
 #' @param exp A SummarizedExperiment object containing the experimental data.
-#' @param aliquots A character vector specifying the aliquots to include in
-#'     the analysis. Defaults to all aliquots.
-#' @param doAll Logical, whether to force recalculation of all metrics.
-#'     Defaults to `FALSE`.
 #' @param removeBadCompounds Logical, whether to remove compounds that do not
 #'     meet usability thresholds. Defaults to `FALSE`.
 #' @param removeOutliers Logical, whether to remove outliers during batch
@@ -287,36 +283,31 @@ medianSampleArea <- function(
 #' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 #'
 #' # Do Analysis
-#' exp <- doAnalysis(exp, doAll = TRUE)
+#' exp <- doAnalysis(exp)
 #' @export
 doAnalysis <- function(
-        exp, aliquots = colnames(exp), doAll = FALSE,
-        removeBadCompounds = FALSE, removeOutliers = FALSE,
+        exp, removeBadCompounds = FALSE, removeOutliers = FALSE,
         useWithinBatch = FALSE, effectNaAsZero = FALSE,
         concentrationType = "ACAL", backgroundPercentage = 40,
         qcPercentage = 80, nonReportableRSD = 30
 ) {
     stopifnot(isValidExperiment(exp))
-    doAliquots <- length(aliquots) != ncol(exp)
-    exp <- exp[, aliquots]
 
-    if (doAliquots | doAll | !"rsdqc" %in% colnames(rowData(exp))) {
-        exp <- calculateRatio(exp) %>%
-            addBatchCorrection(
-                removeOutliers = removeOutliers,
-                useWithinBatch = useWithinBatch,
-                calculateRSDQC = TRUE
-            ) %>%
-            backgroundSignals(NaAsZero = effectNaAsZero) %>%
-            matrixEffect() %>%
-            ratioQcSample() %>%
-            typePresence() %>%
-            medianSampleArea() %>%
-            getSuggestedInternalStandards(
-                removeOutliers = removeOutliers,
-                useWithinBatch = useWithinBatch
-            )
-    }
+    exp <- calculateRatio(exp) %>%
+        addBatchCorrection(
+            removeOutliers = removeOutliers,
+            useWithinBatch = useWithinBatch,
+            calculateRSDQC = TRUE
+        ) %>%
+        backgroundSignals(NaAsZero = effectNaAsZero) %>%
+        matrixEffect() %>%
+        ratioQcSample() %>%
+        typePresence() %>%
+        medianSampleArea() %>%
+        getSuggestedInternalStandards(
+            removeOutliers = removeOutliers,
+            useWithinBatch = useWithinBatch
+        )
 
     if ("concentration" %in% assayNames(exp)) {
         assayName <- sprintf("%s_concentration", metadata(exp)$concentration)
@@ -360,7 +351,7 @@ doAnalysis <- function(
 #' @examples
 #' # Example usage:
 #' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
-#' exp <- doAnalysis(exp, doAll = TRUE, removeOutliers = TRUE)
+#' exp <- doAnalysis(exp, removeOutliers = TRUE)
 #' exp <- getSuggestedInternalStandards(exp, removeOutliers = TRUE)
 getSuggestedInternalStandards <- function(
         exp, secondaryAssay = metadata(exp)$secondary,
@@ -387,23 +378,50 @@ getSuggestedInternalStandards <- function(
 
     rowData(testExp)$compound_is <- as.character(df$compound_is)
 
-    testExp <- calculateRatio(testExp) %>%
+    metrics <- testExp %>%
+        calculateRatio() %>%
         addBatchCorrection(
             removeOutliers = removeOutliers,
             useWithinBatch = useWithinBatch,
             calculateRSDQC = TRUE
         )
 
-    metrics <- rowData(testExp) %>%
-        as.data.frame() %>%
+    exp <- .addSuggestedMetrics(exp, rowData(metrics))
+
+    return(exp)
+}
+
+#' @title Add suggested metrics to the experiment
+#' @description Adds suggested internal standards and their corresponding
+#' RSDQC values to the `rowData` of the provided SummarizedExperiment
+#' @param exp A SummarizedExperiment object containing the experimental data.
+#' @param metrics A data frame containing the suggested internal standards and
+#' their corresponding RSDQC values.
+#' @importFrom dplyr group_by summarise mutate %>%
+#' @importFrom SummarizedExperiment rowData<-
+#' @noRd
+.addSuggestedMetrics <- function(exp, metrics){
+    if (nrow(metrics) == 0) {
+        return(exp)
+    }
+
+    metrics <- as.data.frame(metrics) %>%
         group_by(.data$compound) %>%
+        mutate(hasRSDQC = any(!is.na(.data$rsdqcCorrected))) %>%
         summarise(
-            suggestedRSDQC = min(.data$rsdqcCorrected, na.rm = TRUE),
-            suggestedIS = .data$compound_is[which.min(.data$rsdqcCorrected)]
+            suggestedRSDQC = ifelse(
+                .data$hasRSDQC[1],
+                min(.data$rsdqcCorrected, na.rm = TRUE),
+                NA
+            ),
+            suggestedIS = ifelse(
+                .data$hasRSDQC[1],
+                .data$compound_is[which.min(.data$rsdqcCorrected)],
+                NA
+            )
         )
 
     rowData(exp)$suggestedIS <- metrics$suggestedIS
     rowData(exp)$suggestedRSDQC <- metrics$suggestedRSDQC
-
     return(exp)
 }

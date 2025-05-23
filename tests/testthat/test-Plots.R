@@ -2,7 +2,7 @@ library(testthat)
 suppressPackageStartupMessages(library(mzQuality))
 # Read the example dataset
 exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
-exp <- doAnalysis(exp, doAll = TRUE, useWithinBatch = F)
+exp <- doAnalysis(exp, useWithinBatch = F)
 
 test_that("pca plot can be made", {
     plot <- pcaPlot(exp)

@@ -24,7 +24,7 @@ summaryReport <- function(
         assays = c("ratio", "ratio_corrected")
 ) {
     stopifnot(isValidExperiment(exp))
-    assays <- assays[assays %in% assayNames(exp)]
+    assays <- intersect(assays, assayNames(exp))
 
     .createReport(
         path = file.path(folder, "Plots"),
@@ -55,7 +55,10 @@ compoundReports <- function(
         exp, folder, assays = c("ratio", "ratio_corrected"),
         project = "mzQuality"
 ) {
+    stopifnot(isValidExperiment(exp))
     outputNames <- sprintf("%s.html", make.names(rownames(exp)))
+
+    assays <- intersect(assays, assayNames(exp))
     for (i in seq_len(nrow(exp))) {
         .createReport(
             path = file.path(folder, "Plots", "Compounds"),
@@ -122,14 +125,11 @@ compoundReports <- function(
 #' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 #'
 #' # Perform analysis
-#' exp <- doAnalysis(exp, doAll = TRUE)
+#' exp <- doAnalysis(exp)
 #'
 #' # Export tables in the experiment
 #' exportTables(exp[1:10, 1:10], folder = tempdir())
 exportTables <- function(exp, folder) {
-
-    timeFormat <- format(Sys.time(), "%d-%m-%Y %H.%M.%S")
-    file <- sprintf("mzQualityInput.tsv", timeFormat)
 
     folder <- file.path(folder, "Exports")
     if (!dir.exists(folder)) {
@@ -138,7 +138,7 @@ exportTables <- function(exp, folder) {
 
     write.table(
         x = expToCombined(exp),
-        file = file.path(folder, file),
+        file = file.path(folder, "mzQualityInput.tsv"),
         sep = "\t",
         row.names = TRUE,
         quote = FALSE
@@ -395,7 +395,7 @@ exportTables <- function(exp, folder) {
 #' @examples
 #' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 #'
-#' exp <- doAnalysis(exp, doAll = TRUE, removeOutliers = TRUE)
+#' exp <- doAnalysis(exp, removeOutliers = TRUE)
 #'
 #' createReports(
 #'     folder = tempdir(),
