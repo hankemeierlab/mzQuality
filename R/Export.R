@@ -172,8 +172,8 @@ exportTables <- function(exp, folder) {
 #' @description Creates a summary data frame of aliquot-level metadata from
 #'     the provided experiment object.
 #' @details This function extracts aliquot-level metadata from the
-#'     `colData` of the experiment object, excluding columns specified in
-#'     `pkg.env$colDataExclude`. It adds a column indicating whether each
+#'     `colData` of the experiment object.
+#'     It adds a column indicating whether each
 #'     aliquot is selected based on the presence of outliers and rounds
 #'     numeric columns to three decimal places.
 #' @param exp A SummarizedExperiment object containing the experimental data.

@@ -16,8 +16,3 @@ pkg.env$rowDataExclude <- c(
     "calRatios",
     "compound"
 )
-
-pkg.env$assayExclude <- c(
-    "CALRange",
-    "ACALRange"
-)

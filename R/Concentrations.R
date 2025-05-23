@@ -71,7 +71,6 @@ calculateConcentrationsPerType <- function(exp, type, ...){
 
     concentrationMatrix <- matrices$Predicted
     idx <- is.na(concentrationMatrix)
-    rowData(exp)$hasCalculationConcentrations <- rowSums(idx) != ncol(exp)
     concentrationMatrix[concentrationMatrix < 0] <- NA
 
 
@@ -131,7 +130,6 @@ calculateConcentrations <- function(
     if (!any(calibrationLineTypes %in% exp$type)) {
         return(exp)
     }
-
 
     for (type in calibrationLineTypes) {
         exp <- calculateConcentrationsPerType(

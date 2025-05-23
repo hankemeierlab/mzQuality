@@ -15,6 +15,14 @@ editor_options:
     wrap: 72
 ---
 
+```{=html}
+<style type="text/css">
+div.main-container {
+    max-width: 70vw !important;
+}
+</style>
+```
+
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(
     collapse = TRUE,
@@ -111,6 +119,21 @@ exp <- buildExperiment(
 )
 ```
 
+### Inspecting the Experiment
+
+
+```{r}
+knitr::kable(rowData(exp))
+```
+
+```{r}
+knitr::kable(colData(exp))
+```
+
+```{r}
+assays(exp)
+```
+
 ## Performing analyses
 
 The package tests samples for outliers, specifically for (Pooled)
@@ -142,9 +165,13 @@ functions for inspecting the results. Here, the following plots are provided:
     for each sample, colored by batch and type.
 - `qcPlot`: A violin plot showing the distribution of the Compound /
     Internal Standard ratio for each sample, colored by batch and type.
+    
+The colors used for each sample and/or type can be customized by
+setting the values in `exp$color`.
 
 ### Aliquot Plot
-
+The aliquot plot shows the distribution of the selected assay per 
+aliquot/sample. The boxes are colored per sample type
 ```{r aliquotplot, echo = FALSE, message = FALSE}
 aliquotPlot(
     exp = exp,
@@ -156,6 +183,7 @@ aliquotPlot(
 ```
 
 ### Compound Plot
+
 
 ```{r compoundplot, echo = FALSE, message = FALSE}
 compoundPlot(
@@ -207,6 +235,10 @@ violinPlot(
 ```
 
 ## Generating exports
+mzQuality provides a function to export the results of the analysis. The
+`createReports` function creates a folder containing the results of the 
+analysis. The results are separated by _Plots_ and _Reports_.
+
 
 ```{r export, echo = FALSE, message = FALSE}
 # create a temporary folder
@@ -225,6 +257,13 @@ createReports(
 )
 
 
+if (requireNamespace("fs", quietly = TRUE)) {
+    # List the files in the Project folder
+    fs::dir_tree(file.path(output, "myProject"), recurse = TRUE)
+} else {
+    # List the files in the Project folder 
+    list.files(file.path(output, "myProject"), recursive = TRUE)
+}
 ```
 
 # Session info

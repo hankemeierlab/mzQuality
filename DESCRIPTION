@@ -23,6 +23,7 @@ Depends:
     dplyr,
     SummarizedExperiment
 Imports:
+    DT,
     EnvStats,
     ggplot2,
     heatmaply,
@@ -36,7 +37,7 @@ Imports:
     utils,
     viridis
 Suggests: 
-    DT,
+    fs,
     ggrepel,
     knitr,
     testthat (>= 3.0.0),
@@ -48,5 +49,5 @@ VignetteBuilder:
 RoxygenNote: 7.3.2
 LazyData: false
 BugReports: https://github.com/hankemeierlab/mzQuality/issues
-URL: https://github.com/hankemeierlab/mzQuality, https://hankemeierlab.github.io/mzQuality/Data_Input.html
+URL: https://github.com/hankemeierlab/mzQuality, https://hankemeierlab.github.io/mzQuality/mzQuality.html
 License: GPL (>= 3)

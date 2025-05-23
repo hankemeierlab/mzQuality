@@ -360,9 +360,7 @@ buildExperiment <- function(
 
     exp <- calculateRatio(exp) %>%
         identifyOutliers() %>%
-        identifyMisInjections() %>%
-        addLinearRange(calType = "CAL", saveAssay = "CalRange") %>%
-        addLinearRange(calType = "ACAL", saveAssay = "ACALRange")
+        identifyMisInjections()
 
     return(exp)
 }

@@ -300,7 +300,6 @@ doAnalysis <- function(
             calculateRSDQC = TRUE
         ) %>%
         backgroundSignals(NaAsZero = effectNaAsZero) %>%
-        matrixEffect() %>%
         ratioQcSample() %>%
         typePresence() %>%
         medianSampleArea() %>%
@@ -313,9 +312,7 @@ doAnalysis <- function(
         assayName <- sprintf("%s_concentration", metadata(exp)$concentration)
         exp <- exp %>%
             calculateConcentrations() %>%
-            addBatchCorrection(assay = assayName) %>%
-            carryOverEffect() %>%
-            blankLimits()
+            addBatchCorrection(assay = assayName)
     }
 
     exp <- .calculateMetrics(
