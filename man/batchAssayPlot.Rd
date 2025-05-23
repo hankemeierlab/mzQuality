@@ -21,7 +21,7 @@ Plot an assay per batch with point distribution
 }
 \examples{
 # Read the example dataset
-exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 
 # Create Batch Assay Plot
 batchAssayPlot(exp)

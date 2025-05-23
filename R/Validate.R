@@ -10,7 +10,7 @@
 #' @export
 #' @examples
 #' # Read example dataset
-#' data <- readData(system.file(package = "mzQuality", "example.tsv"))
+#' data <- readData(system.file("extdata/example.tsv", package = "mzQuality"))
 #'
 #' # Validate the dataframe
 #' isValid <- isValidDataframe(data)
@@ -55,7 +55,7 @@ isValidDataframe <- function(dataframe = NULL) {
 #' @export
 #' @examples
 #' # Read example dataset
-#' exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+#' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 #'
 #' # Validate the experiment
 #' isValid <- isValidExperiment(exp)
@@ -102,7 +102,7 @@ isValidExperiment <- function(exp) {
 #' @export
 #' @examples
 #' # Read example dataset
-#' data <- readData(system.file(package = "mzQuality", "example.tsv"))
+#' data <- readData(system.file("extdata/example.tsv", package = "mzQuality"))
 #'
 #' # Construct experiment
 #' exp <- buildExperiment(

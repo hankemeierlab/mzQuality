@@ -26,7 +26,7 @@ in certain batches.
 }
 \examples{
 # Read the example dataset
-exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 
 # Create scatterplot with Relative Standard Deviation values
 rsdPlot(exp, number = 10)

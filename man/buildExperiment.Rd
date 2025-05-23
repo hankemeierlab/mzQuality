@@ -55,7 +55,7 @@ mzQuality works with a SummarizedExperiment object to perform
 }
 \examples{
 # Read example dataset
-data <- readData(system.file(package = "mzQuality", "example.tsv"))
+data <- readData(system.file("extdata/example.tsv", package = "mzQuality"))
 
 # Construct experiment
 exp <- buildExperiment(

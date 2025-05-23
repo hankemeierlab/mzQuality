@@ -33,7 +33,7 @@ values.
 }
 \examples{
 # Read example dataset
-exp <- readRDS(system.file(package = "mzQuality", "data.RDS"))
+exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 
 # Perform analysis
 exp <- doAnalysis(exp)

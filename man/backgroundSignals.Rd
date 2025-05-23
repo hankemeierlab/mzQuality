@@ -28,7 +28,7 @@ signal-to-noise (SNR) ratio. Consider removing compounds with a poor SNR.
 }
 \examples{
 # Read the example dataset
-exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 
 # Perform the calculation
 backgroundSignals(exp)

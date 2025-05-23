@@ -23,7 +23,7 @@ This function checks if the dataframe contains the required
 }
 \examples{
 # Read example dataset
-data <- readData(system.file(package = "mzQuality", "example.tsv"))
+data <- readData(system.file("extdata/example.tsv", package = "mzQuality"))
 
 # Validate the dataframe
 isValid <- isValidDataframe(data)

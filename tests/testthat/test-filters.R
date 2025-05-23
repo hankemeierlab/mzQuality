@@ -1,6 +1,6 @@
 library(testthat)
 # Read the example dataset
-exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 exp <- doAnalysis(exp, doAll = TRUE, removeOutliers = TRUE)
 
 test_that("filterISTD works", {

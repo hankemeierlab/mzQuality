@@ -29,7 +29,7 @@ summaryReport <- function(
     .createReport(
         path = file.path(folder, "Plots"),
         parameters = list(exp = exp, plots = plots, assays = assays),
-        template = "mzquality-report-se.Rmd",
+        template = "summaryTemplate.Rmd",
         output = output
     )
 }
@@ -66,7 +66,7 @@ compoundReports <- function(
                 project = project,
                 vendor = "Unknown"
             ),
-            template = "mzquality-compounds-se.Rmd",
+            template = "compoundTemplate.Rmd",
             output = outputNames[i]
         )
     }
@@ -81,8 +81,8 @@ compoundReports <- function(
 #' @param path Output directory where the final HTML report is stored.
 #' @param parameters Named list of parameters to pass to the Rmarkdown
 #'     template.
-#' @param template Name of the Rmarkdown template file (located in the "rmd"
-#'     directory of the package).
+#' @param template Name of the Rmarkdown template file (located in the
+#' "template" directory of the package).
 #' @param output Output file name (HTML).
 #' @returns HTML file is rendered and saved to disk. Function returns NULL
 #'     invisibly.
@@ -90,7 +90,7 @@ compoundReports <- function(
 #' @importFrom utils assignInNamespace
 #' @noRd
 .createReport <- function(path, parameters, template, output) {
-    file <- system.file("rmd", template, package = "mzQuality")
+    file <- system.file("templates", template, package = "mzQuality")
 
     render(
         input = file,
@@ -119,7 +119,7 @@ compoundReports <- function(
 #' @export
 #' @examples
 #' # Read example dataset
-#' exp <- readRDS(system.file(package = "mzQuality", "data.RDS"))
+#' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 #'
 #' # Perform analysis
 #' exp <- doAnalysis(exp, doAll = TRUE)
@@ -129,7 +129,7 @@ compoundReports <- function(
 exportTables <- function(exp, folder) {
 
     timeFormat <- format(Sys.time(), "%d-%m-%Y %H.%M.%S")
-    file <- sprintf("mzQuality_Original_%s.tsv", timeFormat)
+    file <- sprintf("mzQualityInput.tsv", timeFormat)
 
     folder <- file.path(folder, "Exports")
     if (!dir.exists(folder)) {
@@ -393,7 +393,7 @@ exportTables <- function(exp, folder) {
 #'     the reports. Defaults to `c("ratio", "ratio_corrected")`.
 #' @return None. The function creates reports and exports data as a side effect.
 #' @examples
-#' exp <- readRDS(system.file(package = "mzQuality", "data.RDS"))
+#' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 #'
 #' exp <- doAnalysis(exp, doAll = TRUE, removeOutliers = TRUE)
 #'
@@ -423,14 +423,7 @@ createReports <- function(
     exportTables(exp, folder)
 
     .writeExcelExport(
-        folder = folder, file = "FinalReport_All_v2.xlsx", exp = exp,
-        backgroundPercent = backgroundPercent, cautionRSD = cautionRSD,
-        nonReportableRSD = nonReportableRSD
-    )
-
-    .writeExcelExport(
-        folder = folder, file = "FinalReport_Sample_SelectedComps_v2.xlsx",
-        exp = exp[rowData(exp)$use, ], types = "SAMPLE",
+        folder = folder, file = "FinalReport.xlsx", exp = exp,
         backgroundPercent = backgroundPercent, cautionRSD = cautionRSD,
         nonReportableRSD = nonReportableRSD
     )

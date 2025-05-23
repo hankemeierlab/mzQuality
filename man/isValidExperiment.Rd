@@ -24,7 +24,7 @@ This function checks that the object is a valid
 }
 \examples{
 # Read example dataset
-exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 
 # Validate the experiment
 isValid <- isValidExperiment(exp)

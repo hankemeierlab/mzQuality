@@ -16,7 +16,7 @@
 #' @examples
 #' # Example usage:
 #' # Read the example dataset
-#' exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+#' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 #'
 #' # Replace internal standards with suggested ones
 #' exp <- replaceInternalStandards(exp)
@@ -66,7 +66,7 @@ replaceInternalStandards <- function(
 #' @examples
 #' # Example usage:
 #' # Read the example dataset
-#' exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+#' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 #'
 #' # Calculate the RSDQC for the default assay and QC type
 #' rsdqc_values <- rsdqc(exp)
@@ -102,12 +102,12 @@ rsdqc <- function(exp, assay = "ratio_corrected", type = metadata(exp)$QC) {
 #' @importFrom matrixStats rowSds
 #' @examples
 #' # Example usage:
-#' # exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+#' # exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 #' # rsdMatrix <- matrixRSDQCs(exp)
 #' @export
 #' @examples
 #' # Example usage:
-#' exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+#' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 #'
 #' # Calculate the RSDQC matrix for the default primary and secondary assays
 #' rsd_matrix <- matrixRSDQCs(exp)

@@ -18,7 +18,7 @@
 #' @export
 #' @examples
 #' # Example usage:
-#' exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+#' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 #' exp <- ratioQcSample(exp)
 ratioQcSample <- function(
         exp, assay = "ratio_corrected",
@@ -70,7 +70,7 @@ ratioQcSample <- function(
 #' @export
 #' @examples
 #' # Example usage:
-#' exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+#' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 #' exp <- identifyOutliers(exp, assay = "ratio")
 identifyOutliers <- function(exp, assay = "ratio", qcType = metadata(exp)$QC) {
     stopifnot(isValidExperiment(exp))
@@ -131,12 +131,12 @@ identifyOutliers <- function(exp, assay = "ratio", qcType = metadata(exp)$QC) {
 #'     `use` and `outlier` columns.
 #' @examples
 #' # Example usage:
-#' # exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+#' # exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 #' # exp <- identifyMisInjections(exp, assay = "Ratio")
 #' @export
 #' @examples
 #' # Example usage:
-#' exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+#' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 #' exp <- identifyMisInjections(exp, assay = "area_is")
 identifyMisInjections <- function(
         exp, assay = metadata(exp)$secondary, type = "SAMPLE"
@@ -284,7 +284,7 @@ medianSampleArea <- function(
 #'     reflecting the analysis results.
 #' @examples
 #' # Read data
-#' exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+#' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 #'
 #' # Do Analysis
 #' exp <- doAnalysis(exp, doAll = TRUE)
@@ -359,7 +359,7 @@ doAnalysis <- function(
 #' @export
 #' @examples
 #' # Example usage:
-#' exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+#' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 #' exp <- doAnalysis(exp, doAll = TRUE, removeOutliers = TRUE)
 #' exp <- getSuggestedInternalStandards(exp, removeOutliers = TRUE)
 getSuggestedInternalStandards <- function(

@@ -31,7 +31,7 @@ This function updates the internal standards (`compound_is`) in
 \examples{
 # Example usage:
 # Read the example dataset
-exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 
 # Replace internal standards with suggested ones
 exp <- replaceInternalStandards(exp)

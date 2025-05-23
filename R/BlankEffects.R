@@ -14,12 +14,12 @@
 #' @export
 #' @examples
 #' # Read the example dataset
-#' exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+#' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 #'
 #' # Add concentrations
 #' concentrations <- read.delim(system.file(
 #'     package = "mzQuality",
-#'     "concentrations.txt"
+#'     "extdata/concentrations.tsv"
 #' ))
 #' exp <- addConcentrations(exp, concentrations)
 #'
@@ -78,12 +78,12 @@ carryOverEffect <- function(exp, type = "PROC", assay = "concentration") {
 #' @export
 #' @examples
 #' # Read example dataset
-#' exp <- readRDS(system.file(package = "mzQuality", "data.RDS"))
+#' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 #'
 #' # Add concentrations
 #' concentrations <- read.delim(system.file(
 #'     package = "mzQuality",
-#'     "concentrations.txt"
+#'     "extdata/concentrations.tsv"
 #' ))
 #' exp <- addConcentrations(exp, concentrations)
 #'
@@ -130,7 +130,7 @@ blankLimits <- function(exp, type = "PROC", assay = "concentration") {
 #' @export
 #' @examples
 #' # Read the example dataset
-#' exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+#' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 #'
 #' # Perform the calculation
 #' backgroundSignals(exp)
@@ -217,7 +217,7 @@ backgroundSignals <- function(exp, type = "BLANK", NaAsZero = FALSE) {
 #' @export
 #' @examples
 #' # Read the example dataset
-#' exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+#' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 #'
 #' # Calculate matrix effect factors
 #' exp <- matrixEffect(exp)

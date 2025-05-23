@@ -57,7 +57,7 @@ will also check if the primaryAssay and secondaryAssay are the same.
 }
 \examples{
 # Read example dataset
-data <- readData(system.file(package = "mzQuality", "example.tsv"))
+data <- readData(system.file("extdata/example.tsv", package = "mzQuality"))
 
 # Construct experiment
 exp <- buildExperiment(

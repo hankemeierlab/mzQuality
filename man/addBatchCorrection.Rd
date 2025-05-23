@@ -39,7 +39,7 @@ batch-corrected ratios. This usually results in improved results.
 }
 \examples{
 # Read the example dataset
-exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 
 # Add batch correctied assay and batch-corrected RSDQCs
 exp <- addBatchCorrection(exp)

@@ -1,10 +1,10 @@
 library(testthat)
 suppressPackageStartupMessages(library(mzQuality))
 # Read the example dataset
-combinedFile <- system.file("example.tsv", package = "mzQuality")
+combinedFile <- system.file("extdata/example.tsv", package = "mzQuality")
 
-dataFile <- system.file("data.RDS", package = "mzQuality")
-concentrationsFile <- system.file("concentrations.txt", package = "mzQuality")
+dataFile <- system.file("extdata/data.RDS", package = "mzQuality")
+concentrationsFile <- system.file("extdata/concentrations.tsv", package = "mzQuality")
 
 exp <- readRDS(dataFile)
 concentrations <- read.delim(concentrationsFile)
@@ -14,7 +14,6 @@ exp <- doAnalysis(exp, doAll = TRUE, removeOutliers = TRUE)
 test_that("A combined file can be converted", {
     combined <- readData(combinedFile)
     x <- buildExperiment(combined)
-    expect_true(is(x, "SummarizedExperiment"))
     expect_true(isValidExperiment(x))
 })
 
@@ -48,7 +47,6 @@ test_that("createReports generates reports and exports data", {
     )
 
     expect_true(dir.exists(file.path(temp_folder, "TestProject")))
-    expect_true(file.exists(file.path(temp_folder, "TestProject", "Exports", "FinalReport_All_v2.xlsx")))
-    expect_true(file.exists(file.path(temp_folder, "TestProject", "Exports", "FinalReport_Sample_SelectedComps_v2.xlsx")))
+    expect_true(file.exists(file.path(temp_folder, "TestProject", "Exports", "FinalReport.xlsx")))
 })
 

@@ -17,7 +17,7 @@
 #' @export
 #' @examples
 #' # Read example dataset
-#' data <- readData(system.file(package = "mzQuality", "example.tsv"))
+#' data <- readData(system.file("extdata/example.tsv", package = "mzQuality"))
 #'
 #' # Construct experiment
 #' exp <- buildExperiment(
@@ -65,7 +65,7 @@ filterISTD <- function(exp, tag = "STD") {
 #' @export
 #' @examples
 #' # Read example dataset
-#' data <- readData(system.file(package = "mzQuality", "example.tsv"))
+#' data <- readData(system.file("extdata/example.tsv", package = "mzQuality"))
 #'
 #' # Construct experiment
 #' exp <- buildExperiment(
@@ -117,7 +117,7 @@ filterSST <- function(exp, tag = "SST") {
 #' @export
 #' @examples
 #' # Read example dataset
-#' exp <- readRDS(system.file(package = "mzQuality", "data.RDS"))
+#' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 #'
 #' # Perform analysis
 #' exp <- doAnalysis(exp)
@@ -147,7 +147,7 @@ filterRSDQC <- function(exp, min = 0, max = 30, include.na = FALSE) {
 #' @export
 #' @examples
 #' # Read example dataset
-#' data <- readData(system.file(package = "mzQuality", "example.tsv"))
+#' data <- readData(system.file("extdata/example.tsv", package = "mzQuality"))
 #'
 #' # Construct experiment
 #' exp <- buildExperiment(
@@ -177,7 +177,7 @@ filterBackground <- function(exp, min = 0, max = 0.4, include.na = FALSE) {
 #' @export
 #' @examples
 #' # Read example dataset
-#' exp <- readRDS(system.file(package = "mzQuality", "data.RDS"))
+#' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 #'
 #' # Remove QC outliers
 #' filterOutliers(exp)

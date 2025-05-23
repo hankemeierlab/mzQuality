@@ -1,3 +1,10 @@
+# mzQuality 0.99.2
+- Moved data files from inst/* to inst/extdata/* .
+- Added description of data files in inst/script/README.md.
+- Changed extensions of .txt files to .tsv to reflect the tab-separated format.
+- Moved the files in inst/rmd/* to inst/templates/* and renamed them to
+  reflect their purpose.
+
 # mzQuality 0.99.1
 
 - Renamed `Getting_Started` vignette to `Data_Input` and added information on 
@@ -10,5 +17,5 @@ the prefix of the sample type of the calibration line.
 # mzQuality 0.99.0
 
 - Initial version
-- Reformatted code for Bioconductor submission
-- Added README, LICENSE, and NEWS files
+- Reformatted code for Bioconductor submission.
+- Added README, LICENSE, and NEWS files.

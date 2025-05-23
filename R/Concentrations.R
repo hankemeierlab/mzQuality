@@ -107,7 +107,7 @@ calculateConcentrationsPerType <- function(exp, type, ...){
 #' @examples
 #' # Example usage:
 #' # Load example dataset
-#' exp <- readRDS(system.file(package = "mzQuality", "data.RDS"))
+#' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 #'
 #' exp <- doAnalysis(exp, doAll = TRUE, removeOutliers = TRUE)
 #'
@@ -465,7 +465,7 @@ rowCorrelation <- function(x, y) {
 #' @importFrom dplyr bind_cols
 #' @examples
 #' # Example usage:
-#' exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+#' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 #' exp <- addLinearRange(
 #'     exp, assay = "ratio", minCalNo = 2,
 #'     maxCalNo = 6, saveAssay = "CalRange"

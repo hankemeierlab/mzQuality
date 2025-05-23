@@ -54,7 +54,7 @@ For all other samples, i.e. study samples, the value `NA` should be used.
 
 ```{r, echo=FALSE, message=FALSE,  results='asis'}
 # Example data
-file <- system.file("example.tsv", package = "mzQuality")
+file <- system.file("extdata/example.tsv", package = "mzQuality")
 df <- read.delim(file, sep = "\t")
 columns <- c(
     "aliquot", "compound", "area", "compound_is", "area_is", 

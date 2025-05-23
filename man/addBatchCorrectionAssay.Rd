@@ -45,7 +45,7 @@ This function uses QC sample medians per batch and across all
 }
 \examples{
 # Read the example dataset
-exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 
 # Add batch correction assays
 exp <- addBatchCorrectionAssay(exp)

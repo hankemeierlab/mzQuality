@@ -53,7 +53,7 @@ This function generates a concentration plot using ggplot2. It
 }
 \examples{
 # Read data
-exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 
 # Do Analysis
 exp <- doAnalysis(exp, doAll = TRUE)

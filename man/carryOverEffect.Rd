@@ -28,12 +28,12 @@ this function, the calculations for all samples must be calculated using
 }
 \examples{
 # Read the example dataset
-exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 
 # Add concentrations
 concentrations <- read.delim(system.file(
     package = "mzQuality",
-    "concentrations.txt"
+    "extdata/concentrations.tsv"
 ))
 exp <- addConcentrations(exp, concentrations)
 

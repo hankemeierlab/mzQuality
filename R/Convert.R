@@ -17,7 +17,7 @@
 #' @export
 #' @examples
 #' # Read example dataset
-#' data <- readData(system.file(package = "mzQuality", "example.tsv"))
+#' data <- readData(system.file("extdata/example.tsv", package = "mzQuality"))
 readData <- function(files, vendor = NA, regex = NULL) {
     mandatoryColumns <- c(
         "Acquisition Date & Time", "Acquisition.Date...Time",
@@ -195,7 +195,7 @@ readData <- function(files, vendor = NA, regex = NULL) {
 #' @export
 #' @examples
 #' # Read example dataset
-#' data <- readData(system.file(package = "mzQuality", "example.tsv"))
+#' data <- readData(system.file("extdata/example.tsv", package = "mzQuality"))
 #'
 #' # Construct experiment
 #' exp <- buildExperiment(
@@ -420,7 +420,7 @@ buildExperiment <- function(
 #' @export
 #' @examples
 #' # Read example dataset
-#' data <- readData(system.file(package = "mzQuality", "example.tsv"))
+#' data <- readData(system.file("extdata/example.tsv", package = "mzQuality"))
 #'
 #' # Construct experiment
 #' exp <- buildExperiment(
@@ -502,9 +502,9 @@ expToCombined <- function(exp,  rowIndex = "compound", colIndex = "aliquot") {
 #' @export
 #' @examples
 #' # Read example dataset
-#' exp <- readRDS(system.file(package = "mzQuality", "data.RDS"))
+#' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 #' # Add concentrations
-#' file <- system.file(package = "mzQuality", "concentrations.txt")
+#' file <- system.file("extdata/concentrations.tsv", package = "mzQuality")
 #' concentrations <- read.delim(file)
 #'
 #' addConcentrations(exp, df)
@@ -591,7 +591,7 @@ addConcentrations <- function(exp, df) {
 #' @export
 #' @examples
 #' # Read example dataset
-#' data <- readData(system.file(package = "mzQuality", "example.tsv"))
+#' data <- readData(system.file("extdata/example.tsv", package = "mzQuality"))
 #'
 #' # Construct experiment
 #' exp <- buildExperiment(

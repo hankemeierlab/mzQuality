@@ -48,7 +48,7 @@ Matrix effects in LC-MS analysis occur when components of the sample
 }
 \examples{
 # Read the example dataset
-exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 
 # Calculate matrix effect factors
 exp <- matrixEffect(exp)

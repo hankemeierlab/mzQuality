@@ -34,9 +34,9 @@ The concentrations should be provided as a data frame where rows
 }
 \examples{
 # Read example dataset
-exp <- readRDS(system.file(package = "mzQuality", "data.RDS"))
+exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 # Add concentrations
-file <- system.file(package = "mzQuality", "concentrations.txt")
+file <- system.file("extdata/concentrations.tsv", package = "mzQuality")
 concentrations <- read.delim(file)
 
 addConcentrations(exp, df)

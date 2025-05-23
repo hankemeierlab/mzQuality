@@ -22,7 +22,7 @@ placeholder
 }
 \examples{
 # Read example dataset
-exp <- readRDS(system.file(package = "mzQuality", "data.RDS"))
+exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 
 # Remove QC outliers
 filterOutliers(exp)

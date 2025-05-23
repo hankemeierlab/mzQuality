@@ -32,5 +32,5 @@ The function handles vendor-specific formats by applying
 }
 \examples{
 # Read example dataset
-data <- readData(system.file(package = "mzQuality", "example.tsv"))
+data <- readData(system.file("extdata/example.tsv", package = "mzQuality"))
 }

@@ -32,12 +32,12 @@ are stored in the rowData of the experiment.
 }
 \examples{
 # Read example dataset
-exp <- readRDS(system.file(package = "mzQuality", "data.RDS"))
+exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 
 # Add concentrations
 concentrations <- read.delim(system.file(
     package = "mzQuality",
-    "concentrations.txt"
+    "extdata/concentrations.tsv"
 ))
 exp <- addConcentrations(exp, concentrations)
 

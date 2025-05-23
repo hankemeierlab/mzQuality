@@ -33,7 +33,7 @@ The RSDQC is a measure of the variance of compounds in QC samples,
 \examples{
 # Example usage:
 # Read the example dataset
-exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 
 # Calculate the RSDQC for the default assay and QC type
 rsdqc_values <- rsdqc(exp)

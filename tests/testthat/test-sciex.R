@@ -1,7 +1,7 @@
 library(testthat)
 suppressPackageStartupMessages(library(mzQuality))
 # Read the example dataset
-dataFile <- system.file("sciex.txt", package = "mzQuality")
+dataFile <- system.file("extdata/sciex.tsv", package = "mzQuality")
 
 
 test_that("Combined file can be constructed from sciex os file", {

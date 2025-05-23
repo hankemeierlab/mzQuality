@@ -93,7 +93,7 @@
 #' @export
 #' @examples
 #' # Read data
-#' exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+#' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 #'
 #' # Do Analysis
 #' exp <- doAnalysis(exp, doAll = TRUE)
@@ -221,7 +221,7 @@ facetPlot <- function(
 #' @export
 #' @examples
 #' # Read data
-#' exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+#' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 #'
 #' # Do Analysis
 #' exp <- doAnalysis(exp, doAll = TRUE)
@@ -374,7 +374,7 @@ scatterPlot <- function(
 #' @export
 #' @examples
 #' # Read data
-#' exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+#' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 #'
 #' # Do Analysis
 #' exp <- doAnalysis(exp, doAll = TRUE)
@@ -492,7 +492,7 @@ aliquotPlot <- function(
 #' @export
 #' @examples
 #' # Read data
-#' exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+#' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 #'
 #' # Do Analysis
 #' exp <- doAnalysis(exp, doAll = TRUE)
@@ -702,7 +702,7 @@ violinPlot <- function(
 #' @export
 #' @examples
 #' # Read data
-#' exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+#' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 #'
 #' # Do Analysis
 #' exp <- doAnalysis(exp, doAll = TRUE)
@@ -886,7 +886,7 @@ pcaPlot <- function(
 #' @export
 #' @examples
 #' # Read data
-#' exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+#' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 #'
 #' # Do Analysis
 #' exp <- doAnalysis(exp, doAll = TRUE)
@@ -954,7 +954,7 @@ concentrationPlot <- function(
 #' @export
 #' @examples
 #' # Read the example dataset
-#' exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+#' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 #'
 #' # Plot RSDQCs
 #' rsdqcPlot(exp)
@@ -992,7 +992,7 @@ rsdqcPlot <- function(exp) {
 #' @export
 #' @examples
 #' # Read the example dataset
-#' exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+#' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 #'
 #' # Plot values in heatmap
 #' heatmapPlot(exp)
@@ -1033,7 +1033,7 @@ heatmapPlot <- function(exp, assay = "ratio") {
 #' scale_fill_manual theme_bw
 #' @examples
 #' # Read the example dataset
-#' exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+#' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 #'
 #' # Create scatterplot with Relative Standard Deviation values
 #' rsdPlot(exp, number = 10)
@@ -1115,7 +1115,7 @@ rsdPlot <- function(
 #' @export
 #' @examples
 #' # Read the example dataset
-#' exp <- readRDS(system.file("data.RDS", package = "mzQuality"))
+#' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
 #'
 #' # Create Batch Assay Plot
 #' batchAssayPlot(exp)

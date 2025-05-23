@@ -26,7 +26,7 @@ in the long format. Note that metadata won't be exported.
 }
 \examples{
 # Read example dataset
-data <- readData(system.file(package = "mzQuality", "example.tsv"))
+data <- readData(system.file("extdata/example.tsv", package = "mzQuality"))
 
 # Construct experiment
 exp <- buildExperiment(
