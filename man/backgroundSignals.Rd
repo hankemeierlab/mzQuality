@@ -27,8 +27,8 @@ If this value exceeds 0.4, it is generally cosidered having a poor
 signal-to-noise (SNR) ratio. Consider removing compounds with a poor SNR.
 }
 \examples{
-# Read the example dataset
-exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
+path <- system.file("extdata", "example.tsv", package = "mzQuality")
+exp <- buildExperiment(readData(path))
 
 # Perform the calculation
 backgroundSignals(exp)

@@ -84,13 +84,14 @@ compoundReports <- function(
 #' @param path Output directory where the final HTML report is stored.
 #' @param parameters Named list of parameters to pass to the Rmarkdown
 #'     template.
-#' @param template Name of the Rmarkdown template file (located in the
-#' "template" directory of the package).
-#' @param output Output file name (HTML).
+#' @param template Name of the Rmarkdown template file in the inst/templates
+#'     folder.
+#' @param output Output file name.
 #' @returns HTML file is rendered and saved to disk. Function returns NULL
 #'     invisibly.
 #' @importFrom rmarkdown render
 #' @importFrom utils assignInNamespace
+#' @importFrom DT datatable
 #' @noRd
 .createReport <- function(path, parameters, template, output) {
     file <- system.file("templates", template, package = "mzQuality")
@@ -121,8 +122,8 @@ compoundReports <- function(
 #' @importFrom utils write.table
 #' @export
 #' @examples
-#' # Read example dataset
-#' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
+#' path <- system.file("extdata", "example.tsv", package = "mzQuality")
+#' exp <- buildExperiment(readData(path))
 #'
 #' # Perform analysis
 #' exp <- doAnalysis(exp)
@@ -393,14 +394,15 @@ exportTables <- function(exp, folder) {
 #'     the reports. Defaults to `c("ratio", "ratio_corrected")`.
 #' @return None. The function creates reports and exports data as a side effect.
 #' @examples
-#' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
+#' path <- system.file("extdata", "example.tsv", package = "mzQuality")
+#' exp <- buildExperiment(readData(path))
 #'
 #' exp <- doAnalysis(exp, removeOutliers = TRUE)
 #'
 #' createReports(
 #'     folder = tempdir(),
 #'     project = "MyProject",
-#'     exp = exp[1:2, ],
+#'     exp = exp[c(1, 2), exp$type == "SQC"],
 #'     summaryPlots = c("Aliquot", "PCA"),
 #'     makeSummaryReport = TRUE,
 #'     makeCompoundReport = TRUE,

@@ -16,14 +16,14 @@
 #' Regular expressions are supported.
 #' @export
 #' @examples
-#' # Read example dataset
-#' data <- readData(system.file("extdata/example.tsv", package = "mzQuality"))
+#' path <- system.file("extdata/example.tsv", package = "mzQuality")
+#' data <- readData(path)
 #'
 #' # Construct experiment
 #' exp <- buildExperiment(
 #'     data,
-#'     rowIndex = "compound",
-#'     colIndex = "aliquot",
+#'     compoundColumn = "compound",
+#'     aliquotColumn = "aliquot",
 #'     primaryAssay = "area",
 #'     secondaryAssay = "area_is"
 #' )
@@ -64,14 +64,14 @@ filterISTD <- function(exp, tag = "STD") {
 #' Regular expressions are supported.
 #' @export
 #' @examples
-#' # Read example dataset
-#' data <- readData(system.file("extdata/example.tsv", package = "mzQuality"))
+#' path <- system.file("extdata/example.tsv", package = "mzQuality")
+#' data <- readData(path)
 #'
 #' # Construct experiment
 #' exp <- buildExperiment(
 #'     data,
-#'     rowIndex = "compound",
-#'     colIndex = "aliquot",
+#'     compoundColumn = "compound",
+#'     aliquotColumn = "aliquot",
 #'     primaryAssay = "area",
 #'     secondaryAssay = "area_is"
 #' )
@@ -116,8 +116,8 @@ filterSST <- function(exp, tag = "SST") {
 #' @param include.na Should NA's be included?
 #' @export
 #' @examples
-#' # Read example dataset
-#' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
+#' path <- system.file("extdata", "example.tsv", package = "mzQuality")
+#' exp <- buildExperiment(readData(path))
 #'
 #' # Perform analysis
 #' exp <- doAnalysis(exp)
@@ -146,14 +146,14 @@ filterRSDQC <- function(exp, min = 0, max = 30, include.na = FALSE) {
 #' @param include.na Should NA's be included?
 #' @export
 #' @examples
-#' # Read example dataset
-#' data <- readData(system.file("extdata/example.tsv", package = "mzQuality"))
+#' path <- system.file("extdata", "example.tsv", package = "mzQuality")
+#' data <- readData(path)
 #'
 #' # Construct experiment
 #' exp <- buildExperiment(
 #'     data,
-#'     rowIndex = "compound",
-#'     colIndex = "aliquot",
+#'     compoundColumn = "compound",
+#'     aliquotColumn = "aliquot",
 #'     primaryAssay = "area",
 #'     secondaryAssay = "area_is"
 #' )
@@ -176,8 +176,8 @@ filterBackground <- function(exp, min = 0, max = 0.4, include.na = FALSE) {
 #' @param exp SummarizedExperiment object
 #' @export
 #' @examples
-#' # Read example dataset
-#' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
+#' path <- system.file("extdata/example.tsv", package = "mzQuality")
+#' exp <- buildExperiment(readData(path))
 #'
 #' # Remove QC outliers
 #' filterOutliers(exp)

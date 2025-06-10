@@ -4,10 +4,18 @@
 \alias{rsdPlot}
 \title{Plot the Relative Standard Deviation}
 \usage{
-rsdPlot(exp, assay = "ratio_corrected", qc = "SQC", number = nrow(exp))
+rsdPlot(
+  exp,
+  compound = 1,
+  assay = "ratio_corrected",
+  qc = "SQC",
+  number = nrow(exp)
+)
 }
 \arguments{
 \item{exp}{SummarizedExperiment object}
+
+\item{compound}{Which compound to plot. Defaults to the first compound.}
 
 \item{assay}{Which assay to use for calculating the RSDQC}
 
@@ -25,9 +33,12 @@ aid in identifying which compounds have a high variation in the given assay
 in certain batches.
 }
 \examples{
-# Read the example dataset
-exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
+path <- system.file("extdata", "example.tsv", package = "mzQuality")
+exp <- buildExperiment(readData(path))
+
+# Do analysis
+exp <- doAnalysis(exp)
 
 # Create scatterplot with Relative Standard Deviation values
-rsdPlot(exp, number = 10)
+rsdPlot(exp, assay = "ratio", number = 10)
 }

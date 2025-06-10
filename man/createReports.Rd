@@ -67,14 +67,15 @@ This function automates the process of creating reports for a
     for background percentage and relative standard deviation (RSD).
 }
 \examples{
-exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
+path <- system.file("extdata", "example.tsv", package = "mzQuality")
+exp <- buildExperiment(readData(path))
 
 exp <- doAnalysis(exp, removeOutliers = TRUE)
 
 createReports(
     folder = tempdir(),
     project = "MyProject",
-    exp = exp[1:2, ],
+    exp = exp[c(1, 2), exp$type == "SQC"],
     summaryPlots = c("Aliquot", "PCA"),
     makeSummaryReport = TRUE,
     makeCompoundReport = TRUE,

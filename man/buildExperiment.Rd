@@ -6,8 +6,8 @@
 \usage{
 buildExperiment(
   df,
-  rowIndex = "compound",
-  colIndex = "aliquot",
+  compoundColumn = "compound",
+  aliquotColumn = "aliquot",
   primaryAssay = "area",
   secondaryAssay = "area_is",
   typeColumn = "type",
@@ -20,11 +20,11 @@ buildExperiment(
 compounds, aliquots, area, type, and datetime. See the vignette for an
 example of a valid dataframe.}
 
-\item{rowIndex}{The column name in `df` that should be used for compounds.
-Defaults to 'compound'.}
+\item{compoundColumn}{The column name in `df` that should be used for
+compounds. Defaults to 'compound'.}
 
-\item{colIndex}{The column name in `df` that should be used for aliquots.
-Defaults to 'aliquot'.}
+\item{aliquotColumn}{The column name in `df` that should be used for
+aliquots. Defaults to 'aliquot'.}
 
 \item{primaryAssay}{The column name in `df` that represents the area or
 intensities of measured compounds. Defaults to 'area'.}
@@ -54,24 +54,17 @@ mzQuality works with a SummarizedExperiment object to perform
   mzQuality to use.
 }
 \examples{
-# Read example dataset
-data <- readData(system.file("extdata/example.tsv", package = "mzQuality"))
+path <- system.file("extdata", "example.tsv", package = "mzQuality")
+data <- readData(path)
 
 # Construct experiment
-exp <- buildExperiment(
-    df = data,
-    rowIndex = "compound",
-    colIndex = "aliquot",
-    primaryAssay = "area",
-    secondaryAssay = "area_is"
-)
 
 # Construct experiment without concentrations
 data <- data[-which(colnames(data) == "concentration")]
 exp <- buildExperiment(
     df = data,
-    rowIndex = "compound",
-    colIndex = "aliquot",
+    compoundColumn = "compound",
+    aliquotColumn = "aliquot",
     primaryAssay = "area",
     secondaryAssay = "area_is"
 )
@@ -81,8 +74,8 @@ isValidExperiment(exp)
 data <- data[-grep("_is", colnames(data))]
 exp <- buildExperiment(
     df = data,
-    rowIndex = "compound",
-    colIndex = "aliquot",
+    compoundColumn = "compound",
+    aliquotColumn = "aliquot",
     primaryAssay = "area",
     secondaryAssay = "area"
 )

@@ -20,8 +20,8 @@ using heatmaply, it is an interactive plot that shows the value of the
 provide assay.
 }
 \examples{
-# Read the example dataset
-exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
+path <- system.file("extdata", "example.tsv", package = "mzQuality")
+exp <- buildExperiment(readData(path))
 
 # Plot values in heatmap
 heatmapPlot(exp)

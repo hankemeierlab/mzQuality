@@ -28,18 +28,8 @@ div.main-container {
 ```{r loadDependencies, echo = FALSE, include=FALSE}
 library(mzQuality)
 
-if (!isValidExperiment(params$exp)) {
-  # use a default example instead
-  exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
-  exp <- doAnalysis(exp)
-  
-  # Select compound number 2 for this analysis
-  exp <- exp[2, ]
-  assays <- c("ratio", "ratio_corrected")
-} else {
-  exp <- params$exp
-  assays <- params$assays
-}
+exp <- params$exp
+assays <- params$assays
 
 numOfSamples <- ncol(exp)
 numOfCompounds <- nrow(exp)

@@ -27,8 +27,8 @@ this function, the calculations for all samples must be calculated using
 `calculateConcentrations()`.
 }
 \examples{
-# Read the example dataset
-exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
+path <- system.file("extdata", "example.tsv", package = "mzQuality")
+exp <- buildExperiment(readData(path))
 
 # Add concentrations
 concentrations <- read.delim(system.file(

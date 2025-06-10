@@ -18,7 +18,7 @@
 #' assay values. Defaults to `FALSE`.
 #' @return A data frame in long format with columns for aliquots, compounds,
 #'     assay values, metadata, and a color column for sample types.
-#' @importFrom dplyr filter arrange %>%
+#' @importFrom dplyr filter arrange %>% .data
 #' @noRd
 .preparePlotData <- function(
         exp, assay, batches = exp$batch,
@@ -61,6 +61,7 @@
 #'     Defaults to "white".
 #' @param textSize A numeric value specifying the size of the text.
 #'     Defaults to 3.
+#' @importFrom ggplot2 .data
 #' @noRd
 .addPcaLabels <- function(p, textColor = "white", textSize = 3) {
     if (requireNamespace("ggrepel", quietly = TRUE)) {
@@ -93,7 +94,8 @@
 #' @export
 #' @examples
 #' # Read data
-#' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
+#' path <- system.file("extdata", "example.tsv", package = "mzQuality")
+#' exp <- buildExperiment(readData(path))
 #'
 #' # Do Analysis
 #' exp <- doAnalysis(exp)
@@ -150,11 +152,10 @@ facetPlot <- function(
 .addTextHover <- function(exp, df, type = "aliquot") {
     if (type == "aliquot") {
         metadata <- as.data.frame(colData(exp[, df$aliquot]))
+        names <- c(type, colnames(metadata))
 
         df$text <- vapply(seq_len(nrow(metadata)), function(i) {
-            names <- c(type, colnames(metadata))
             values <- c(rownames(metadata)[i], as.vector(metadata[i, ]))
-
             paste0(sprintf("%s: %s", names, values), collapse = "\n")
         }, character(1))
     } else {
@@ -163,9 +164,9 @@ facetPlot <- function(
 
         metadata <- as.data.frame(x)
         rownames(metadata) <- rownames(x)
+        names <- c(type, colnames(metadata))
 
         res <- vapply(seq_len(nrow(metadata)), function(i) {
-            names <- c(type, colnames(metadata))
             values <- c(rownames(metadata)[i], as.vector(metadata[i, ]))
             paste0(sprintf("%s: %s", names, values), collapse = "\n")
         }, character(1))
@@ -221,7 +222,8 @@ facetPlot <- function(
 #' @export
 #' @examples
 #' # Read data
-#' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
+#' path <- system.file("extdata", "example.tsv", package = "mzQuality")
+#' exp <- buildExperiment(readData(path))
 #'
 #' # Do Analysis
 #' exp <- doAnalysis(exp)
@@ -372,7 +374,8 @@ scatterPlot <- function(
 #' @export
 #' @examples
 #' # Read data
-#' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
+#' path <- system.file("extdata", "example.tsv", package = "mzQuality")
+#' exp <- buildExperiment(readData(path))
 #'
 #' # Do Analysis
 #' exp <- doAnalysis(exp)
@@ -435,10 +438,11 @@ aliquotPlot <- function(
 #' @importFrom dplyr group_by summarise pull
 #' @importFrom ggplot2 geom_hline .data
 #' @importFrom stats sd
+#' @noRd
 .addPlotConfidenceInterval <- function(plot, df, assay){
     medians <- df %>%
         group_by(.data$aliquot) %>%
-        filter(n() < 2)
+        filter(n() > 2)
 
     if (nrow(medians) < 2) return(plot)
 
@@ -497,7 +501,8 @@ aliquotPlot <- function(
 #' @export
 #' @examples
 #' # Read data
-#' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
+#' path <- system.file("extdata", "example.tsv", package = "mzQuality")
+#' exp <- buildExperiment(readData(path))
 #'
 #' # Do Analysis
 #' exp <- doAnalysis(exp)
@@ -519,7 +524,9 @@ violinPlot <- function(
 
     df <- .preparePlotData(
         exp, assay, batches, types = types, logTransform = logTransform
-    )
+    ) %>%
+        filter(!is.na(.data[[assay]]))
+
 
     df <- .addTextHover(exp, df, type = "compound")
 
@@ -709,7 +716,8 @@ violinPlot <- function(
 #' @export
 #' @examples
 #' # Read data
-#' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
+#' path <- system.file("extdata", "example.tsv", package = "mzQuality")
+#' exp <- buildExperiment(readData(path))
 #'
 #' # Do Analysis
 #' exp <- doAnalysis(exp)
@@ -877,8 +885,7 @@ pcaPlot <- function(
 #'     on the y-axis. Defaults to "ratio_corrected".
 #' @param compound An integer specifying the compound index to be plotted.
 #'     Defaults to 1.
-#' @param batch An integer specifying the batch index to be plotted.
-#'     Defaults to 1.
+#' @param batches Name of the batch(es) to plot. Defaults to the first batch.
 #' @param types A character vector specifying the types of data to include
 #'     in the plot. Defaults to `c("SAMPLE", "SQC")`.
 #' @param calType A character string specifying the calibration type.
@@ -893,7 +900,8 @@ pcaPlot <- function(
 #' @export
 #' @examples
 #' # Read data
-#' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
+#' path <- system.file("extdata", "example.tsv", package = "mzQuality")
+#' exp <- buildExperiment(readData(path))
 #'
 #' # Do Analysis
 #' exp <- doAnalysis(exp)
@@ -906,7 +914,7 @@ pcaPlot <- function(
 #' )
 concentrationPlot <- function(
         exp, assay = "ratio_corrected", compound = 1,
-        batch = exp$batch[1], types = c("SAMPLE", "SQC"),
+        batches = exp$batch[1], types = c("SAMPLE", "SQC"),
         calType = metadata(exp)$concentration,
         removeOutliers = TRUE, plotOnCalibrationLine = TRUE
 ) {
@@ -915,11 +923,12 @@ concentrationPlot <- function(
     df <- .getConcentrationPlotData(
         exp = exp[compound, ],
         assay = assay,
-        batch = batch,
+        batch = batches,
         calType = calType,
         types = types,
         plotOnCalibrationLine = plotOnCalibrationLine
-    )
+    ) %>%
+        filter(!is.na(.data$assay))
 
     modelData <- .getConcentrationModelData(
         df = df,
@@ -960,17 +969,23 @@ concentrationPlot <- function(
 #' @importFrom heatmaply heatmaply
 #' @export
 #' @examples
-#' # Read the example dataset
-#' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
+#' path <- system.file("extdata", "example.tsv", package = "mzQuality")
+#' exp <- buildExperiment(readData(path))
+#'
+#' # Run analysis
+#' exp <- doAnalysis(exp)
 #'
 #' # Plot RSDQCs
 #' rsdqcPlot(exp)
 rsdqcPlot <- function(exp) {
     stopifnot(isValidExperiment(exp))
+    stopifnot("rsdqcCorrected" %in% colnames(rowData(exp)))
 
     if (!metadata(exp)$hasIS) {
         return(NULL)
     }
+
+
 
     exp <- exp[!is.na(rowData(exp)$rsdqcCorrected), ]
     rsdqcs <- matrixRSDQCs(exp)
@@ -998,8 +1013,8 @@ rsdqcPlot <- function(exp) {
 #' @importFrom viridis viridis
 #' @export
 #' @examples
-#' # Read the example dataset
-#' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
+#' path <- system.file("extdata", "example.tsv", package = "mzQuality")
+#' exp <- buildExperiment(readData(path))
 #'
 #' # Plot values in heatmap
 #' heatmapPlot(exp)
@@ -1031,6 +1046,7 @@ heatmapPlot <- function(exp, assay = "ratio") {
 #' in certain batches.
 #' @param assay Which assay to use for calculating the RSDQC
 #' @param exp SummarizedExperiment object
+#' @param compound Which compound to plot. Defaults to the first compound.
 #' @param qc type of QC to plot
 #' @param number Optional Show the n number of worst RSD
 #' @returns ggplot object of a scatter- / lineplot of RSDs per compound
@@ -1039,22 +1055,24 @@ heatmapPlot <- function(exp, assay = "ratio") {
 #' @importFrom ggplot2 geom_line theme geom_point scale_color_manual
 #' scale_fill_manual theme_bw
 #' @examples
-#' # Read the example dataset
-#' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
+#' path <- system.file("extdata", "example.tsv", package = "mzQuality")
+#' exp <- buildExperiment(readData(path))
+#'
+#' # Do analysis
+#' exp <- doAnalysis(exp)
 #'
 #' # Create scatterplot with Relative Standard Deviation values
-#' rsdPlot(exp, number = 10)
+#' rsdPlot(exp, assay = "ratio", number = 10)
 rsdPlot <- function(
-        exp, assay = "ratio_corrected",
+        exp, compound = 1, assay = "ratio_corrected",
         qc = "SQC", number = nrow(exp)
 ) {
     stopifnot(isValidExperiment(exp))
+    stopifnot("rsdqcCorrected" %in% colnames(rowData(exp)))
+
     exp <- exp[!is.na(rowData(exp)$rsdqcCorrected), ]
 
-    exp <- exp[utils::tail(
-        order(rowData(exp)$rsdqcCorrected),
-        as.integer(number)
-    ), ]
+    exp <- exp[compound, ]
     df <- do.call(cbind, lapply(unique(exp$batch), function(x) {
         rsdqc(exp[, exp$type == qc & exp$batch == x], assay)
     }))
@@ -1121,8 +1139,8 @@ rsdPlot <- function(
 #' theme_bw theme
 #' @export
 #' @examples
-#' # Read the example dataset
-#' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
+#' path <- system.file("extdata", "example.tsv", package = "mzQuality")
+#' exp <- buildExperiment(readData(path))
 #'
 #' # Create Batch Assay Plot
 #' batchAssayPlot(exp)

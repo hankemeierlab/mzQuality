@@ -1,15 +1,12 @@
 library(testthat)
 suppressPackageStartupMessages(library(mzQuality))
-# Read the example dataset
-dataFile <- system.file("extdata/data.RDS", package = "mzQuality")
-concentrationsFile <- system.file("extdata/concentrations.tsv", package = "mzQuality")
+path <- system.file("extdata/example.tsv", package = "mzQuality")
 
-exp <- readRDS(dataFile)
+concentrationsFile <- system.file("extdata/concentrations.tsv", package = "mzQuality")
 concentrations <- read.delim(concentrationsFile)
 
-file <- system.file("extdata/example.tsv", package = "mzQuality")
-concentrationsFile <- system.file("extdata/concentrations.tsv", package = "mzQuality")
-
+file <- path
+exp <- buildExperiment(readData(file))
 exp <- doAnalysis(exp, removeOutliers = TRUE)
 
 
@@ -19,19 +16,21 @@ test_that("A tab-delimited file can be converted into a SummarizedExperiment", {
     expect_true(is(combined, "data.frame"))
 
     exp <- buildExperiment(combined)
-    expect_true(is(exp, "SummarizedExperiment"))
     expect_true(isValidExperiment(exp))
 
     # Check that the last row is not included in the experiment
     # This should trigger fix missing
     exp <- buildExperiment(combined[-nrow(combined), ])
-    expect_true(is(exp, "SummarizedExperiment"))
+
     expect_true(isValidExperiment(exp))
+
+    exp <- doAnalysis(exp, removeOutliers = TRUE)
+    expect_true(isValidExperiment(exp))
+
 })
 
 
 test_that("Is a valid experiment", {
-    expect_true(is(exp, "SummarizedExperiment"))
     expect_true(isValidExperiment(exp))
     expect_true("area" %in% assayNames(exp))
     expect_true("ratio" %in% assayNames(exp))
@@ -48,7 +47,6 @@ test_that("experiment can be converted to combined", {
 
 test_that("Concentrations can be added", {
     x <- addConcentrations(exp, concentrations)
-    expect_true(is(x, "SummarizedExperiment"))
     expect_true(isValidExperiment(x))
     expect_true("hasKnownConcentrations" %in% colnames(rowData(exp)))
 

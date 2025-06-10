@@ -56,14 +56,14 @@ SummarizedExperiment object if it is not already present. The function
 will also check if the primaryAssay and secondaryAssay are the same.
 }
 \examples{
-# Read example dataset
-data <- readData(system.file("extdata/example.tsv", package = "mzQuality"))
+path <- system.file("extdata/example.tsv", package = "mzQuality")
+data <- readData(path)
 
 # Construct experiment
 exp <- buildExperiment(
     data,
-    rowIndex = "compound",
-    colIndex = "aliquot",
+    compoundColumn = "compound",
+    aliquotColumn = "aliquot",
     primaryAssay = "area",
     secondaryAssay = "area_is"
 )

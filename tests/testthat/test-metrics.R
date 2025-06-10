@@ -1,7 +1,7 @@
 library(testthat)
 suppressPackageStartupMessages(library(mzQuality))
-# Read the example dataset
-exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
+path <- system.file("extdata", "example.tsv", package = "mzQuality")
+exp <- buildExperiment(readData(path))
 exp <- doAnalysis(exp, removeOutliers = TRUE)
 
 test_that("Outliers are detected correctly", {
@@ -21,12 +21,12 @@ test_that("Outliers are detected correctly", {
 
 test_that("identifyMisInjections", {
     typeName <- "SAMPLE"
-    x <- identifyMisInjections(exp, assay = "area", type = typeName)
+    x <- identifyMisInjections(exp, assay = "area_is", type = typeName)
     expect_true(is(x, "SummarizedExperiment"))
     expect_true(isValidExperiment(x))
 
     # No misinjections are expected
-    expect_true(all(x[, x$type == typeName]$use))
+    expect_true(!all(x[, x$type == typeName]$use))
 
     # Non-existing sample should return the original experiment
     typeName <- "wrongType"

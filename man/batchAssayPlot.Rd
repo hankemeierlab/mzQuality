@@ -20,8 +20,8 @@ ggplot object of a Batch Assay Plot
 Plot an assay per batch with point distribution
 }
 \examples{
-# Read the example dataset
-exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
+path <- system.file("extdata", "example.tsv", package = "mzQuality")
+exp <- buildExperiment(readData(path))
 
 # Create Batch Assay Plot
 batchAssayPlot(exp)

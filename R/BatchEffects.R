@@ -150,8 +150,8 @@
 #' @importFrom matrixStats rowMedians
 #' @export
 #' @examples
-#' # Read the example dataset
-#' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
+#' path <- system.file("extdata", "example.tsv", package = "mzQuality")
+#' exp <- buildExperiment(readData(path))
 #'
 #' # Add batch correction assays
 #' exp <- addBatchCorrectionAssay(exp)
@@ -267,8 +267,8 @@ addWithinBatchCorrectionAssay <- function(
 #' rowData slot
 #' @export
 #' @examples
-#' # Read the example dataset
-#' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
+#' path <- system.file("extdata", "example.tsv", package = "mzQuality")
+#' exp <- buildExperiment(readData(path))
 #'
 #' # Add batch correctied assay and batch-corrected RSDQCs
 #' exp <- addBatchCorrection(exp)

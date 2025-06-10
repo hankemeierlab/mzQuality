@@ -16,7 +16,7 @@ existing workflows.
 Useful links:
 \itemize{
   \item \url{https://github.com/hankemeierlab/mzQuality}
-  \item \url{https://hankemeierlab.github.io/mzQuality/Data_Input.html}
+  \item \url{https://hankemeierlab.github.io/mzQuality/mzQuality.html}
   \item Report bugs at \url{https://github.com/hankemeierlab/mzQuality/issues}
 }
 
@@ -36,7 +36,7 @@ Other contributors:
   \item Lieke Lamont \email{l.lamont@lacdr.leidenuniv.nl} (\href{https://orcid.org/0000-0002-2779-124X}{ORCID}) [contributor]
   \item Thomas Hankemeier \email{hankemeier@lacdr.leidenuniv.nl} (\href{https://orcid.org/0000-0001-7871-2073}{ORCID}) [contributor]
   \item Amy Harms \email{a.c.harms@lacdr.leidenuniv.nl} (\href{https://orcid.org/0000-0002-2931-4295}{ORCID}) [contributor]
-  \item Ronan Fleming (\href{https://orcid.org/orcid.org/0000-0001-5346-9812}{ORCID}) [contributor]
+  \item Ronan Fleming \email{ronan.mt.fleming@gmail.com} (\href{https://orcid.org/orcid.org/0000-0001-5346-9812}{ORCID}) [contributor]
   \item Recon4IMD, Horizon Europe (101080997) [funder]
   \item SKINERGY, NWO (1389.20.182) [funder]
   \item X-Omics, NWO (184.034.019) [funder]

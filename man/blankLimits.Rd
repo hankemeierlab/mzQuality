@@ -31,8 +31,8 @@ compound can reliably be quantified. The results of the LoB, LoD, and LoQ
 are stored in the rowData of the experiment.
 }
 \examples{
-# Read example dataset
-exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
+path <- system.file("extdata", "example.tsv", package = "mzQuality")
+exp <- buildExperiment(readData(path))
 
 # Add concentrations
 concentrations <- read.delim(system.file(

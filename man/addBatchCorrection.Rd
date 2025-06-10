@@ -38,8 +38,8 @@ can be calculated. These are multiplied by the original A/IS ratio to obtain
 batch-corrected ratios. This usually results in improved results.
 }
 \examples{
-# Read the example dataset
-exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
+path <- system.file("extdata", "example.tsv", package = "mzQuality")
+exp <- buildExperiment(readData(path))
 
 # Add batch correctied assay and batch-corrected RSDQCs
 exp <- addBatchCorrection(exp)

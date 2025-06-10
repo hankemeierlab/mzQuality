@@ -31,14 +31,14 @@ ratio equals 1. If the `hasIS` metadata is set to TRUE, it will also
 remove compounds that have the same A/IS ratio as the internal standard.
 }
 \examples{
-# Read example dataset
-data <- readData(system.file("extdata/example.tsv", package = "mzQuality"))
+path <- system.file("extdata/example.tsv", package = "mzQuality")
+data <- readData(path)
 
 # Construct experiment
 exp <- buildExperiment(
     data,
-    rowIndex = "compound",
-    colIndex = "aliquot",
+    compoundColumn = "compound",
+    aliquotColumn = "aliquot",
     primaryAssay = "area",
     secondaryAssay = "area_is"
 )

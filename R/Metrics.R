@@ -18,8 +18,9 @@
 #' @export
 #' @examples
 #' # Example usage:
-#' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
-#' exp <- ratioQcSample(exp)
+#' path <- system.file("extdata", "example.tsv", package = "mzQuality")
+#' exp <- buildExperiment(readData(path))
+#' exp <- ratioQcSample(exp, assay = "ratio")
 ratioQcSample <- function(
         exp, assay = "ratio_corrected",
         qcLabel = metadata(exp)$QC, sampleLabel = "SAMPLE"
@@ -70,7 +71,8 @@ ratioQcSample <- function(
 #' @export
 #' @examples
 #' # Example usage:
-#' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
+#' path <- system.file("extdata", "example.tsv", package = "mzQuality")
+#' exp <- buildExperiment(readData(path))
 #' exp <- identifyOutliers(exp, assay = "ratio")
 identifyOutliers <- function(exp, assay = "ratio", qcType = metadata(exp)$QC) {
     stopifnot(isValidExperiment(exp))
@@ -131,13 +133,10 @@ identifyOutliers <- function(exp, assay = "ratio", qcType = metadata(exp)$QC) {
 #'     `use` and `outlier` columns.
 #' @examples
 #' # Example usage:
-#' # exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
-#' # exp <- identifyMisInjections(exp, assay = "Ratio")
-#' @export
-#' @examples
-#' # Example usage:
-#' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
+#' path <- system.file("extdata", "example.tsv", package = "mzQuality")
+#' exp <- buildExperiment(readData(path))
 #' exp <- identifyMisInjections(exp, assay = "area_is")
+#' @export
 identifyMisInjections <- function(
         exp, assay = metadata(exp)$secondary, type = "SAMPLE"
 ) {
@@ -280,7 +279,8 @@ medianSampleArea <- function(
 #'     reflecting the analysis results.
 #' @examples
 #' # Read data
-#' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
+#' path <- system.file("extdata", "example.tsv", package = "mzQuality")
+#' exp <- buildExperiment(readData(path))
 #'
 #' # Do Analysis
 #' exp <- doAnalysis(exp)
@@ -347,7 +347,8 @@ doAnalysis <- function(
 #' @export
 #' @examples
 #' # Example usage:
-#' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
+#' path <- system.file("extdata", "example.tsv", package = "mzQuality")
+#' exp <- buildExperiment(readData(path))
 #' exp <- doAnalysis(exp, removeOutliers = TRUE)
 #' exp <- getSuggestedInternalStandards(exp, removeOutliers = TRUE)
 getSuggestedInternalStandards <- function(

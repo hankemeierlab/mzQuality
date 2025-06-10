@@ -54,7 +54,8 @@ the following code. The result is a SummarizedExperiment, which is the core
 object that mzQuality uses. See [here](https://bioconductor.org/packages/release/bioc/vignettes/SummarizedExperiment/inst/doc/SummarizedExperiment.html) for an overview on a SummarizedExperiment.
 
 ``` r
-exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
+path <- system.file("extdata", "example.tsv", package = "mzQuality")
+exp <- buildExperiment(readData(path))
 ```
 
 To use your own data, either a SummarizedExperiment or a 
@@ -70,7 +71,7 @@ uses to perform all calculations and analyses and is used throughout the package
 
 ``` r
 # Path to the file
-path <- system.file("extdata/example.tsv", package = "mzQuality")
+path <- path
 
 # Read the file and check if all mandatory columns are present:
 combined <- readData(path)

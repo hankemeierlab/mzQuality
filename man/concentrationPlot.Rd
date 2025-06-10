@@ -8,7 +8,7 @@ concentrationPlot(
   exp,
   assay = "ratio_corrected",
   compound = 1,
-  batch = exp$batch[1],
+  batches = exp$batch[1],
   types = c("SAMPLE", "SQC"),
   calType = metadata(exp)$concentration,
   removeOutliers = TRUE,
@@ -24,8 +24,7 @@ on the y-axis. Defaults to "ratio_corrected".}
 \item{compound}{An integer specifying the compound index to be plotted.
 Defaults to 1.}
 
-\item{batch}{An integer specifying the batch index to be plotted.
-Defaults to 1.}
+\item{batches}{Name of the batch(es) to plot. Defaults to the first batch.}
 
 \item{types}{A character vector specifying the types of data to include
 in the plot. Defaults to `c("SAMPLE", "SQC")`.}
@@ -53,7 +52,8 @@ This function generates a concentration plot using ggplot2. It
 }
 \examples{
 # Read data
-exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
+path <- system.file("extdata", "example.tsv", package = "mzQuality")
+exp <- buildExperiment(readData(path))
 
 # Do Analysis
 exp <- doAnalysis(exp)

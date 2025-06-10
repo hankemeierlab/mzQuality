@@ -16,8 +16,8 @@
 #' @importFrom utils read.delim
 #' @export
 #' @examples
-#' # Read example dataset
-#' data <- readData(system.file("extdata/example.tsv", package = "mzQuality"))
+#' path <- system.file("extdata/example.tsv", package = "mzQuality")
+#' data <- readData(path)
 readData <- function(files, vendor = NA, regex = NULL) {
     mandatoryColumns <- c(
         "Acquisition Date & Time", "Acquisition.Date...Time",
@@ -26,7 +26,7 @@ readData <- function(files, vendor = NA, regex = NULL) {
         "Area"
     )
 
-    df <- .setBatches(lapply(files, function(file) {
+    df <- lapply(files, function(file) {
         df <- read.delim(file, sep = "\t")
 
         if (sum(colnames(df) %in% mandatoryColumns) > 1) {
@@ -40,7 +40,16 @@ readData <- function(files, vendor = NA, regex = NULL) {
         colnames(df) <- tolower(colnames(df))
         df$type <- toupper(df$type)
         df
-    }))
+    })
+
+    if (length(df) > 1) {
+        df <- .setBatches(df) # Set batch numbers if multiple files
+    } else {
+        df <- df[[1]]
+        if (!"batch" %in% colnames(df)) {
+            df$batch <- "Batch01"
+        }
+    }
 
     df
 }
@@ -79,18 +88,18 @@ readData <- function(files, vendor = NA, regex = NULL) {
 #'     DataFrame is empty, it initializes it with the unique rows. Otherwise,
 #'     it updates the rownames and removes the specified index column.
 #' @param rowData A DataFrame containing the metadata.
-#' @param rowIndex A string specifying the column to use as the row index.
+#' @param compoundColumn A string specifying the column to use as the row index.
 #' @param rows A character vector of row names to include in the metadata.
 #' @return A DataFrame containing the updated metadata, ordered by rownames.
 #' @importFrom dplyr distinct
 #' @importFrom S4Vectors DataFrame
 #' @noRd
-.setMetaDataFrame <- function(rowData, rowIndex, rows) {
+.setMetaDataFrame <- function(rowData, compoundColumn, rows) {
     if (nrow(rowData) == 0) {
         rowData <- DataFrame(row.names = unique(rows))
     } else {
         rownames(rowData) <- rows
-        rowData <- rowData[-which(colnames(rowData) == rowIndex)]
+        rowData <- rowData[-which(colnames(rowData) == compoundColumn)]
     }
     return(rowData)
 }
@@ -124,20 +133,27 @@ readData <- function(files, vendor = NA, regex = NULL) {
 #' @param df A dataframe in long format containing the data.
 #' @param rowData A DataFrame containing row metadata.
 #' @param colData A DataFrame containing column metadata.
-#' @param rowIndex A string specifying the column to use as the row index.
-#' @param colIndex A string specifying the column to use as the column index.
+#' @param compoundColumn A string specifying the column that contains the
+#' reported compounds. Defaults to "compound".
+#' @param aliquotColumn A string specifying the column that contains the
+#' aliquots/samples measured. Defaults to "aliquot".
 #' @return A named list of assay matrices, with rows corresponding to
 #'     `rowData` and columns corresponding to `colData`.
 #' @noRd
-.buildAssayList <- function(df, rowData, colData, rowIndex, colIndex) {
+.buildAssayList <- function(
+        df, rowData, colData,
+        compoundColumn = "compound", aliquotColumn = "aliquot"
+) {
     hasMissing <- nrow(df) != nrow(colData) * nrow(rowData)
-    reserved <- c(colnames(rowData), colnames(colData), rowIndex, colIndex)
+    reserved <- c(
+        colnames(rowData), colnames(colData), compoundColumn, aliquotColumn
+    )
     assayNames <- setdiff(colnames(df), reserved)
-
+    df <- df[order(df[, "injection_time"]), ]
 
     if (hasMissing) {
         df <- .fillMissingCombinations(
-            df, rowIndex, colIndex, rowData, colData, assayNames
+            df, compoundColumn, aliquotColumn, rowData, colData, assayNames
         )
     }
 
@@ -146,11 +162,11 @@ readData <- function(files, vendor = NA, regex = NULL) {
         values <- df[, assayName, drop = TRUE]
         if (all(is.numeric(values))) {
             m <- matrix(
-                data = as.double(values),
+                data = values,
                 ncol = nrow(colData),
                 nrow = nrow(rowData),
                 dimnames = list(rownames(rowData), rownames(colData)),
-                byrow = TRUE
+                byrow = FALSE
             )
         }
 
@@ -171,10 +187,10 @@ readData <- function(files, vendor = NA, regex = NULL) {
 #' @param df A dataframe in a long format. Should contain at least a column for
 #'   compounds, aliquots, area, type, and datetime. See the vignette for an
 #'   example of a valid dataframe.
-#' @param rowIndex The column name in `df` that should be used for compounds.
-#'   Defaults to 'compound'.
-#' @param colIndex The column name in `df` that should be used for aliquots.
-#'   Defaults to 'aliquot'.
+#' @param compoundColumn The column name in `df` that should be used for
+#' compounds. Defaults to 'compound'.
+#' @param aliquotColumn The column name in `df` that should be used for
+#' aliquots. Defaults to 'aliquot'.
 #' @param primaryAssay The column name in `df` that represents the area or
 #'   intensities of measured compounds. Defaults to 'area'.
 #' @param secondaryAssay The column name in `df` that represents the area or
@@ -195,24 +211,24 @@ readData <- function(files, vendor = NA, regex = NULL) {
 #' @returns A SummarizedExperiment object with dimensions compounds x aliquots.
 #' @export
 #' @examples
-#' # Read example dataset
-#' data <- readData(system.file("extdata/example.tsv", package = "mzQuality"))
+#' path <- system.file("extdata", "example.tsv", package = "mzQuality")
+#' data <- readData(path)
 #'
 #' # Construct experiment
-#' exp <- buildExperiment(
-#'     df = data,
-#'     rowIndex = "compound",
-#'     colIndex = "aliquot",
-#'     primaryAssay = "area",
-#'     secondaryAssay = "area_is"
-#' )
+# exp <- buildExperiment(
+#     df = data,
+#     compoundColumn = "compound",
+#     aliquotColumn = "aliquot",
+#     primaryAssay = "area",
+#     secondaryAssay = "area_is"
+# )
 #'
 #' # Construct experiment without concentrations
 #' data <- data[-which(colnames(data) == "concentration")]
 #' exp <- buildExperiment(
 #'     df = data,
-#'     rowIndex = "compound",
-#'     colIndex = "aliquot",
+#'     compoundColumn = "compound",
+#'     aliquotColumn = "aliquot",
 #'     primaryAssay = "area",
 #'     secondaryAssay = "area_is"
 #' )
@@ -222,13 +238,13 @@ readData <- function(files, vendor = NA, regex = NULL) {
 #' data <- data[-grep("_is", colnames(data))]
 #' exp <- buildExperiment(
 #'     df = data,
-#'     rowIndex = "compound",
-#'     colIndex = "aliquot",
+#'     compoundColumn = "compound",
+#'     aliquotColumn = "aliquot",
 #'     primaryAssay = "area",
 #'     secondaryAssay = "area"
 #' )
 buildExperiment <- function(
-        df, rowIndex = "compound", colIndex = "aliquot",
+        df, compoundColumn = "compound", aliquotColumn = "aliquot",
         primaryAssay = "area", secondaryAssay = "area_is",
         typeColumn = "type", qc = "SQC", secondaryIndex = "compound_is"
 ) {
@@ -254,41 +270,27 @@ buildExperiment <- function(
     df <- df[, keep, drop = FALSE]
 
     idx <- colnames(df) != typeColumn
-    rowData <- .buildMetadataWithIndex(df[, idx], rowIndex)
-    colData <- .buildMetadataWithIndex(df, colIndex)
-    assays <- .buildAssayList(df, rowData, colData, rowIndex, colIndex)
+    rowData <- .buildMetadataWithIndex(df[, idx], compoundColumn)
+    colData <- .buildMetadataWithIndex(df, aliquotColumn)
+    assays <- .buildAssayList(
+        df, rowData, colData, compoundColumn, aliquotColumn
+    )
 
     assayNames <- names(assays)
-    id <- which(assayNames == primaryAssay)
-    assays <- c(assays[id], assays[-id])
-    names(assays) <- c(primaryAssay, assayNames[-id])
-
     hasIS <- secondaryAssay %in% assayNames & primaryAssay != secondaryAssay
-    meta <- list(
-        QC = qc,
-        primary = primaryAssay,
-        secondary = secondaryAssay,
-        hasIS = hasIS,
-        Date = Sys.time()
-    )
 
-    exp <- SummarizedExperiment(
+    SummarizedExperiment(
         assays = assays, rowData = rowData, colData = colData,
-        metadata = meta
-    )
-
-
-
-
-
-
-
-
-    exp <- exp %>%
+        metadata = list(
+            QC = qc,
+            primary = primaryAssay,
+            secondary = secondaryAssay,
+            hasIS = hasIS,
+            Date = Sys.time()
+        )
+    ) %>%
         .addConcentrationMetadata() %>%
         .addInitialAnalysis()
-
-    return(exp)
 }
 
 #' @title Set the Colors of the Samples
@@ -374,19 +376,24 @@ buildExperiment <- function(
 #' @returns A dataframe with all aliquot-compound combinations, including
 #'   the missing ones filled with NA values.
 #' @param df A dataframe in long format.
-#' @param rowIndex The column name in `df` to be used for compounds.
-#' @param colIndex The column name in `df` to be used for aliquots.
+#' @param compoundColumn The column name in `df` to be used for compounds.
+#' @param aliquotColumn The column name in `df` to be used for aliquots.
 #' @param rowData A dataframe containing row data (e.g., compounds).
 #' @param colData A dataframe containing column data (e.g., aliquots).
 #' @param assayNames A character vector of column names in `df` representing
 #'   the area or intensities of measured compounds.
 #' @importFrom dplyr bind_rows
-.fillMissingCombinations <- function(df, rowIndex, colIndex, rowData, colData,
-                                    assayNames) {
+#' @noRd
+.fillMissingCombinations <- function(
+        df, compoundColumn, aliquotColumn, rowData, colData,  assayNames
+) {
 
     # Identify compounds and aliquots with missing combinations
-    incompleteCompounds <- names(which(table(df[[rowIndex]]) < nrow(colData)))
-    incompleteAliquots <- names(which(table(df[[colIndex]]) < nrow(rowData)))
+    compoundCounts <- table(df[[compoundColumn]])
+    aliquotCounts <- table(df[[aliquotColumn]])
+
+    incompleteCompounds <- names(which(compoundCounts < nrow(colData)))
+    incompleteAliquots <- names(which(aliquotCounts < nrow(rowData)))
 
     # All possible missing pairs to add
     grid <- expand.grid(
@@ -397,11 +404,11 @@ buildExperiment <- function(
     pairs <- paste0(grid$aliquot, grid$compound)
 
     # Existing compound-aliquot pairs
-    existingPairs <- paste0(df[[colIndex]], df[[rowIndex]])
+    existingPairs <- paste0(df[[aliquotColumn]], df[[compoundColumn]])
 
     # Keep only the missing ones
     grid <- grid[!pairs %in% existingPairs, ]
-    colnames(grid) <- c(colIndex, rowIndex)
+    colnames(grid) <- c(aliquotColumn, compoundColumn)
 
     # Fill assay columns with NA
     for (assay in assayNames) {
@@ -409,10 +416,7 @@ buildExperiment <- function(
     }
 
     # Combine original and missing rows
-    df <- bind_rows(df[, c(colIndex, rowIndex, assayNames)], grid)
-
-    # Sort for consistency
-    df <- df[order(df[[colIndex]], df[[rowIndex]], method = "radix"), ]
+    df <- bind_rows(df[, c(aliquotColumn, compoundColumn, assayNames)], grid)
 
     return(df)
 }
@@ -423,75 +427,77 @@ buildExperiment <- function(
 #' this function can be used to convert a SummarizedExperiment to a dataframe
 #' in the long format. Note that metadata won't be exported.
 #' @param exp a SummarizedExperiment object
-#' @param rowIndex Columnname in the resulting dataframe for compounds,
+#' @param compoundColumn Columnname in the resulting dataframe for compounds,
 #' defaults to 'Compound'.
-#' @param colIndex Columnname in the resulting dataframe for aliquots,
+#' @param aliquotColumn Columnname in the resulting dataframe for aliquots,
 #' defaults to 'Aliquot'.
 #' @importFrom SummarizedExperiment assayNames assay colData rowData
 #' @importFrom utils stack
 #' @returns a data.frame in a generic, human-readable format
 #' @export
 #' @examples
-#' # Read example dataset
-#' data <- readData(system.file("extdata/example.tsv", package = "mzQuality"))
+#' path <- system.file("extdata/example.tsv", package = "mzQuality")
+#' data <- readData(path)
 #'
 #' # Construct experiment
 #' exp <- buildExperiment(
 #'     data,
-#'     rowIndex = "compound",
-#'     colIndex = "aliquot",
+#'     compoundColumn = "compound",
+#'     aliquotColumn = "aliquot",
 #'     primaryAssay = "area",
 #'     secondaryAssay = "area_is"
 #' )
 #'
 #' # Convert to a table format
-#' expToCombined(exp, rowIndex = "Compound", colIndex = "Aliquot")
-expToCombined <- function(exp,  rowIndex = "compound", colIndex = "aliquot") {
-        # transform to a long format, only maintaining the dim-names
+#' expToCombined(exp, compoundColumn = "Compound", aliquotColumn = "Aliquot")
+expToCombined <- function(
+        exp, compoundColumn = "compound", aliquotColumn = "aliquot"
+) {
+    # transform to a long format, only maintaining the dim-names
 
-        rData <- rowData(exp)
-        cData <- colData(exp)
+    rData <- rowData(exp)
+    cData <- colData(exp)
 
-        x <- expand.grid(list(rownames(rData), rownames(cData)))
-        colnames(x) <- c(rowIndex, colIndex)
+    x <- expand.grid(list(rownames(rData), rownames(cData)))
+    colnames(x) <- c(compoundColumn, aliquotColumn)
 
-        # Get long-format dataframe of all assays in the experiment
-        assays <- do.call(cbind, lapply(assayNames(exp), function(assay){
-            # Per assay, retrieve it as a matrix
-            mat <- assay(exp, assay)
-            return(stack(as.data.frame(mat))[, -2, drop = FALSE])
-        }))
+    # Get long-format dataframe of all assays in the experiment
+    assays <- do.call(cbind, lapply(assayNames(exp), function(assay){
+        # Per assay, retrieve it as a matrix
+        mat <- assay(exp, assay)
+        return(stack(as.data.frame(mat))[, -2, drop = FALSE])
+    }))
 
-        # Set the column names of the assays to their assay names
-        colnames(assays) <- assayNames(exp)
+    # Set the column names of the assays to their assay names
+    colnames(assays) <- assayNames(exp)
 
-        # Set a vector of all columns names to be used after binding
-        cols <- c(
-            colnames(x),
-            colnames(assays),
-            colnames(cData),
-            colnames(rData)
-        )
+    # Set a vector of all columns names to be used after binding
+    cols <- c(
+        colnames(x),
+        colnames(assays),
+        colnames(cData),
+        colnames(rData)
+    )
 
-        df <- as.data.frame(cbind(
-            x,
-            assays,
-            cData[x[, colIndex], ],
-            rData[x[, rowIndex], ]
-        ))
+    df <- as.data.frame(cbind(
+        x,
+        assays,
+        cData[x[, aliquotColumn], ],
+        rData[x[, compoundColumn], ]
+    ))
 
-        # Order the dataframe based on the Compounds and aliquots
-        df <- df[order(df[, rowIndex], df[, colIndex]), , drop = FALSE]
+    # Order the dataframe based on the Compounds and aliquots
+    df <- df[order(df[, compoundColumn], df[, aliquotColumn]), , drop = FALSE]
 
-        # Assign new rownames
-        rownames(df) <- seq_len(nrow(df))
+    # Assign new rownames
+    rownames(df) <- seq_len(nrow(df))
 
-        # Assign the correct column names
-        colnames(df) <- cols
+    # Assign the correct column names
+    colnames(df) <- cols
 
-        # Return the data.fame
-        cols <- !duplicated(colnames(df)) & !is.na(colnames(df))
-        return(df[, cols, drop = FALSE])
+    # Return the data.fame
+    cols <- !duplicated(colnames(df)) & !is.na(colnames(df))
+    return(df[, cols, drop = FALSE])
 }
 
 #' @title Add Known Concentrations of Calibration Lines
@@ -514,16 +520,18 @@ expToCombined <- function(exp,  rowIndex = "compound", colIndex = "aliquot") {
 #'     and other values are set to `NA`.
 #' @export
 #' @examples
-#' # Read example dataset
-#' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
+#' path <- system.file("extdata", "example.tsv", package = "mzQuality")
+#' exp <- buildExperiment(readData(path))
 #' # Add concentrations
 #' file <- system.file("extdata/concentrations.tsv", package = "mzQuality")
 #' concentrations <- read.delim(file)
 #'
-#' addConcentrations(exp, df)
+#' addConcentrations(exp, concentrations)
 addConcentrations <- function(exp, df) {
     comps <- intersect(rownames(exp), rownames(df))
-
+    if (length(comps) == 0) {
+        return(exp)
+    }
     find <- gregexec("([A-Za-z]+)([0-9]+)", colnames(df))
     matches <- do.call(rbind, lapply(regmatches(colnames(df), find), t))
     idx1 <- exp$calno %in% as.integer(matches[, 3])
@@ -580,7 +588,7 @@ addConcentrations <- function(exp, df) {
     m <- assay(exp, "concentration")
     concType <- unique(exp$type[colSums(is.na(m)) != nrow(m)])
     if (length(concType) > 1) {
-        message("> 1 calibration line is not supported, selecting first type")
+        message(">1 calibration line is not supported, selecting first type")
         concType <- concType[1]
     }
 
@@ -603,14 +611,14 @@ addConcentrations <- function(exp, df) {
 #' the ratio between two assays.
 #' @export
 #' @examples
-#' # Read example dataset
-#' data <- readData(system.file("extdata/example.tsv", package = "mzQuality"))
+#' path <- system.file("extdata/example.tsv", package = "mzQuality")
+#' data <- readData(path)
 #'
 #' # Construct experiment
 #' exp <- buildExperiment(
 #'     data,
-#'     rowIndex = "compound",
-#'     colIndex = "aliquot",
+#'     compoundColumn = "compound",
+#'     aliquotColumn = "aliquot",
 #'     primaryAssay = "area",
 #'     secondaryAssay = "area_is"
 #' )

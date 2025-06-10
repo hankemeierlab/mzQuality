@@ -32,8 +32,8 @@ to match the tag, so you can use any pattern that matches the RSDQC
 values.
 }
 \examples{
-# Read example dataset
-exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
+path <- system.file("extdata", "example.tsv", package = "mzQuality")
+exp <- buildExperiment(readData(path))
 
 # Perform analysis
 exp <- doAnalysis(exp)

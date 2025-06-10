@@ -21,8 +21,8 @@ A/IS ratio of QCs.
 placeholder
 }
 \examples{
-# Read example dataset
-exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
+path <- system.file("extdata/example.tsv", package = "mzQuality")
+exp <- buildExperiment(readData(path))
 
 # Remove QC outliers
 filterOutliers(exp)

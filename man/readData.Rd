@@ -31,6 +31,6 @@ The function handles vendor-specific formats by applying
   and column names are converted to lowercase for consistency.
 }
 \examples{
-# Read example dataset
-data <- readData(system.file("extdata/example.tsv", package = "mzQuality"))
+path <- system.file("extdata/example.tsv", package = "mzQuality")
+data <- readData(path)
 }

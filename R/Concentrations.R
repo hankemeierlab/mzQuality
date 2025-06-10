@@ -106,7 +106,8 @@ calculateConcentrationsPerType <- function(exp, type, ...){
 #' @examples
 #' # Example usage:
 #' # Load example dataset
-#' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
+#' path <- system.file("extdata", "example.tsv", package = "mzQuality")
+#' exp <- buildExperiment(readData(path))
 #'
 #' exp <- doAnalysis(exp, removeOutliers = TRUE)
 #'
@@ -269,6 +270,7 @@ modelWithOutliers <- function(
 #'         levels}
 #' @importFrom dplyr pull
 #' @importFrom matrixStats rowMins rowMaxs
+#' @noRd
 batchConcentrations <- function(
         exp, batch, assayX = "ratio",
         assayY = "concentration", type = "ACAL",
@@ -353,6 +355,7 @@ getConcentrationAssays <- function(
 #' @param y A numeric matrix of Y-values.
 #'
 #' @returns A numeric vector containing the row-wise covariance values.
+#' @noRd
 .rowWiseCov <- function(x, y){
 
     valid <- !is.na(x) & !is.na(y)  # Only consider non-NA pairs
@@ -380,6 +383,7 @@ getConcentrationAssays <- function(
 #' @param y A numeric matrix of Y-values.
 #'
 #' @returns A numeric vector containing the row-wise slope values.
+#' @noRd
 .rowWiseSlope <- function(x, y) {
     slope <- .rowWiseCov(x, y) / .rowWiseCov(x, x)
     return(slope)
@@ -403,6 +407,7 @@ getConcentrationAssays <- function(
 #' [.rowWiseSlope].
 #'
 #' @returns A numeric vector containing the row-wise intercept values.
+#' @noRd
 .rowWiseIntercept <- function(x, y, slope) {
     int <- rowMeans(y, na.rm = TRUE) - slope * rowMeans(x, na.rm = TRUE)
     return(int)
@@ -463,7 +468,8 @@ rowCorrelation <- function(x, y) {
 #' @importFrom dplyr bind_cols
 #' @examples
 #' # Example usage:
-#' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
+#' path <- system.file("extdata", "example.tsv", package = "mzQuality")
+#' exp <- buildExperiment(readData(path))
 #' exp <- addLinearRange(
 #'     exp, assay = "ratio", minCalNo = 2,
 #'     maxCalNo = 6, saveAssay = "CalRange"

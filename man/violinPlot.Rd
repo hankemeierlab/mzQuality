@@ -53,7 +53,8 @@ This function generates a violin plot using ggplot2. It allows
 }
 \examples{
 # Read data
-exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
+path <- system.file("extdata", "example.tsv", package = "mzQuality")
+exp <- buildExperiment(readData(path))
 
 # Do Analysis
 exp <- doAnalysis(exp)

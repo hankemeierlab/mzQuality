@@ -13,8 +13,8 @@
 #' called "CarryOver"
 #' @export
 #' @examples
-#' # Read the example dataset
-#' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
+#' path <- system.file("extdata", "example.tsv", package = "mzQuality")
+#' exp <- buildExperiment(readData(path))
 #'
 #' # Add concentrations
 #' concentrations <- read.delim(system.file(
@@ -77,8 +77,8 @@ carryOverEffect <- function(exp, type = "PROC", assay = "concentration") {
 #' (Limit of Quantification)
 #' @export
 #' @examples
-#' # Read example dataset
-#' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
+#' path <- system.file("extdata", "example.tsv", package = "mzQuality")
+#' exp <- buildExperiment(readData(path))
 #'
 #' # Add concentrations
 #' concentrations <- read.delim(system.file(
@@ -129,8 +129,8 @@ blankLimits <- function(exp, type = "PROC", assay = "concentration") {
 #' the rowData slot
 #' @export
 #' @examples
-#' # Read the example dataset
-#' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
+#' path <- system.file("extdata", "example.tsv", package = "mzQuality")
+#' exp <- buildExperiment(readData(path))
 #'
 #' # Perform the calculation
 #' backgroundSignals(exp)
@@ -216,8 +216,8 @@ backgroundSignals <- function(exp, type = "BLANK", NaAsZero = FALSE) {
 #' @importFrom matrixStats rowMedians
 #' @export
 #' @examples
-#' # Read the example dataset
-#' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
+#' path <- system.file("extdata", "example.tsv", package = "mzQuality")
+#' exp <- buildExperiment(readData(path))
 #'
 #' # Calculate matrix effect factors
 #' exp <- matrixEffect(exp)

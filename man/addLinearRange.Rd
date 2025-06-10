@@ -49,7 +49,8 @@ This function checks whether the ratios of compounds in the
 }
 \examples{
 # Example usage:
-exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
+path <- system.file("extdata", "example.tsv", package = "mzQuality")
+exp <- buildExperiment(readData(path))
 exp <- addLinearRange(
     exp, assay = "ratio", minCalNo = 2,
     maxCalNo = 6, saveAssay = "CalRange"

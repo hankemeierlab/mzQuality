@@ -23,8 +23,8 @@ This function checks that the object is a valid
   `colData`, and includes the "ratio" assay.
 }
 \examples{
-# Read example dataset
-exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
+path <- system.file("extdata", "example.tsv", package = "mzQuality")
+exp <- buildExperiment(readData(path))
 
 # Validate the experiment
 isValid <- isValidExperiment(exp)

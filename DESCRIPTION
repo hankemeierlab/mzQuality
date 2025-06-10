@@ -10,7 +10,7 @@ Authors@R: c(
         person("Lieke", "Lamont", email = "l.lamont@lacdr.leidenuniv.nl", role = "ctb", comment = c(ORCID = "0000-0002-2779-124X")),
         person("Thomas", "Hankemeier", email = "hankemeier@lacdr.leidenuniv.nl", role = "ctb", comment = c(ORCID = "0000-0001-7871-2073")),
         person("Amy", "Harms", email = "a.c.harms@lacdr.leidenuniv.nl", role = "ctb", comment = c(ORCID = "0000-0002-2931-4295")),
-        person("Ronan", "Fleming", email = "", role = "ctb", comment = c(ORCID = "orcid.org/0000-0001-5346-9812")),
+        person("Ronan", "Fleming", email = "ronan.mt.fleming@gmail.com", role = "ctb", comment = c(ORCID = "orcid.org/0000-0001-5346-9812")),
         person("Recon4IMD, Horizon Europe", role = "fnd", comment = c(GRANT = "101080997")),
         person("SKINERGY, NWO", role = "fnd", comment = c(GRANT = "1389.20.182")),
         person("X-Omics, NWO", role = "fnd", comment = c(GRANT = "184.034.019")),
@@ -20,6 +20,7 @@ Authors@R: c(
 Description: mzQuality is an R package for monitoring variation in mass spectrometry measurements. It provides various metrics by utilizing pooled quality control samples, blank samples and calibration lines. mzQuality uses Bioconductors' SummarizedExperiment to facilitate implementation with existing workflows.
 biocViews: Software, MassSpectrometry, BatchEffect, QualityControl, Metabolomics 
 Depends:
+    R (>= 4.5.0),
     dplyr,
     SummarizedExperiment
 Imports:

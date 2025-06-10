@@ -34,7 +34,8 @@ This function uses ggplot2's facet_wrap to create facets for a
 }
 \examples{
 # Read data
-exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
+path <- system.file("extdata", "example.tsv", package = "mzQuality")
+exp <- buildExperiment(readData(path))
 
 # Do Analysis
 exp <- doAnalysis(exp)

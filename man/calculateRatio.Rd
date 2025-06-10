@@ -26,14 +26,14 @@ the ratio between two assays.
 Calculate the A/IS ratio with minimal imputation
 }
 \examples{
-# Read example dataset
-data <- readData(system.file("extdata/example.tsv", package = "mzQuality"))
+path <- system.file("extdata/example.tsv", package = "mzQuality")
+data <- readData(path)
 
 # Construct experiment
 exp <- buildExperiment(
     data,
-    rowIndex = "compound",
-    colIndex = "aliquot",
+    compoundColumn = "compound",
+    aliquotColumn = "aliquot",
     primaryAssay = "area",
     secondaryAssay = "area_is"
 )

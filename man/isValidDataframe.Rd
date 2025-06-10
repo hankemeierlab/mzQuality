@@ -22,8 +22,8 @@ This function checks if the dataframe contains the required
   includes at least one "QC" type.
 }
 \examples{
-# Read example dataset
-data <- readData(system.file("extdata/example.tsv", package = "mzQuality"))
+path <- system.file("extdata/example.tsv", package = "mzQuality")
+data <- readData(path)
 
 # Validate the dataframe
 isValid <- isValidDataframe(data)

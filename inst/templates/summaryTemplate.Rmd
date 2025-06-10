@@ -30,8 +30,9 @@ div.main-container {
 library(mzQuality)
 
 if (!isValidExperiment(params$exp)) {
+  path <- system.file("extdata", "example.tsv", package = "mzQuality")
   # use a default example instead
-  exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
+  exp <- buildExperiment(readData(path))
   exp <- doAnalysis(exp)
   
   assays <- c("ratio", "ratio_corrected")
@@ -93,7 +94,9 @@ x <- cleanDataframe(colData(exp))
 DT::datatable(as.data.frame(x))
 ```
 
-In total, `r nrow(exp)` compounds were submitted, of which `r if ("use" %in% colnames(rowData(exp))) sum(rowData(exp)$use) else 0` compounds were used. See the table below for compound data.
+In total, `r nrow(exp)` compounds were submitted, of which 
+`r if ("use" %in% colnames(rowData(exp))) sum(rowData(exp)$use) else 0` 
+compounds were used. See the table below for compound data.
 
 ```{r compoundTable, echo = FALSE}
 x <- cleanDataframe(rowData(exp), onlyNumeric = TRUE)
@@ -102,7 +105,8 @@ DT::datatable(x)
 
 
 # Aliquot Plot {.tabset .tabset-fade .tabset-pills}
-The Aliquot plot shows the distribution of the assay(s) `r paste(assays, collapse = ", ")` in `r if ("batch" %in% colnames(colData(exp))) length(unique(exp$batch)) else 1` batch(es). 
+The Aliquot plot shows the distribution of the assay(s) 
+`r paste(assays, collapse = ", ")` in `r length(unique(exp$batch))` batch(es). 
 
 ```{r aliquotPlot, echo = FALSE, fig.width=24, warning=FALSE, fig.height=height, out.width='100%', results = "asis", dpi = 100}
 if ("Aliquot" %in% plots) {

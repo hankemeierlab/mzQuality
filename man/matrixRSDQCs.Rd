@@ -40,11 +40,7 @@ This function calculates the RSDQC, which is an indicator of the
 }
 \examples{
 # Example usage:
-# exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
-# rsdMatrix <- matrixRSDQCs(exp)
-# Example usage:
-exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
-
-# Calculate the RSDQC matrix for the default primary and secondary assays
-rsd_matrix <- matrixRSDQCs(exp)
+path <- system.file("extdata", "example.tsv", package = "mzQuality")
+exp <- buildExperiment(readData(path))
+rsdMatrix <- matrixRSDQCs(exp)
 }

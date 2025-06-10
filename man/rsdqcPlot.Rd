@@ -19,8 +19,11 @@ if the picked internal standard is the correct one or if possible another
 internal standard should be picked.
 }
 \examples{
-# Read the example dataset
-exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
+path <- system.file("extdata", "example.tsv", package = "mzQuality")
+exp <- buildExperiment(readData(path))
+
+# Run analysis
+exp <- doAnalysis(exp)
 
 # Plot RSDQCs
 rsdqcPlot(exp)

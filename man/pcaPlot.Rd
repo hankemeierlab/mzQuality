@@ -66,7 +66,8 @@ This function calculates PCA on selected assay data from a
 }
 \examples{
 # Read data
-exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
+path <- system.file("extdata", "example.tsv", package = "mzQuality")
+exp <- buildExperiment(readData(path))
 
 # Do Analysis
 exp <- doAnalysis(exp)

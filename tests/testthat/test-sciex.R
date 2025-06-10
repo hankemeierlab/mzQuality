@@ -1,6 +1,6 @@
 library(testthat)
 suppressPackageStartupMessages(library(mzQuality))
-# Read the example dataset
+path <- system.file("extdata/example.tsv", package = "mzQuality")
 dataFile <- system.file("extdata/sciex.tsv", package = "mzQuality")
 
 

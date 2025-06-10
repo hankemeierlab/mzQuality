@@ -4,15 +4,15 @@
 \alias{expToCombined}
 \title{Convert a SummarizedExperiment to a data frame in the long format}
 \usage{
-expToCombined(exp, rowIndex = "compound", colIndex = "aliquot")
+expToCombined(exp, compoundColumn = "compound", aliquotColumn = "aliquot")
 }
 \arguments{
 \item{exp}{a SummarizedExperiment object}
 
-\item{rowIndex}{Columnname in the resulting dataframe for compounds,
+\item{compoundColumn}{Columnname in the resulting dataframe for compounds,
 defaults to 'Compound'.}
 
-\item{colIndex}{Columnname in the resulting dataframe for aliquots,
+\item{aliquotColumn}{Columnname in the resulting dataframe for aliquots,
 defaults to 'Aliquot'.}
 }
 \value{
@@ -25,18 +25,18 @@ this function can be used to convert a SummarizedExperiment to a dataframe
 in the long format. Note that metadata won't be exported.
 }
 \examples{
-# Read example dataset
-data <- readData(system.file("extdata/example.tsv", package = "mzQuality"))
+path <- system.file("extdata/example.tsv", package = "mzQuality")
+data <- readData(path)
 
 # Construct experiment
 exp <- buildExperiment(
     data,
-    rowIndex = "compound",
-    colIndex = "aliquot",
+    compoundColumn = "compound",
+    aliquotColumn = "aliquot",
     primaryAssay = "area",
     secondaryAssay = "area_is"
 )
 
 # Convert to a table format
-expToCombined(exp, rowIndex = "Compound", colIndex = "Aliquot")
+expToCombined(exp, compoundColumn = "Compound", aliquotColumn = "Aliquot")
 }

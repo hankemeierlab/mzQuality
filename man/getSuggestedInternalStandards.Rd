@@ -41,7 +41,8 @@ This function evaluates all available internal standards and
 }
 \examples{
 # Example usage:
-exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
+path <- system.file("extdata", "example.tsv", package = "mzQuality")
+exp <- buildExperiment(readData(path))
 exp <- doAnalysis(exp, removeOutliers = TRUE)
 exp <- getSuggestedInternalStandards(exp, removeOutliers = TRUE)
 }

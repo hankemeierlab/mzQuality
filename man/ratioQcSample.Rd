@@ -39,6 +39,7 @@ This function calculates the ratio of row medians for QC samples
 }
 \examples{
 # Example usage:
-exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
-exp <- ratioQcSample(exp)
+path <- system.file("extdata", "example.tsv", package = "mzQuality")
+exp <- buildExperiment(readData(path))
+exp <- ratioQcSample(exp, assay = "ratio")
 }

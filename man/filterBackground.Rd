@@ -29,14 +29,14 @@ the background signal values. It filters the compounds based on the
 provided minimum and maximum background signal values.
 }
 \examples{
-# Read example dataset
-data <- readData(system.file("extdata/example.tsv", package = "mzQuality"))
+path <- system.file("extdata", "example.tsv", package = "mzQuality")
+data <- readData(path)
 
 # Construct experiment
 exp <- buildExperiment(
     data,
-    rowIndex = "compound",
-    colIndex = "aliquot",
+    compoundColumn = "compound",
+    aliquotColumn = "aliquot",
     primaryAssay = "area",
     secondaryAssay = "area_is"
 )

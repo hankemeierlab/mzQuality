@@ -1,12 +1,10 @@
 library(testthat)
 suppressPackageStartupMessages(library(mzQuality))
-# Read the example dataset
 combinedFile <- system.file("extdata/example.tsv", package = "mzQuality")
 
-dataFile <- system.file("extdata/data.RDS", package = "mzQuality")
 concentrationsFile <- system.file("extdata/concentrations.tsv", package = "mzQuality")
 
-exp <- readRDS(dataFile)
+exp <- buildExperiment(readData(combinedFile))
 concentrations <- read.delim(concentrationsFile)
 
 exp <- doAnalysis(exp, removeOutliers = TRUE)

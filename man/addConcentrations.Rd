@@ -33,11 +33,11 @@ The concentrations should be provided as a data frame where rows
     concentration in the CAL lines.
 }
 \examples{
-# Read example dataset
-exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
+path <- system.file("extdata", "example.tsv", package = "mzQuality")
+exp <- buildExperiment(readData(path))
 # Add concentrations
 file <- system.file("extdata/concentrations.tsv", package = "mzQuality")
 concentrations <- read.delim(file)
 
-addConcentrations(exp, df)
+addConcentrations(exp, concentrations)
 }

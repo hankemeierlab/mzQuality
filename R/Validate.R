@@ -9,8 +9,8 @@
 #' @importFrom dplyr %>%
 #' @export
 #' @examples
-#' # Read example dataset
-#' data <- readData(system.file("extdata/example.tsv", package = "mzQuality"))
+#' path <- system.file("extdata/example.tsv", package = "mzQuality")
+#' data <- readData(path)
 #'
 #' # Validate the dataframe
 #' isValid <- isValidDataframe(data)
@@ -54,8 +54,8 @@ isValidDataframe <- function(dataframe = NULL) {
 #' @importFrom methods is
 #' @export
 #' @examples
-#' # Read example dataset
-#' exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
+#' path <- system.file("extdata", "example.tsv", package = "mzQuality")
+#' exp <- buildExperiment(readData(path))
 #'
 #' # Validate the experiment
 #' isValid <- isValidExperiment(exp)
@@ -101,14 +101,14 @@ isValidExperiment <- function(exp) {
 #' @importFrom SummarizedExperiment colData<-
 #' @export
 #' @examples
-#' # Read example dataset
-#' data <- readData(system.file("extdata/example.tsv", package = "mzQuality"))
+#' path <- system.file("extdata/example.tsv", package = "mzQuality")
+#' data <- readData(path)
 #'
 #' # Construct experiment
 #' exp <- buildExperiment(
 #'     data,
-#'     rowIndex = "compound",
-#'     colIndex = "aliquot",
+#'     compoundColumn = "compound",
+#'     aliquotColumn = "aliquot",
 #'     primaryAssay = "area",
 #'     secondaryAssay = "area_is"
 #' )
@@ -122,7 +122,7 @@ convertExperiment <- function(
     cols <- colnames(rowData(exp))
 
     if (primaryAssay != secondaryAssay) {
-        cols[which(cols) == istd] <- "compound_is"
+        cols[which(cols == istd)] <- "compound_is"
         colnames(rowData(exp)) <- cols
     }
 

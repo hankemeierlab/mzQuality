@@ -26,8 +26,8 @@ This function creates a folder named "Export" in the specified
   SummarizedExperiment object into separate tab-separated files.
 }
 \examples{
-# Read example dataset
-exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
+path <- system.file("extdata", "example.tsv", package = "mzQuality")
+exp <- buildExperiment(readData(path))
 
 # Perform analysis
 exp <- doAnalysis(exp)

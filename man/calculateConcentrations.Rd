@@ -42,7 +42,8 @@ The function computes concentrations for each batch in the
 \examples{
 # Example usage:
 # Load example dataset
-exp <- readRDS(system.file("extdata/data.RDS", package = "mzQuality"))
+path <- system.file("extdata", "example.tsv", package = "mzQuality")
+exp <- buildExperiment(readData(path))
 
 exp <- doAnalysis(exp, removeOutliers = TRUE)
 

@@ -88,6 +88,11 @@
 #' @noRd
 .setBatches <- function(list_of_files, batch_order = NULL) {
     list_of_files <- .fixDates(list_of_files)
+
+    if (length(list_of_files) == 1) {
+        list_of_files <- split(list_of_files[[1]], list_of_files[[1]]$batch)
+    }
+
     if (is.null(batch_order)) {
         batch_order <- vapply(list_of_files, function(file_df) {
             min(file_df$datetime)
