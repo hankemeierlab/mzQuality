@@ -24,6 +24,7 @@ Depends:
     dplyr,
     SummarizedExperiment
 Imports:
+    data.table,
     DT,
     EnvStats,
     ggplot2,

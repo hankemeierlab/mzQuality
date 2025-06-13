@@ -13,7 +13,7 @@
 #' @param files A character vector of paths to batch files or a combined file.
 #' @param vendor An optional character string specifying the vendor used.
 #' @param regex A regular expression for parsing aliquot names.
-#' @importFrom utils read.delim
+#' @importFrom data.table fread
 #' @export
 #' @examples
 #' path <- system.file("extdata/example.tsv", package = "mzQuality")
@@ -27,29 +27,36 @@ readData <- function(files, vendor = NA, regex = NULL) {
     )
 
     df <- lapply(files, function(file) {
-        df <- read.delim(file, sep = "\t")
+        df <- fread(file)
 
         if (sum(colnames(df) %in% mandatoryColumns) > 1) {
             # Sciex routine
             df <- .processSciex(df, regex = regex)
         }
 
-        df$datetime <- as.character(df$datetime)
-
-        df[df == "N/A"] <- NA
         colnames(df) <- tolower(colnames(df))
+
+        if (!"datetime" %in% colnames(df)) {
+            if ("injection_time" %in% colnames(df)) {
+                df$datetime <- lubridate::as_datetime(df$injection_time)
+            } else {
+                aliqs <- as.factor(df$aliquot)
+                n <- length(levels(aliqs))
+                df$datetime <- Sys.time() - n + as.integer(aliqs)
+            }
+        }
+
+        df$datetime <- as.character(df$datetime)
+        df[df == "N/A"] <- NA
         df$type <- toupper(df$type)
+        if ("batch" %in% colnames(df)) {
+            df$batch <- as.character(df$batch)
+        }
+
         df
     })
 
-    if (length(df) > 1) {
-        df <- .setBatches(df) # Set batch numbers if multiple files
-    } else {
-        df <- df[[1]]
-        if (!"batch" %in% colnames(df)) {
-            df$batch <- "Batch01"
-        }
-    }
+    df <- .setBatches(df) # Set batch numbers if multiple files
 
     df
 }
