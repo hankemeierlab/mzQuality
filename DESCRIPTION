@@ -1,7 +1,7 @@
 Package: mzQuality
 Title: Tool For Quality Monitoring And Reporting Of Mass Spectrometry Measurements
-Version: 0.99.2
-Date: 2025-01-24
+Version: 0.99.3
+Date: 2026-06-26
 Authors@R: c(
         person("Pascal", "Maas", email = "p.maas@lacdr.leidenuniv.nl", role = c("aut", "cre"), comment = c(ORCID = "0000-0001-9379-6041")),
         person("Alida", "Kindt", email = "a.s.d.kindt@lacdr.leidenuniv.nl", role = "aut", comment = c(ORCID = "0000-0001-6551-6030")),
@@ -48,7 +48,7 @@ Config/testthat/edition: 3
 Encoding: UTF-8
 VignetteBuilder:
   knitr
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3
 LazyData: false
 BugReports: https://github.com/hankemeierlab/mzQuality/issues
 URL: https://github.com/hankemeierlab/mzQuality, https://hankemeierlab.github.io/mzQuality/mzQuality.html

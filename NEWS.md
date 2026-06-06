@@ -1,3 +1,16 @@
+# mzQuality 0.99.3
+- Improved stability reading files by adding guards for optional columns
+- Improved detection for generic versus Sciex-type files
+- Improved batch names for sorting and displaying batches.
+- Removed mandatory internal standard columns for Sciex-type files
+- Fixed bug where the order of aliquots mattered for constructing the
+SummarizedExperiment object.
+- Fixed a bug where some aliquots could not be parsed, resulting in an
+error instead of default values.
+- Fixed a bug in the within-batch correction where the ratio was scaled
+up/down over all aliquots, not just the QCs. This could cause the 
+`ratio_corrected` to be much lower/higher than the original `ratio`.
+
 # mzQuality 0.99.2
 - Moved data files from inst/* to inst/extdata/* .
 - Added description of data files in inst/script/README.md.

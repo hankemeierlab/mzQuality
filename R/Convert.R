@@ -19,18 +19,10 @@
 #' path <- system.file("extdata/example.tsv", package = "mzQuality")
 #' data <- readData(path)
 readData <- function(files, vendor = NA, regex = NULL) {
-    mandatoryColumns <- c(
-        "Acquisition Date & Time", "Acquisition.Date...Time",
-        "Component Name", "Component.Name",
-        "Retention Time", "Retention.Time",
-        "Area"
-    )
-
     df <- lapply(files, function(file) {
-        df <- fread(file)
+        df <- as.data.frame(fread(file))
 
-        if (sum(colnames(df) %in% mandatoryColumns) > 1) {
-            # Sciex routine
+        if (.isSciex(df)) {
             df <- .processSciex(df, regex = regex)
         }
 
@@ -48,7 +40,11 @@ readData <- function(files, vendor = NA, regex = NULL) {
 
         df$datetime <- as.character(df$datetime)
         df[df == "N/A"] <- NA
-        df$type <- toupper(df$type)
+        if (!"type" %in% colnames(df)) {
+            df$type <- "SAMPLE"
+        } else {
+            df$type <- toupper(df$type)
+        }
         if ("batch" %in% colnames(df)) {
             df$batch <- as.character(df$batch)
         }
@@ -156,7 +152,6 @@ readData <- function(files, vendor = NA, regex = NULL) {
         colnames(rowData), colnames(colData), compoundColumn, aliquotColumn
     )
     assayNames <- setdiff(colnames(df), reserved)
-    df <- df[order(df[, "injection_time"]), ]
 
     if (hasMissing) {
         df <- .fillMissingCombinations(
@@ -164,19 +159,21 @@ readData <- function(files, vendor = NA, regex = NULL) {
         )
     }
 
-    assays <- lapply(assayNames, function(assayName) {
-        m <- NA
-        values <- df[, assayName, drop = TRUE]
-        if (all(is.numeric(values))) {
-            m <- matrix(
-                data = values,
-                ncol = nrow(colData),
-                nrow = nrow(rowData),
-                dimnames = list(rownames(rowData), rownames(colData)),
-                byrow = FALSE
-            )
-        }
+    idx_row <- match(df[[compoundColumn]], rownames(rowData))
+    idx_col <- match(df[[aliquotColumn]], rownames(colData))
+    idx <- cbind(idx_row, idx_col)
 
+    assays <- lapply(assayNames, function(assayName) {
+        values <- df[, assayName, drop = TRUE]
+        if (!all(is.numeric(values))) return(NA)
+
+        m <- matrix(
+            data = NA_real_,
+            ncol = nrow(colData),
+            nrow = nrow(rowData),
+            dimnames = list(rownames(rowData), rownames(colData))
+        )
+        m[idx] <- values
         return(m)
     })
     names(assays) <- assayNames
@@ -259,6 +256,7 @@ buildExperiment <- function(
     colnames(df) <- tolower(colnames(df))
 
     if (!"type" %in% colnames(df)) df$type <- "SAMPLE"
+    if (!"batch" %in% colnames(df)) df$batch <- "1"
     stopifnot(isValidDataframe(df))
 
     df$type <- toupper(df$type)
@@ -270,9 +268,10 @@ buildExperiment <- function(
 
     if (!secondaryAssay %in% colnames(df)) secondaryAssay <- primaryAssay
 
+    mandatory <- c("type", "batch", "datetime")
     allNa <- colSums(is.na(df)) == nrow(df)
     allSame <- vapply(df, function(col) all(col == col[1]), logical(1))
-    keep <- !allNa & (!allSame | is.na(allSame))
+    keep <- !allNa & (!allSame | is.na(allSame)) | colnames(df) %in% mandatory
 
     df <- df[, keep, drop = FALSE]
 
@@ -344,6 +343,10 @@ buildExperiment <- function(
 #' @importFrom dplyr group_by n pull arrange mutate
 #' @noRd
 .addInitialAnalysis <- function(exp) {
+    if (!"injection_time" %in% colnames(colData(exp))) {
+        exp$injection_time <- seq_len(ncol(exp))
+    }
+
     exp <- exp[, order(exp$injection_time, method = "radix")]
     exp$datetime <- lubridate::as_datetime(exp$injection_time)
     exp$color <- .setSampleColors(exp$type)[exp$type]
@@ -353,18 +356,19 @@ buildExperiment <- function(
         batches <- as.integer(as.factor(exp$batch))
     }
 
-    batches <- formatC(batches, max(nchar(batches)), format = "d", flag = "0")
+    width <- max(2, floor(log10(max(batches))) + 1L)
+    batches <- formatC(batches, width, format = "d", flag = "0")
     exp$batch <- paste0("Batch", batches)
 
     if (!"order" %in% colnames(colData(exp))) {
-        order <- colData(exp) %>%
+        inj_order <- colData(exp) %>%
             as.data.frame() %>%
             arrange(.data$injection_time) %>%
             group_by(.data$batch) %>%
             mutate(order = seq_len(n())) %>%
             pull(order)
 
-        colData(exp)$order <- order
+        colData(exp)$order <- inj_order
     }
 
     exp <- calculateRatio(exp) %>%
@@ -408,10 +412,10 @@ buildExperiment <- function(
         compound = incompleteCompounds
     )
 
-    pairs <- paste0(grid$aliquot, grid$compound)
+    pairs <- paste(grid$aliquot, grid$compound, sep = "||")
 
     # Existing compound-aliquot pairs
-    existingPairs <- paste0(df[[aliquotColumn]], df[[compoundColumn]])
+    existingPairs <- paste(df[[aliquotColumn]], df[[compoundColumn]], sep = "||")
 
     # Keep only the missing ones
     grid <- grid[!pairs %in% existingPairs, ]

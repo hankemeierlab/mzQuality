@@ -116,7 +116,8 @@
     trend <- orderMatrix * slope + int
 
     vals <- log(assay[, batchColumns, drop = FALSE])
-    batchMedians <- apply(vals, 1, median, na.rm = TRUE)
+    batchMedians <- rowMeans(log_qcVals, na.rm = TRUE)
+
 
     tooManyNAs <- rowSums(!is.na(vals)) < withinBatchNonNA
     trend[tooManyNAs, ] <- 0

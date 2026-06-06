@@ -1,3 +1,15 @@
+#' @title Detect Sciex Vendor Files
+#' @description Checks whether a dataframe originates from a Sciex vendor
+#'     export by looking for the two Sciex-specific column identifiers.
+#' @param df A dataframe to test.
+#' @returns TRUE if the dataframe looks like a Sciex export, FALSE otherwise.
+#' @noRd
+.isSciex <- function(df) {
+    hasDatetime <- any(c("Acquisition Date & Time", "Acquisition.Date...Time") %in% colnames(df))
+    hasCompound <- any(c("Component Name", "Component.Name") %in% colnames(df))
+    hasDatetime && hasCompound
+}
+
 #' @title Parse Sciex Vendor Files
 #' @description Processes Sciex vendor files to extract and standardize
 #'     aliquot and compound data.
@@ -6,42 +18,58 @@
 #' @returns A standardized dataframe with parsed aliquot and compound data.
 #' @noRd
 .processSciex <- function(df, regex = NULL) {
-    samples <- as.vector(unlist(df[, 1]))
-
-    aliquot_df <- .parseAliquots(samples, regex)
-
-    IScolumns <- c(
-        "IS Name", "IS Retention Time", "IS Area",
-        "IS.Name", "IS.Area", "IS.Retention.Time"
-    )
-    if (!any(IScolumns %in% colnames(df))) {
-        df$`IS Area` <- 1
-        df$`IS Retention Time` <- 1
-        df$`IS Name` <- "NA"
+    if (is.null(regex)) {
+        regex <- paste0(
+            "([0-9]{4}[A-Z]{3}_",
+            "[0-9]{4})([A-Z]+|)([0-9]+|)_([A-Z])([0-9])"
+        )
     }
 
-    mandatoryColumns <- c(
-        "Acquisition Date & Time", "Acquisition.Date...Time",
-        "Component Name", "Component.Name",
-        "Retention Time", "Retention.Time",
-        "Area",
-        "IS Name", "IS.Name",
-        "IS Retention Time", "IS.Retention.Time",
-        "IS Area", "IS.Area"
+    aliquotVariants <- c("Sample Name", "Sample.Name")
+    aliquotCol <- aliquotVariants[aliquotVariants %in% colnames(df)][1]
+    if (is.na(aliquotCol)) {
+        stop("Sciex file missing required column: 'Sample Name'")
+    }
+
+    samples <- as.character(df[[aliquotCol]])
+    aliquot_df <- .parseAliquots(samples, regex)
+
+    mandatoryVariants <- list(
+        datetime = c("Acquisition Date & Time", "Acquisition.Date...Time"),
+        compound = c("Component Name", "Component.Name"),
+        rt       = c("Retention Time", "Retention.Time"),
+        area     = c("Area")
     )
 
-    mandatoryData <- do.call(cbind, lapply(mandatoryColumns, function(x) {
-        df[, which(colnames(df) == x)]
-    }))
-
-    colnames(mandatoryData) <- c(
-        "datetime", "compound", "rt", "area",
-        "compound_is", "rt_is", "area_is"
+    optionalVariants <- list(
+        compound_is = c("IS Name", "IS.Name"),
+        rt_is       = c("IS Retention Time", "IS.Retention.Time"),
+        area_is     = c("IS Area", "IS.Area")
     )
+
+    allKnownColumns <- c(aliquotVariants, unlist(c(mandatoryVariants, optionalVariants), use.names = FALSE))
+
+    selectColumn <- function(variants, required) {
+        found <- variants[variants %in% colnames(df)]
+        if (length(found) == 0 && required) {
+            stop(sprintf("Sciex file missing required column: %s", variants[1]))
+        }
+        found[1]
+    }
+
+    mandatorySelected <- vapply(mandatoryVariants, selectColumn, character(1), required = TRUE)
+
+    optionalSelected <- Filter(Negate(is.na), vapply(
+        optionalVariants, selectColumn, character(1), required = FALSE
+    ))
+
+    selected <- c(mandatorySelected, optionalSelected)
+    mandatoryData <- df[, selected, drop = FALSE]
+    colnames(mandatoryData) <- names(selected)
 
     res <- cbind(aliquot_df, mandatoryData)
 
-    otherColumns <- setdiff(colnames(df), mandatoryColumns)
+    otherColumns <- setdiff(colnames(df), allKnownColumns)
     if (length(otherColumns) > 0) {
         res <- cbind(res, df[, otherColumns, drop = FALSE])
     }
@@ -66,7 +94,8 @@
 
     aliquots <- aliquots[nchar(aliquots) > 0]
     aliquots <- toupper(aliquots)
-    matches <- lapply(regmatches(aliquots, gregexec(regex, aliquots)), t)
+    matches <- regmatches(aliquots, gregexec(regex, aliquots))
+    matches <- lapply(matches[lengths(matches) > 0], t)
     df <- as.data.frame(do.call(rbind, matches))
     colnames(df) <- c(
         "aliquot", "sample", "type", "calno", "replicate", "injection"
@@ -89,7 +118,7 @@
 .setBatches <- function(list_of_files, batch_order = NULL) {
     list_of_files <- .fixDates(list_of_files)
 
-    if (length(list_of_files) == 1) {
+    if (length(list_of_files) == 1 && "batch" %in% colnames(list_of_files[[1]])) {
         list_of_files <- split(list_of_files[[1]], list_of_files[[1]]$batch)
     }
 
@@ -100,8 +129,10 @@
     }
 
     list_of_files <- list_of_files[order(batch_order)]
-    names(list_of_files) <- seq_len(length(list_of_files))
-    df <- do.call(rbind, lapply(names(list_of_files), function(name) {
+    n <- length(list_of_files)
+    batchNames <- paste0("Batch", formatC(seq_len(n), width = max(2, nchar(n)), format = "d", flag = "0"))
+    names(list_of_files) <- batchNames
+    df <- do.call(rbind, lapply(batchNames, function(name) {
         list_of_files[[name]]$batch <- name
         list_of_files[[name]]
     }))
