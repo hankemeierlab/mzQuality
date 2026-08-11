@@ -20,7 +20,7 @@
 #' data <- readData(path)
 readData <- function(files, vendor = NA, regex = NULL) {
     df <- lapply(files, function(file) {
-        df <- as.data.frame(fread(file))
+        df <- as.data.frame(fread(file, integer64 = "double"))
 
         if (.isSciex(df)) {
             df <- .processSciex(df, regex = regex)
