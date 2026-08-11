@@ -287,6 +287,10 @@ addBatchCorrection <- function(
     # Validate if the experiment is correct
     stopifnot(isValidExperiment(exp))
 
+    if (calculateRSDQC) {
+        rowData(exp)$rsdqc <- rsdqc(exp, assay = assay, type = qcType)
+    }
+
     correctedAssay <- sprintf("%s_corrected", assay)
     if (useWithinBatch) {
         exp <- addWithinBatchCorrectionAssay(
@@ -306,7 +310,6 @@ addBatchCorrection <- function(
     )
 
     if (calculateRSDQC) {
-        rowData(exp)$rsdqc <- rsdqc(exp, assay = assay, type = qcType)
         rowData(exp)$rsdqcCorrected <- rsdqc(
             exp = exp, assay = correctedAssay, type = qcType
         )
